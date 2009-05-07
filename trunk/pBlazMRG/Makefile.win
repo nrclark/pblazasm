@@ -1,0 +1,33 @@
+# Project: pBlazMRG
+# Makefile created by Dev-C++ 4.9.9.2
+
+CPP  = g++.exe -D__DEBUG__
+CC   = gcc.exe -D__DEBUG__
+WINDRES = windres.exe
+RES  = 
+OBJ  = pBlazMRG.o pbLibgen.o $(RES)
+LINKOBJ  = pBlazMRG.o pbLibgen.o $(RES)
+LIBS =  -L"C:/Dev-Cpp/lib"  -g3 
+INCS =  -I"C:/Dev-Cpp/include" 
+CXXINCS =  -I"C:/Dev-Cpp/lib/gcc/mingw32/3.4.2/include"  -I"C:/Dev-Cpp/include/c++/3.4.2/backward"  -I"C:/Dev-Cpp/include/c++/3.4.2/mingw32"  -I"C:/Dev-Cpp/include/c++/3.4.2"  -I"C:/Dev-Cpp/include" 
+BIN  = pBlazMRG.exe
+CXXFLAGS = $(CXXINCS)   -g3
+CFLAGS = $(INCS)   -g3
+RM = rm -f
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before pBlazMRG.exe all-after
+
+
+clean: clean-custom
+	${RM} $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CC) $(LINKOBJ) -o "pBlazMRG.exe" $(LIBS)
+
+pBlazMRG.o: pBlazMRG.c
+	$(CC) -c pBlazMRG.c -o pBlazMRG.o $(CFLAGS)
+
+pbLibgen.o: pbLibgen.c
+	$(CC) -c pbLibgen.c -o pbLibgen.o $(CFLAGS)
