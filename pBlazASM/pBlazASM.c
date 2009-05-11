@@ -34,7 +34,15 @@
 static void usage(char * text) {
 	printf( "\n%s - %s\n", text, "Picoblaze Assembler" ) ;
 	printf( "\nUSAGE:\n" ) ;
-	printf( "   pBlazASM [-m[MEMfile>]] [-l[LSTfile]] [-k] [-v] <input file>\n" ) ;
+	printf(
+		"   pBlazASM [-m[<MEMfile>]] [-l[<LSTfile>]] [-k] [-v] [-f] <input file>\n"
+		"   where:\n"
+		"         -m      creates a MEM file for further processing by pBlazMRG\n"
+		"         -l      creates a LST file\n"
+		"         -k      to select KCPSM mode with limited expression handling\n"
+		"         -v      generates verbose reporting\n"
+		"         -m      with -l creates a list file without code, to replace the source\n"
+	) ;
 }
 
 int main(int argc, char **argv) {
@@ -45,6 +53,7 @@ int main(int argc, char **argv) {
 
 	// KCPSM mode, accepts 'NAMEREG' etc
 	bool bKCPSM_mode = false ;
+	bool bList_mode = true ;
 	bool bOptErr = false ;
 	bool bWantMEM = false ;
 	bool bWantLST = false ;
@@ -54,8 +63,11 @@ int main(int argc, char **argv) {
 	extern int optind, optopt ;
 	int optch ;
 
-	while ( ( optch = getopt( argc, argv, ":hkl::m::v" ) ) != -1 ) {
+	while ( ( optch = getopt( argc, argv, "fhkl::m::v" ) ) != -1 ) {
 		switch ( optch ) {
+		case 'f' :
+			bList_mode = false ;
+			break ;
 		case 'h' :
 			bOptErr = true ;
 			break ;
@@ -142,7 +154,7 @@ int main(int argc, char **argv) {
 			printf( "! LST file: %s\n", list_filename ) ;
 	}
 
-	if ( assembler( src_filename, mem_filename, list_filename, bKCPSM_mode ) )
+	if ( assembler( src_filename, mem_filename, list_filename, bKCPSM_mode, bList_mode ) )
 		exit( 0 ) ;
 	else
 		exit( -1 ) ;
