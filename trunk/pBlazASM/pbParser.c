@@ -38,7 +38,8 @@ typedef enum {
 	bsINIT, bsLABEL, bsLABELED, bsSYMBOL, bsOPCODE, bsDIRECTIVE, bsOPERAND, bsEND
 } build_state ;
 
-static bool bMode ; //! KCPSM mode, accepts 'NAMEREG' etc
+static bool bMode = false ; //! KCPSM mode, accepts 'NAMEREG' etc
+static bool bCode = true ; // list code
 static uint32_t gCode[ 1024 + 256 / 2 ] ; // code space and scratchpad space (in words)
 static char * gSource ; // sorce filename for error printer
 static int gLinenr = 0 ; // current linenumber
@@ -179,7 +180,6 @@ static error_t term( uint32_t * result ) {
 	symbol_t * oper = NULL ;
 	const char * p = NULL ;
 	symbol_t * h = NULL ;
-	error_t e = etNONE ;
 	char * s = NULL ;
 	uint32_t val ;
 
@@ -1036,25 +1036,27 @@ static void print_line( FILE * f, error_t e, uint32_t addr, uint32_t code ) {
 	if ( e != etNONE )
 		fprintf( f, "?? %s:\n", s_errors[ e ] ) ;
 
-	// address info
-	if ( addr != 0xFFFFFFFF ) {
-		n += fprintf( f, "%03X ", addr ) ;
-	} else
-		n += fprintf( f, "%4s", "" ) ;
-
-	// code info
-	if ( code != 0xFFFFFFFF ) {
+	if ( bCode ) {
+		// address info
 		if ( addr != 0xFFFFFFFF ) {
-			if ( code <= 0xFFFFF )
-				n += fprintf( f, "%05X ", code ) ;
+			n += fprintf( f, "%03X ", addr ) ;
+		} else
+			n += fprintf( f, "%4s", "" ) ;
+
+		// code info
+		if ( code != 0xFFFFFFFF ) {
+			if ( addr != 0xFFFFFFFF ) {
+				if ( code <= 0xFFFFF )
+					n += fprintf( f, "%05X ", code ) ;
+				else
+					n += fprintf( f, "  %02X  ", code & 0xFF ) ;
+			} else if ( code > 0xFF )
+				n += fprintf( f, "%04X  ", code ) ;
 			else
 				n += fprintf( f, "  %02X  ", code & 0xFF ) ;
-		} else if ( code > 0xFF )
-			n += fprintf( f, "%04X  ", code ) ;
-		else
-			n += fprintf( f, "  %02X  ", code & 0xFF ) ;
-	} else
-		n += fprintf( f, "%6s", "" ) ;
+		} else
+			n += fprintf( f, "%6s", "" ) ;
+	}
 
 	if ( tok_current()->type == tLABEL ) {
 		// labels in the margin
@@ -1081,10 +1083,10 @@ static void print_line( FILE * f, error_t e, uint32_t addr, uint32_t code ) {
 				n += fprintf( f, " " ) ;
 			switch ( tok_current()->type ) {
 			case tHEX :
-				n += fprintf( f, "$%s", tok_current()->text ) ;
+				n += fprintf( f, "0x%s", tok_current()->text ) ;
 				break ;
 			case tBIN :
-				n += fprintf( f, "%%%s", tok_current()->text ) ;
+				n += fprintf( f, "0b%s", tok_current()->text ) ;
 				break ;
 			case tCHAR :
 				n += fprintf( f, "'%s'", tok_current()->text ) ;
@@ -1118,7 +1120,7 @@ static void print_line( FILE * f, error_t e, uint32_t addr, uint32_t code ) {
 }
 
 // main entry for the 2-pass assembler
-bool assembler( char * sourcefilename, char * codefilename, char * listfilename, bool mode ) {
+bool assembler( char * sourcefilename, char * codefilename, char * listfilename, bool mode, bool listcode ) {
 	FILE * fsrc = NULL ;
 	FILE * fmem = NULL ;
 	FILE * flist = NULL ;
@@ -1164,7 +1166,9 @@ bool assembler( char * sourcefilename, char * codefilename, char * listfilename,
 			result = false ;
 		}
 	}
-	for ( gLinenr = 1, gPC = 0, gSCR = 2048, bMode = mode ; fgets( line, sizeof( line ), fsrc ) != NULL ; gLinenr += 1 ) {
+	bMode = mode ;
+	bCode = listcode ;
+	for ( gLinenr = 1, gPC = 0, gSCR = 2048 ; fgets( line, sizeof( line ), fsrc ) != NULL ; gLinenr += 1 ) {
 		if ( lex( line, mode ) ) {
 			result &= error( e = assemble( &addr, &code ) ) ;
 			if ( flist != NULL )
