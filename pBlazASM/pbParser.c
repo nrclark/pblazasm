@@ -648,7 +648,7 @@ static error_t build( void ) {
 					}
 					break ;
 				default :
-					return etNOTIMPL ;
+					return etDOUBLE ;
 				}
 			} else if ( state == bsINIT ) {
 				// not known yet, label or symbol definition?
