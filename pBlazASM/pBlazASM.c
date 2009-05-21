@@ -41,7 +41,7 @@ static void usage(char * text) {
 		"         -l      creates a LST file\n"
 		"         -k      to select KCPSM mode with limited expression handling\n"
 		"         -v      generates verbose reporting\n"
-		"         -m      with -l creates a list file without code, to replace the source\n"
+		"         -f      with -l creates a list file without code, to replace the source\n"
 	) ;
 }
 
