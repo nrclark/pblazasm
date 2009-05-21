@@ -28,6 +28,11 @@
 #include "pbLexer.h"
 #include "pbErrors.h"
 
+//#ifdef _MSC_VER	//Microsoft Visual C doesn't have strcasemcp, but has stricmp instead
+#define strcasecmp	stricmp
+//#endif
+
+
 //! \file
 //!  pBlazASM work horse
 //!
@@ -41,8 +46,8 @@ typedef enum {
 static bool bMode = false ; //! KCPSM mode, accepts 'NAMEREG' etc
 static bool bCode = true ; // list code
 static uint32_t gCode[ 1024 + 256 / 2 ] ; // code space and scratchpad space (in words)
-static char * gSource ; // sorce filename for error printer
-static int gLinenr = 0 ; // current linenumber
+static char * gSource ; // source filename for error printer
+static int gLinenr = 0 ; // current line number
 static uint32_t gPC = 0 ; // current code counter
 static uint32_t gSCR = 2048 ; // current scratchpad counter
 
@@ -50,7 +55,7 @@ static const char * s_errors[] = {
 		"<none>", "unexpected tokens", "doubly defined", "undefined", "phasing error", "missing symbol",
 		"syntax error", "syntax error in expression", "syntax error in operand", "syntax error in operand",
 		"syntax error in operator", "syntax error, register expected", "comma expected", "unexpected characters",
-		"codesize > 1024", "<not-implemented>", "<internal error>" } ;
+		"expression expected", "code size > 1024", "<not-implemented>", "<internal error>" } ;
 
 static error_t expression( uint32_t * result ) ;
 
@@ -280,6 +285,10 @@ static error_t expression( uint32_t * result ) {
 		default :
 			return etEXPR ;
 		}
+	}
+
+	if ( tok_current()->type == tNONE ) {
+		return etEMPTY ;
 	}
 
 	// full expression handling
@@ -586,8 +595,12 @@ static error_t build( void ) {
 							if ( !add_symbol( tVALUE, stINT, symtok->text, ( gSCR ) & 0xFF ) )
 								return etDOUBLE ;
 							do {
-								if ( ( e = expression( &result ) ) != etNONE )
-									return e ;
+								if ( ( e = expression( &result ) ) != etNONE ) {
+									if ( e == etEMPTY )
+										break ;	// allow an empty expression list for generating a symbol only
+									else
+										return e ;
+								}
 								gSCR += 1 ;
 							} while ( comma() ) ;
 						} else
@@ -866,6 +879,10 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x0FF00 ) | ( result & 0xFF ) ;
 								else
 									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x000FF ) | ( ( result & 0xFF ) << 8 ) ;
+							} else if ( e == etEMPTY ) {
+								// allow an empty expression list for generating a symbol only
+								*code = 0xFFFFFFFF ;
+								break ;
 							} else
 								return e ;
 							// only show the first 2 bytes as a 'uint18'

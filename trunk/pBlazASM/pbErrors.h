@@ -33,6 +33,7 @@ typedef enum {
 	etREGISTER,
 	etCOMMA,
 	etLEX,
+	etEMPTY,
 	etRANGE,
 	etNOTIMPL,
 	etINTERNAL

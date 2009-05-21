@@ -18,7 +18,7 @@
  */
 
 #include <stdlib.h>
-#include <ctype.h>
+#include <string.h>
 
 //!
 // operating system dependent filename processing functions
