@@ -37,14 +37,14 @@ static void usage( char * text ) {
 }
 
 bool loadMEM( const char * strMEMfile ) {
-	int i, j ;
-	uint32_t addr, code ;
+	int i, j, addr ;
+	uint32_t code ;
 	char line[ 256 ], *p ;
 	FILE * infile = NULL ;
 
 	infile = fopen( strMEMfile, "r" ) ;
 	if ( infile == NULL ) {
-		fprintf( stderr, "? Unable to open template file '%s'", strMEMfile ) ;
+		fprintf( stderr, "? Unable to open MEM file '%s'", strMEMfile ) ;
 		return false ;
 	}
 
@@ -56,11 +56,17 @@ bool loadMEM( const char * strMEMfile ) {
 		for ( j = 0 ; j < 128; j++ )
 			INITP[ i ][ j ] = 0 ;
 
-	for ( addr = 0 ; addr < 1024 && fgets( line, sizeof( line ), infile ) != NULL; ) {
+	for ( addr = -1 ; addr < 1024 && fgets( line, sizeof( line ), infile ) != NULL; ) {
 		if ( ( p = strchr( line, '@' ) ) != NULL ) {
-			if ( sscanf( ++p, "%X", &addr ) != 1 )
+			if ( sscanf( ++p, "%X", &addr ) != 1 ) {
+				fprintf( stderr, "? Missing address in MEM file '%s'", strMEMfile ) ;
 				return false ;
+			}
 		} else {
+			if ( addr == -1 ) {
+				fprintf( stderr, "? Missing address in MEM file '%s'", strMEMfile ) ;
+				return false ;
+			}
 			sscanf( line, "%X", &code ) ;
 
 			// INIT00 .. INIT3F
@@ -219,14 +225,6 @@ int main( int argc, char *argv[] ) {
 		exit( -1 ) ;
 	}
 
-	if ( strlen( entity_name ) == 0 ) {
-		fprintf( stderr, "? entity name missing\n" ) ;
-		usage( basename( argv[ 0 ] ) ) ;
-		exit( -1 ) ;
-	}
-	if ( bVerbose )
-		printf( "! entity name: %s\n", entity_name ) ;
-
 	// source filename
 	if ( argv[ optind ] == NULL ) {
 		fprintf( stderr, "? source file missing\n" ) ;
@@ -239,13 +237,18 @@ int main( int argc, char *argv[] ) {
 	if ( bVerbose )
 		printf( "! MEM file: %s\n", mem_filename ) ;
 
+	if ( strlen( entity_name ) == 0 ) {
+		strcpy( entity_name, filename( mem_filename ) ) ;
+	}
+	if ( bVerbose )
+		printf( "! entity name: %s\n", entity_name ) ;
+
 	// template filename
 	if ( argv[ optind ] == NULL ) {
-		fprintf( stderr, "? template file missing\n" ) ;
-		usage( basename( argv[ 0 ] ) ) ;
-		exit( -1 ) ;
+		strcpy( tpl_filename, "ROM_form_template.vhd" ) ;
+	} else {
+		strcpy( tpl_filename, argv[ optind++ ] ) ;
 	}
-	strcpy( tpl_filename, argv[ optind++ ] ) ;
 	if ( strrchr( tpl_filename, '.' ) == NULL )
 		strcat( tpl_filename, ".vhd" ) ;
 	if ( bVerbose )
@@ -253,11 +256,10 @@ int main( int argc, char *argv[] ) {
 
 	// output filename
 	if ( argv[ optind ] == NULL ) {
-		fprintf( stderr, "? output file missing\n" ) ;
-		usage( basename( argv[ 0 ] ) ) ;
-		exit( -1 ) ;
+		strcpy( rom_filename, filename( mem_filename ) ) ;
+	} else {
+		strcpy( rom_filename, argv[ optind++ ] ) ;
 	}
-	strcpy( rom_filename, argv[ optind++ ] ) ;
 	if ( strrchr( rom_filename, '.' ) == NULL )
 		strcat( rom_filename, ".vhd" ) ;
 	if ( bVerbose )
