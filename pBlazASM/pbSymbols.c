@@ -82,6 +82,9 @@ symbol_t * find_symbol( const char * text, bool bUpper ) {
 	int h, p ;
 	char buf[ 256 ], *s ;
 
+	if (!text)
+		return NULL ;
+
 	// uppercase only?
 	strcpy( buf, text ) ;
 	for ( s = buf ; bUpper && *s != '\0' ; s++ )

@@ -84,7 +84,7 @@ static bool processOperator( unsigned int * result, unsigned int term, symbol_t 
 		*result |= term ;
 		break ;
 	case stXOR :
-		*result |= term ;
+		*result ^= term ;
 		break ;
 	case stAND :
 		*result &= term ;
@@ -185,6 +185,7 @@ static error_t term( uint32_t * result ) {
 	symbol_t * oper = NULL ;
 	const char * p = NULL ;
 	symbol_t * h = NULL ;
+	error_t e = etNONE ;
 	char * s = NULL ;
 	uint32_t val ;
 
@@ -224,6 +225,14 @@ static error_t term( uint32_t * result ) {
 		val = h->value & 0xFFFF ;
 		if ( h->type != tVALUE && h->type != tLABEL )
 			return etVALUE ;
+		break ;
+	case tLPAREN :
+		tok_next() ;
+		e = expression( &val ) ;
+		if ( e != etNONE )
+			return e ;
+		if ( tok_current()->type != tRPAREN )
+			return etEXPR ;
 		break ;
 	default :
 		return etEXPR ;
@@ -588,62 +597,53 @@ static error_t build( void ) {
 
 						// _BYT
 					case stBYTE :
-						if ( state != bsSYMBOL )
+						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
 						tok_next() ;
-						if ( symtok != NULL ) {
-							if ( !add_symbol( tVALUE, stINT, symtok->text, ( gSCR ) & 0xFF ) )
-								return etDOUBLE ;
-							do {
-								if ( ( e = expression( &result ) ) != etNONE ) {
-									if ( e == etEMPTY )
-										break ;	// allow an empty expression list for generating a symbol only
-									else
-										return e ;
-								}
-								gSCR += 1 ;
-							} while ( comma() ) ;
-						} else
-							return etMISSING ;
+						if ( symtok && !add_symbol( tVALUE, stINT, symtok->text, ( gSCR ) & 0xFF ) )
+							return etDOUBLE ;
+						do {
+							if ( ( e = expression( &result ) ) != etNONE ) {
+								if ( e == etEMPTY )
+									break ;	// allow an empty expression list for generating a symbol only
+								else
+									return e ;
+							}
+							gSCR += 1 ;
+						} while ( comma() ) ;
 						state = bsEND ;
 						break ;
 
 						// _BUFFER
 					case stBUFFER :
-						if ( state != bsSYMBOL )
+						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
 						tok_next() ;
-						if ( symtok != NULL ) {
-							if ( !add_symbol( tVALUE, stINT, symtok->text, ( gSCR ) & 0xFF ) )
-								return etDOUBLE ;
-							if ( ( e = expression( &result ) ) == etNONE ) {
-								if ( result < 256 )
-									gSCR += result ;
-								else
-									return etRANGE ;
-							} else
-								return e ;
+						if ( symtok && !add_symbol( tVALUE, stINT, symtok->text, ( gSCR ) & 0xFF ) )
+							return etDOUBLE ;
+						if ( ( e = expression( &result ) ) == etNONE ) {
+							if ( result < 256 )
+								gSCR += result ;
+							else
+								return etRANGE ;
 						} else
-							return etMISSING ;
+							return e ;
 						state = bsEND ;
 						break ;
 
 						// _TXT
 					case stTEXT :
-						if ( state != bsSYMBOL )
+						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
 						tok_next() ;
-						if ( symtok != NULL ) {
-							if ( !add_symbol( tVALUE, stINT, symtok->text, ( gSCR ) & 0xFF ) )
-								return etDOUBLE ;
-							if ( tok_current()->type == tSTRING ) {
-								char * dup = convert_string( tok_current()->text ) ;
-								gSCR += strlen( dup ) + 1 ;
-								free( dup ) ;
-							} else
-								return etEXPR ;
+						if ( symtok && !add_symbol( tVALUE, stINT, symtok->text, ( gSCR ) & 0xFF ) )
+							return etDOUBLE ;
+						if ( tok_current()->type == tSTRING ) {
+							char * dup = convert_string( tok_current()->text ) ;
+							gSCR += strlen( dup ) + 1 ;
+							free( dup ) ;
 						} else
-							return etMISSING ;
+							return etEXPR ;
 						state = bsEND ;
 						break ;
 
@@ -766,9 +766,9 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 						break ;
 
 					case stINTE :
-						if ( !enadis( &operand1 ) )
-							return etOPERAND ;
-						opcode = h->value | operand1 ;
+						opcode = h->value ;
+						if ( enadis( &operand1 ) )
+							opcode = ( h->value & 0xFFFFE ) | operand1 ;
 						break ;
 
 					case stIO :
@@ -870,7 +870,7 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 						break ;
 
 					case stBYTE :
-						if ( state != bsSYMBOL )
+						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
 						*addr = gSCR ;
 						do {
@@ -893,7 +893,7 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 						break ;
 
 					case stBUFFER :
-						if ( state != bsSYMBOL )
+						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
 						if ( ( e = expression( &result ) ) == etNONE ) {
 							if ( result < 256 ) {
@@ -908,7 +908,7 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 
 						// _TXT
 					case stTEXT :
-						if ( state != bsSYMBOL )
+						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
 						if ( tok_current()->type == tSTRING ) {
 							char * dup = convert_string( tok_current()->text ) ;
