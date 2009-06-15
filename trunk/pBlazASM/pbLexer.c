@@ -46,7 +46,7 @@ typedef enum {
 
 // global token list
 static symbol_t tokens[ 256 ] ; // global token list
-static symbol_t * ptok = 0 ; // pointe to current token, index in 'tokens[]'
+static symbol_t * ptok = 0 ; // pointer to current token, index in 'tokens[]'
 
 symbol_t * tok_first( void ) {
 	ptok = tokens ;

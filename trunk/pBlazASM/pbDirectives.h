@@ -25,33 +25,33 @@
 const symbol_t directives[] =
 	{
 	// pBlazASM
-			{ tDIRECTIVE, stORG, ".ORG", 0 },
-			{ tDIRECTIVE, stEND, ".END", 0 },
+			{ tDIRECTIVE, stORG,        ".ORG",     0 },
+			{ tDIRECTIVE, stEND,        ".END",     0 },
 
-			{ tDIRECTIVE, stSCRATCHPAD, ".SCR", 0 },
-			{ tDIRECTIVE, stSFR, ".SFR", 0 },
+			{ tDIRECTIVE, stSCRATCHPAD, ".SCR",     0 },
+			{ tDIRECTIVE, stSFR,        ".SFR",     0 },
 
-			{ tDIRECTIVE, stEQU, ".EQU", 0 },
-			{ tDIRECTIVE, stBYTE, ".BYT", 0 },
-			{ tDIRECTIVE, stBUFFER, ".BUF", 0 },
-			{ tDIRECTIVE, stTEXT, ".TXT", 0 },
+			{ tDIRECTIVE, stEQU,        ".EQU",     0 },
+			{ tDIRECTIVE, stBYTE,       ".BYT",     0 },
+			{ tDIRECTIVE, stBUFFER,     ".BUF",     0 },
+			{ tDIRECTIVE, stTEXT,       ".TXT",     0 },
 
 		// pBlazIDE
-			{ tDIRECTIVE, stORG, "ORG", 0 },
-			{ tDIRECTIVE, stEQU, "EQU", 0 },
-			{ tDIRECTIVE, stDS, "DS", 0 },
-			{ tDIRECTIVE, stDSIN, "DSIN", 0 },
-			{ tDIRECTIVE, stDSOUT, "DSOUT", 0 },
-			{ tDIRECTIVE, stDSIO, "DSIO", 0 },
-			{ tDIRECTIVE, stDSROM, "DSROM", 0 },
-			{ tDIRECTIVE, stDSRAM, "DSRAM", 0 },
+			{ tDIRECTIVE, stORG,        "ORG",      0 },
+			{ tDIRECTIVE, stEQU,        "EQU",      0 },
+			{ tDIRECTIVE, stDS,         "DS",       0 },
+			{ tDIRECTIVE, stDSIN,       "DSIN",     0 },
+			{ tDIRECTIVE, stDSOUT,      "DSOUT",    0 },
+			{ tDIRECTIVE, stDSIO,       "DSIO",     0 },
+			{ tDIRECTIVE, stDSROM,      "DSROM",    0 },
+			{ tDIRECTIVE, stDSRAM,      "DSRAM",    0 },
 
-			{ tDIRECTIVE, stVHDL, "VHDL", 0 },
-			{ tDIRECTIVE, stMEM, "MEM", 0 },
-			{ tDIRECTIVE, stCOE, "COE", 0 },
-			{ tDIRECTIVE, stHEX, "HEX", 0 },
+			{ tDIRECTIVE, stVHDL,       "VHDL",     0 },
+			{ tDIRECTIVE, stMEM,        "MEM",      0 },
+			{ tDIRECTIVE, stCOE,        "COE",      0 },
+			{ tDIRECTIVE, stHEX,        "HEX",      0 },
 
 		// KCPSM3
-			{ tDIRECTIVE, stADDRESS, "ADDRESS", 0 },
-			{ tDIRECTIVE, stCONSTANT, "CONSTANT", 0 },
-			{ tDIRECTIVE, stNAMEREG, "NAMEREG", 0 } } ;
+			{ tDIRECTIVE, stADDRESS,    "ADDRESS",  0 },
+			{ tDIRECTIVE, stCONSTANT,   "CONSTANT",	0 },
+			{ tDIRECTIVE, stNAMEREG,    "NAMEREG",  0 } } ;
