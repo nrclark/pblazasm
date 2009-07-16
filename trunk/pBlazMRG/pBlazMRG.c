@@ -31,7 +31,7 @@ uint8_t INIT[ 64 ][ 32 ] ;
 uint8_t INITP[ 8 ][ 128 ] ;
 
 static void usage( char * text ) {
-	printf( "\n%s - %s\n", text, "Picoblaze Assembler merge utility" ) ;
+	printf( "\n%s - %s\n", text, "Picoblaze Assembler merge utility V1.0" ) ;
 	printf( "\nUSAGE:\n" ) ;
 	printf( "   pBlazMRG [-v] -e<entity_name> <MEM inputfile> <TPL inputfile> <ROM outputfile>\n" ) ;
 }
