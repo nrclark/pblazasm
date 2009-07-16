@@ -31,25 +31,29 @@
  *  pBlazASM main
  */
 
-static void usage(char * text) {
-	printf( "\n%s - %s\n", text, "Picoblaze Assembler V1.0" ) ;
+static void usage( char * text ) {
+	printf( "\n%s - %s\n", text, "Picoblaze Assembler V1.1" ) ;
 	printf( "\nUSAGE:\n" ) ;
-	printf(
-		"   pBlazASM [-m[<MEMfile>]] [-l[<LSTfile>]] [-k] [-v] [-f] <input file>\n"
+	printf( "   pBlazASM [-m[<MEMfile>]] [-l[<LSTfile>]] [-k] [-v] [-f] <input file> <input file> <input file> ...\n"
 		"   where:\n"
 		"         -m      creates a MEM file for further processing by pBlazMRG\n"
 		"         -l      creates a LST file\n"
 		"         -k      to select KCPSM mode with limited expression handling\n"
 		"         -v      generates verbose reporting\n"
-		"         -f      with -l creates a list file without code, to replace the source\n"
-	) ;
+		"         -f      with -l creates a list file without code, to replace the source\n" ) ;
+	printf( "\nNote: All (max 255) input files are assembled to one output.\n" ) ;
 }
 
-int main(int argc, char **argv) {
-	char src_filename[ 256 ] = { 0 } ;
-	char mem_filename[ 256 ] = { 0 } ;
-	char list_filename[ 256 ] = { 0 } ;
+int main( int argc, char **argv ) {
+	char * src_filenames[ 256 ] =
+		{ NULL } ;
+	char mem_filename[ 256 ] =
+		{ 0 } ;
+	char list_filename[ 256 ] =
+		{ 0 } ;
 	char * pfile, *ppath ;
+	int result = 0 ;
+	int nInputfile = 0 ;
 
 	// KCPSM mode, accepts 'NAMEREG' etc
 	bool bKCPSM_mode = false ;
@@ -100,30 +104,34 @@ int main(int argc, char **argv) {
 
 	if ( bOptErr ) {
 		usage( basename( argv[ 0 ] ) ) ;
-		exit( -1 ) ;
+		result = -1 ;
+		goto finally ;
 	}
 
 	if ( bVerbose && bKCPSM_mode )
-		printf( "! KCPSM3 compatible mode selected\n" ) ;
+		fprintf( stdout, "! KCPSM3 compatible mode selected\n" ) ;
 
 	if ( argv[ optind ] == NULL ) {
-		fprintf( stderr, "? source file missing\n" ) ;
+		fprintf( stderr, "? source file(s) missing\n" ) ;
 		usage( basename( argv[ 0 ] ) ) ;
-		exit( -1 ) ;
+		result = -1 ;
+		goto finally ;
 	}
-	strcpy( src_filename, argv[ optind ] ) ;
-	if ( strlen( src_filename ) == 0 ) {
-		fprintf( stderr, "? source file missing\n" ) ;
-		usage( basename( argv[ 0 ] ) ) ;
-		exit( -1 ) ;
+
+	for ( nInputfile = 0 ; argv[ optind ] != NULL && nInputfile < 256 ; nInputfile += 1, optind += 1 ) {
+		src_filenames[ nInputfile ] = calloc( strlen( argv[ optind ] ) + 16, sizeof(char) ) ;
+		strcpy( src_filenames[ nInputfile ], argv[ optind ] ) ;
+
+		if ( strrchr( src_filenames[ nInputfile ], '.' ) == NULL )
+			strcat( src_filenames[ nInputfile ], ".psm" ) ;
+		if ( bVerbose )
+			fprintf( stdout, "! Sourcefile: %s\n", src_filenames[ nInputfile ] ) ;
 	}
-	if ( strrchr( src_filename, '.' ) == NULL )
-		strcat( src_filename, ".psm" ) ;
 
 	if ( bWantMEM ) {
 		if ( strlen( mem_filename ) == 0 ) {
-			pfile = filename( src_filename ) ;
-			ppath = dirname( src_filename ) ;
+			pfile = filename( src_filenames[ nInputfile - 1 ] ) ;
+			ppath = dirname( src_filenames[ nInputfile - 1 ] ) ;
 			strcpy( mem_filename, ppath ) ;
 			strcat( mem_filename, "/" ) ;
 			strcat( mem_filename, pfile ) ;
@@ -134,13 +142,13 @@ int main(int argc, char **argv) {
 		if ( strrchr( mem_filename, '.' ) == NULL )
 			strcat( mem_filename, ".mem" ) ;
 		if ( bVerbose )
-			printf( "! MEM file: %s\n", mem_filename ) ;
+			fprintf( stdout, "! MEM file: %s\n", mem_filename ) ;
 	}
 
 	if ( bWantLST ) {
 		if ( strlen( list_filename ) == 0 ) {
-			pfile = filename( src_filename ) ;
-			ppath = dirname( src_filename ) ;
+			pfile = filename( src_filenames[ nInputfile - 1 ] ) ;
+			ppath = dirname( src_filenames[ nInputfile - 1 ] ) ;
 			strcpy( list_filename, ppath ) ;
 			strcat( list_filename, "/" ) ;
 			strcat( list_filename, pfile ) ;
@@ -151,11 +159,19 @@ int main(int argc, char **argv) {
 		if ( strrchr( list_filename, '.' ) == NULL )
 			strcat( list_filename, ".lst" ) ;
 		if ( bVerbose )
-			printf( "! LST file: %s\n", list_filename ) ;
+			fprintf( stdout, "! LST file: %s\n", list_filename ) ;
 	}
 
-	if ( assembler( src_filename, mem_filename, list_filename, bKCPSM_mode, bList_mode ) )
-		exit( 0 ) ;
+	if ( assembler( src_filenames, mem_filename, list_filename, bKCPSM_mode, bList_mode ) )
+		result = 0 ;
 	else
-		exit( -1 ) ;
+		result = -1 ;
+
+	finally: {
+		int i ;
+		for ( i = 0 ; i < nInputfile ; i += 1 ) {
+			free( src_filenames ) ;
+		}
+	}
+	exit( result ) ;
 }

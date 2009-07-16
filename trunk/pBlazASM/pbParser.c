@@ -51,7 +51,8 @@ static int gLinenr = 0 ; // current line number
 static uint32_t gPC = 0 ; // current code counter
 static uint32_t gSCR = 2048 ; // current scratchpad counter
 
-static const char * s_errors[] = {
+static const char * s_errors[] =
+	{
 		"<none>", "unexpected tokens", "doubly defined", "undefined", "phasing error", "missing symbol",
 		"syntax error", "syntax error in expression", "syntax error in operand", "syntax error in operand",
 		"syntax error in operator", "syntax error, register expected", "comma expected", "unexpected characters",
@@ -605,7 +606,7 @@ static error_t build( void ) {
 						do {
 							if ( ( e = expression( &result ) ) != etNONE ) {
 								if ( e == etEMPTY )
-									break ;	// allow an empty expression list for generating a symbol only
+									break ; // allow an empty expression list for generating a symbol only
 								else
 									return e ;
 							}
@@ -1137,10 +1138,11 @@ static void print_line( FILE * f, error_t e, uint32_t addr, uint32_t code ) {
 }
 
 // main entry for the 2-pass assembler
-bool assembler( char * sourcefilename, char * codefilename, char * listfilename, bool mode, bool listcode ) {
+bool assembler( char ** sourcefilenames, char * codefilename, char * listfilename, bool mode, bool listcode ) {
 	FILE * fsrc = NULL ;
 	FILE * fmem = NULL ;
 	FILE * flist = NULL ;
+	char ** Sources = NULL ;
 	char line[ 256 ] ;
 	error_t e = etNONE ;
 	int h = 0 ;
@@ -1148,34 +1150,35 @@ bool assembler( char * sourcefilename, char * codefilename, char * listfilename,
 
 	uint32_t addr, code ;
 
-	// open source file
-	fsrc = fopen( sourcefilename, "r" ) ;
-	if ( fsrc == NULL ) {
-		fprintf( stderr, "? unable to open source file '%s'", sourcefilename ) ;
-		return false ;
-	}
-	gSource = sourcefilename ;
-
 	// set up symbol table with keywords
 	init_symbol() ;
-
-	// pass 1, add symbols from source
-	for ( gLinenr = 1, gPC = 0, gSCR = 2048, bMode = mode ; fgets( line, sizeof( line ), fsrc ) != NULL ; gLinenr += 1 ) {
-		if ( lex( line, mode ) ) {
-			result &= error( build() ) ;
-			tok_free() ;
-		} else
-			result &= error( etLEX ) ;
-	}
-
-	// rewind
-	fseek( fsrc, 0, SEEK_SET ) ;
 
 	// clear code
 	for ( h = 0 ; h < 1024 + 256 / 2 ; h += 1 )
 		gCode[ h ] = 0xFFFC0000 ;
 
-	// pass 2, build code and scratchpad
+	Sources = sourcefilenames ;
+	for ( gSource = *Sources++, gLinenr = 1, gPC = 0, gSCR = 2048, bMode = mode ; gSource != NULL ; gSource
+		= *Sources++ ) {
+		// open source file
+		fsrc = fopen( gSource, "r" ) ;
+		if ( fsrc == NULL ) {
+			fprintf( stderr, "? unable to open source file '%s'", gSource ) ;
+			result = false ;
+			goto finally ;
+		}
+
+		// pass 1, add symbols from source
+		for ( ; fgets( line, sizeof( line ), fsrc ) != NULL ; gLinenr += 1 ) {
+			if ( lex( line, mode ) ) {
+				result &= error( build() ) ;
+				tok_free() ;
+			} else
+				result &= error( etLEX ) ;
+		}
+		fclose( fsrc ) ;
+	}
+
 	if ( strlen( listfilename ) > 0 ) {
 		flist = fopen( listfilename, "w" ) ;
 		if ( flist == NULL ) {
@@ -1183,22 +1186,34 @@ bool assembler( char * sourcefilename, char * codefilename, char * listfilename,
 			result = false ;
 		}
 	}
-	bMode = mode ;
+
 	bCode = listcode ;
-	for ( gLinenr = 1, gPC = 0, gSCR = 2048 ; fgets( line, sizeof( line ), fsrc ) != NULL ; gLinenr += 1 ) {
-		if ( lex( line, mode ) ) {
-			result &= error( e = assemble( &addr, &code ) ) ;
-			if ( flist != NULL )
-				print_line( flist, e, addr, code ) ;
-		} else {
-			result &= error( etLEX ) ;
-			if ( flist != NULL )
-				print_line( flist, etLEX, addr, code ) ;
+	Sources = sourcefilenames ;
+	for ( gSource = *Sources++, gLinenr = 1, gPC = 0, gSCR = 2048, bMode = mode ; gSource != NULL ; gSource
+		= *Sources++ ) {
+
+		fsrc = fopen( gSource, "r" ) ;
+		if ( fsrc == NULL ) {
+			fprintf( stderr, "? unable to re-open source file '%s'", gSource ) ;
+			result = false ;
+			goto finally ;
 		}
-		tok_free() ;
+
+		// pass 2, build code and scratchpad
+		for ( ; fgets( line, sizeof( line ), fsrc ) != NULL ; gLinenr += 1 ) {
+			if ( lex( line, mode ) ) {
+				result &= error( e = assemble( &addr, &code ) ) ;
+				if ( flist != NULL )
+					print_line( flist, e, addr, code ) ;
+			} else {
+				result &= error( etLEX ) ;
+				if ( flist != NULL )
+					print_line( flist, etLEX, addr, code ) ;
+			}
+			tok_free() ;
+		}
+		fclose( fsrc ) ;
 	}
-	if ( flist != NULL )
-		fclose( flist ) ;
 
 	// dump code and scratch pad
 	if ( strlen( codefilename ) > 0 ) {
@@ -1212,8 +1227,11 @@ bool assembler( char * sourcefilename, char * codefilename, char * listfilename,
 		}
 	}
 
-	free_symbol() ;
-	fclose( fsrc ) ;
+	finally: {
+		if ( flist != NULL )
+			fclose( flist ) ;
+		free_symbol() ;
+	}
 
 	return result ;
 }
