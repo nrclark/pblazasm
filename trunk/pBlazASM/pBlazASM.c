@@ -32,7 +32,7 @@
  */
 
 static void usage(char * text) {
-	printf( "\n%s - %s\n", text, "Picoblaze Assembler" ) ;
+	printf( "\n%s - %s\n", text, "Picoblaze Assembler V1.0" ) ;
 	printf( "\nUSAGE:\n" ) ;
 	printf(
 		"   pBlazASM [-m[<MEMfile>]] [-l[<LSTfile>]] [-k] [-v] [-f] <input file>\n"
