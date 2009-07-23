@@ -1,0 +1,43 @@
+#
+# makefile for compiling for Windoze using MinGW w/o eclipse
+# 16-jul-09	hvk	initial
+#
+
+## defines
+
+RM = "C:/MSYS/1.0/bin/rm" -f
+MP = "C:/MinGW"
+CC = "C:/MinGW/bin/gcc"
+ 
+C_SRCS += \
+./pBlazMRG.c \
+./pbLibgen.c
+
+EXE = "./pBlazMRG.exe"
+OBJS = $(C_SRCS:.c=.o)
+LIBS = 
+INCS = -I$(MP)"/include" -I"./inc"
+#CFLAGS = $(INCS) -g3 -DWINDOWS -Wall -std=c99 -c -O3
+CFLAGS = $(INCS) -g3 -DWINDOWS -Wall -c -O3
+
+## rules
+
+# All Target
+all:	$(EXE)
+
+# Tool invocations
+$(EXE):	$(OBJS)
+	@echo 'Building: $(EXE)'
+	$(CC) -o $@ $^ $(LIBS)
+	
+%.o : %.c
+	@echo 'Building:' "$@"
+	$(CC) $(CFLAGS) -o"$@" "$<"
+
+# Other Targets
+clean:
+	-@echo 'Clean up:' $(OBJS) $(EXE)
+	-$(RM) $(OBJS) $(EXE)
+
+.PHONY: all clean
+.SECONDARY:
