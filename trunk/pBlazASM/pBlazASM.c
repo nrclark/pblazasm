@@ -169,6 +169,7 @@ int main( int argc, char **argv ) {
 
 	finally: {
 		int i ;
+
 		for ( i = 0 ; i < nInputfile ; i += 1 ) {
 			free( src_filenames ) ;
 		}
