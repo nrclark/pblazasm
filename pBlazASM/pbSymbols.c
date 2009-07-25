@@ -71,6 +71,8 @@ void init_symbol( void ) {
 		add_keyword( &opcodes[ h ] ) ;
 	for ( h = 0 ; h < sizeof( conditions ) / sizeof(symbol_t) ; h += 1 )
 		add_keyword( &conditions[ h ] ) ;
+	for ( h = 0 ; h < sizeof( indexes ) / sizeof(symbol_t) ; h += 1 )
+		add_keyword( &indexes[ h ] ) ;
 	for ( h = 0 ; h < sizeof( directives ) / sizeof(symbol_t) ; h += 1 )
 		add_keyword( &directives[ h ] ) ;
 	for ( h = 0 ; h < sizeof( registers ) / sizeof(symbol_t) ; h += 1 )

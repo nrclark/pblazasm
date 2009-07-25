@@ -33,12 +33,14 @@
 //#endif
 
 
-//! \file
-//!  pBlazASM work horse
-//!
+/**
+ * pBlazASM work horse
+ * @file pBParser.c
+ */
 
-//! \brief
-// assemler states
+/**
+ * assemler states
+ */
 typedef enum {
 	bsINIT, bsLABEL, bsLABELED, bsSYMBOL, bsOPCODE, bsDIRECTIVE, bsOPERAND, bsEND
 } build_state ;
@@ -51,6 +53,9 @@ static int gLinenr = 0 ; // current line number
 static uint32_t gPC = 0 ; // current code counter
 static uint32_t gSCR = 2048 ; // current scratchpad counter
 
+/**
+ * error strings
+ */
 static const char * s_errors[] =
 	{
 		"<none>", "unexpected tokens", "doubly defined", "undefined", "phasing error", "missing symbol",
@@ -60,9 +65,14 @@ static const char * s_errors[] =
 
 static error_t expression( uint32_t * result ) ;
 
-//! \brief
-//! handle 'expression' <operator> 'term'
-//!
+/**
+ * processOperator
+ * handle 'expression' <operator> 'term'
+ * @param result value to operate on
+ * @param term value to operate with
+ * @param oper ref to operator to be used
+ * @return success
+ */
 static bool processOperator( unsigned int * result, unsigned int term, symbol_t ** oper ) {
 	if ( *oper == NULL ) {
 		*result = term ;
@@ -103,7 +113,11 @@ static bool processOperator( unsigned int * result, unsigned int term, symbol_t 
 	return true ;
 }
 
-// convert escaped char's
+/**
+ * convert escaped char's
+ * @param p ref to character sequence
+ * @return converted character
+ */
 static char convert_char( char * * p ) {
 	int r = 0 ;
 	char * s = *p ;
@@ -172,7 +186,11 @@ static char convert_char( char * * p ) {
 	return r ;
 }
 
-// convert escaped char's in a string
+/**
+ * convert escaped char's in a string
+ * @param s string to be converted
+ * @return new string with result (needs to be freeed)
+ */
 static char * convert_string( char * s ) {
 	char * r = calloc( 1, 256 ), *p ;
 
@@ -182,6 +200,11 @@ static char * convert_string( char * s ) {
 	return r ;
 }
 
+/**
+ * term processing
+ * @param resulting value of term
+ * @result error code
+ */
 static error_t term( uint32_t * result ) {
 	symbol_t * oper = NULL ;
 	const char * p = NULL ;
@@ -255,9 +278,12 @@ static error_t term( uint32_t * result ) {
 	return etNONE ;
 }
 
-//! \brief
-//! eat expression
-//!
+/**
+ * expression processing
+ * depending of current bMode
+ * @param result resulting value of expression
+ * @return error code
+ */
 static error_t expression( uint32_t * result ) {
 	symbol_t * h = NULL ;
 	char * s = NULL ;
@@ -341,9 +367,11 @@ static error_t expression( uint32_t * result ) {
 	return etNONE ;
 }
 
-//! \brief destreg
-//! eat destination register
-//!
+/**
+ * destreg: process destination register
+ * @param result value of destination register, shifted already in position
+ * @return success
+ */
 static bool destreg( uint32_t * result ) {
 	symbol_t * h ;
 
@@ -360,9 +388,11 @@ static bool destreg( uint32_t * result ) {
 	return false ;
 }
 
-//! \brief srcreg
-//! eat source register
-//!
+/**
+ * srcreg: process source register, accepts parens
+ * @param result value of source register, shifted already in position
+ * @return success
+ */
 static bool srcreg( uint32_t * result ) {
 	symbol_t * h ;
 	bool bpar = false ;
@@ -402,7 +432,10 @@ static bool srcreg( uint32_t * result ) {
 	}
 }
 
-// eat comma
+/**
+ * eat comma in token stream
+ * @return success
+ */
 static bool comma( void ) {
 	if ( tok_current()->type == tCOMMA ) {
 		tok_next() ;
@@ -411,7 +444,11 @@ static bool comma( void ) {
 		return false ;
 }
 
-// eat condition
+/**
+ * process condition token
+ * @param result value of condition, already in position
+ * @return success
+ */
 static bool condition( uint32_t * result ) {
 	symbol_t * h ;
 
@@ -430,7 +467,11 @@ static bool condition( uint32_t * result ) {
 	return false ;
 }
 
-// eat enable/disable
+/**
+ * process enable token
+ * @param result value of enable, already in position
+ * @return success
+ */
 static bool enadis( uint32_t * result ) {
 	symbol_t * h ;
 
@@ -447,6 +488,11 @@ static bool enadis( uint32_t * result ) {
 	return false ;
 }
 
+/**
+ * first pass of assembler
+ * process all source lines and build symbol table
+ * @return error code
+ */
 static error_t build( void ) {
 	build_state state = bsINIT ;
 	symbol_t * symtok = NULL ;
@@ -686,6 +732,13 @@ static error_t build( void ) {
 	return etNONE ;
 }
 
+/**
+ * second pass of assembler
+ * process all source lines and build code and scratchpad contents
+ * @param addr ref to address value for listing
+ * @param code ref to code value for listing
+ * @return error code
+ */
 static error_t assemble( uint32_t * addr, uint32_t * code ) {
 	build_state state = bsINIT ;
 	symbol_t * h = NULL ;

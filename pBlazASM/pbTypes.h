@@ -38,6 +38,7 @@ typedef enum {
 	tIDENT,
 	tLABEL,
 	tDIRECTIVE,
+	tINDEX,
 	tVALUE,
 	tCHAR,
 	tSTRING,
