@@ -41,6 +41,7 @@ typedef enum {
 	lsOperator,
 	lsDoubleOp,
 	lsPunct,
+	lsIndex,
 	lsString
 } LexState ;
 
@@ -139,6 +140,10 @@ bool lex( char * line, const bool mode ) {
 				// binary number
 				start = ++s ;
 				state = lsBin ;
+			} else if ( *s == '.' ) {
+				// indexing '.X++' etc
+				start = ++s ;
+				state = lsIndex ;
 			} else if ( *s == ':' || *s == ',' || *s == '(' || *s == ')' ) {
 				// punctuation ',', ':', '(', ')', '~'
 				start = s++ ;
@@ -325,6 +330,17 @@ bool lex( char * line, const bool mode ) {
 				break ;
 			default :
 				state = lsError ;
+			}
+			break ;
+
+		case lsIndex :
+			// any of .X, .X++, .--X, .--X++
+			if ( isalpha( *s ) || *s == '-' || *s == '+' )
+				s++ ;
+			else {
+				end = s ;
+				ptok->type = tINDEX ;
+				state = lsCopy ;
 			}
 			break ;
 

@@ -17,6 +17,12 @@
  *  along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * pBlaze assembler
+ * @file pBlazASM.c
+ * @author Henk van Kampen
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -27,10 +33,10 @@
 #include "pbParser.h"
 #include "pbLibgen.h"
 
-/** \brief
- *  pBlazASM main
+/**
+ * usage prints usage text
+ * @param text application name
  */
-
 static void usage( char * text ) {
 	printf( "\n%s - %s\n", text, "Picoblaze Assembler V1.1" ) ;
 	printf( "\nUSAGE:\n" ) ;
@@ -44,6 +50,11 @@ static void usage( char * text ) {
 	printf( "\nNote: All (max 255) input files are assembled to one output.\n" ) ;
 }
 
+/**
+ * main entry
+ * processes command line and
+ * calls actual assembler()
+ */
 int main( int argc, char **argv ) {
 	char * src_filenames[ 256 ] =
 		{ NULL } ;
