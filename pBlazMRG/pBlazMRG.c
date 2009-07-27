@@ -27,8 +27,8 @@
 #include "pbTypes.h"
 #include "pbLibgen.h"
 
-uint8_t INIT[ 64 ][ 32 ] ;
-uint8_t INITP[ 8 ][ 128 ] ;
+uint8_t INIT[ 64 + 8 ][ 32 ] ;
+uint8_t INITP[ 8 + 2 ][ 128 ] ;
 
 static void usage( char * text ) {
 	printf( "\n%s - %s\n", text, "Picoblaze Assembler merge utility V1.0" ) ;
@@ -56,7 +56,7 @@ bool loadMEM( const char * strMEMfile ) {
 		for ( j = 0 ; j < 128; j++ )
 			INITP[ i ][ j ] = 0 ;
 
-	for ( addr = -1 ; addr < 1024 && fgets( line, sizeof( line ), infile ) != NULL; ) {
+	for ( addr = -1 ; addr < 1024 + 128 && fgets( line, sizeof( line ), infile ) != NULL; ) {
 		if ( ( p = strchr( line, '@' ) ) != NULL ) {
 			if ( sscanf( ++p, "%X", &addr ) != 1 ) {
 				fprintf( stderr, "? Missing address in MEM file '%s'", strMEMfile ) ;
@@ -137,10 +137,9 @@ bool mergeTPL( const char * strTPLfile, const char * strROMfile, const char * st
 			} else if ( strlen( buffer ) > 0 ) {
 				if ( strncmp( "INIT_", buffer, 5 ) == 0 ) {
 					sscanf( buffer, "INIT_%02X", &line ) ;
-					if ( line < 64 ) {
+					if ( line < 64 )
 						for ( i = 31 ; i >= 0; i-- ) {
 							fprintf( outfile, "%02X", INIT[ line ][ i ] ) ;
-						}
 					}
 					state = stCOPY ;
 				} else if ( strncmp( "INITP_", buffer, 6 ) == 0 ) {
@@ -151,6 +150,15 @@ bool mergeTPL( const char * strTPLfile, const char * strROMfile, const char * st
 									| ( INITP[ line ][ i * 4 + 2 ] << 4 ) | ( INITP[ line ][ i * 4 + 3 ] << 6 ) ;
 							fprintf( outfile, "%02X", code ) ;
 						}
+					state = stCOPY ;
+				} else if ( strncmp( "INITD_", buffer, 6 ) == 0 ) {
+					sscanf( buffer, "INITD_%02X", &line ) ;
+					if ( line < 8 ) {
+						for ( i = 31 ; i >= 0 ; i -= 1 )
+							fprintf( outfile, "%c", (INIT[ 64 + 1 ][ i ] & ( 1 << line ) ) ? '1' : '0' ) ;
+						for ( i = 31 ; i >= 0 ; i -= 1 )
+							fprintf( outfile, "%c", (INIT[ 64 + 0 ][ i ] & ( 1 << line ) ) ? '1' : '0' ) ;
+					}
 					state = stCOPY ;
 				} else if ( strcmp( "name", buffer ) == 0 ) {
 					fprintf( outfile, "%s", strEntity ) ;
