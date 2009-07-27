@@ -59,7 +59,7 @@ static uint32_t gSCR = 2048 ; // current scratchpad counter
 static const char * s_errors[] =
 	{
 		"<none>", "unexpected tokens", "doubly defined", "undefined", "phasing error", "missing symbol",
-		"syntax error", "syntax error in expression", "syntax error in operand", "syntax error in operand",
+		"syntax error", "syntax error in expression", "syntax error in operand", "syntax error in value",
 		"syntax error in operator", "syntax error, register expected", "comma expected", "unexpected characters",
 		"expression expected", "code size > 1024", "<not-implemented>", "<internal error>" } ;
 
@@ -489,6 +489,30 @@ static bool enadis( uint32_t * result ) {
 }
 
 /**
+ * process indexed token
+ * @param result value of indexed construct, already in position
+ * @return success
+ */
+static bool indexed( uint32_t * result ) {
+	symbol_t * h ;
+
+	if ( result == NULL )
+		return false ;
+	*result = 0 ;
+
+	if ( tok_current()->type != tNONE ) {
+		h = find_symbol( tok_current()->text, true ) ;
+		if ( h != NULL && h->type == tINDEX ) {
+			tok_next() ;
+			*result = h->value ;
+			return true ;
+		}
+	}
+	return false ;
+}
+
+
+/**
  * first pass of assembler
  * process all source lines and build symbol table
  * @return error code
@@ -831,9 +855,12 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 						if ( !comma() )
 							return etCOMMA ;
 						if ( !srcreg( &operand2 ) ) {
-							if ( ( e = expression( &operand2 ) ) != etNONE )
-								return e ;
-							opcode = h->value | operand1 | ( operand2 & 0xFF ) ;
+							if ( !indexed( &operand2 ) ) {
+								if ( ( e = expression( &operand2 ) ) != etNONE )
+									return e ;
+								opcode = h->value | operand1 | ( operand2 & 0xFF ) ;
+							} else
+								opcode = h->value | operand1 | operand2 ;
 						} else
 							opcode = h->value | operand1 | ( operand2 & 0xFF ) | 0x01000 ;
 						break ;
