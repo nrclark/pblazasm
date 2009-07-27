@@ -116,7 +116,7 @@ bool lex( char * line, const bool mode ) {
 				// ident
 				start = s++ ;
 				state = lsIdent ;
-			} else if ( !mode && ( isalpha( *s ) || *s == '_' || *s == '.' ) ) {
+			} else if ( !mode && ( isalpha( *s ) || *s == '_' ) ) {
 				// ident
 				start = s++ ;
 				state = lsIdent ;
@@ -142,7 +142,7 @@ bool lex( char * line, const bool mode ) {
 				state = lsBin ;
 			} else if ( *s == '.' ) {
 				// indexing '.X++' etc
-				start = ++s ;
+				start = s ;
 				state = lsIndex ;
 			} else if ( *s == ':' || *s == ',' || *s == '(' || *s == ')' ) {
 				// punctuation ',', ':', '(', ')', '~'
@@ -334,12 +334,12 @@ bool lex( char * line, const bool mode ) {
 			break ;
 
 		case lsIndex :
-			// any of .X, .X++, .--X, .--X++
-			if ( isalpha( *s ) || *s == '-' || *s == '+' )
+			// any of .IX, .IX++, .--IX, .-IX+
+			if ( *s == '.' || isalpha( *s ) || *s == '-' || *s == '+' )
 				s++ ;
 			else {
 				end = s ;
-				ptok->type = tINDEX ;
+				ptok->type = tIDENT ;
 				state = lsCopy ;
 			}
 			break ;

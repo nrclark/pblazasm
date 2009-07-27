@@ -71,17 +71,17 @@ const symbol_t conditions[] =
 
 const symbol_t indexes[] =
 	{
-		 { tIDENT, stNONE, "SP",       0x000F0 },
+		 { tVALUE, stINT, "SP",        0x000F0 },
 		 { tINDEX, stNONE, ".SP",      0x000F4 },
 		 { tINDEX, stNONE, ".SP++",    0x000F5 },
 		 { tINDEX, stNONE, ".--SP",    0x000F6 },
-		 { tINDEX, stNONE, ".--SP++",  0x000F7 },
+		 { tINDEX, stNONE, ".-SP+",    0x000F7 },
 
-		 { tIDENT, stNONE, "X",        0x000F8 },
-		 { tINDEX, stNONE, ".X",       0x000FC },
-		 { tINDEX, stNONE, ".X++",     0x000FD },
-		 { tINDEX, stNONE, ".--X",     0x000FE },
-		 { tINDEX, stNONE, ".--X++",   0x000FF }
+		 { tVALUE, stINT, "IX",         0x000F8 },
+		 { tINDEX, stNONE, ".IX",       0x000FC },
+		 { tINDEX, stNONE, ".IX++",     0x000FD },
+		 { tINDEX, stNONE, ".--IX",     0x000FE },
+		 { tINDEX, stNONE, ".-IX+",     0x000FF }
 } ;
 
 const symbol_t registers[] =
