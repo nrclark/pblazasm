@@ -1,6 +1,7 @@
 #
 # makefile for compiling for Windoze using MinGW w/o eclipse
 # 16-jul-09	hvk	initial
+# 24-jul-09	hvk	fixed echo
 #
 
 ## defines
@@ -27,16 +28,16 @@ all:	$(EXE)
 
 # Tool invocations
 $(EXE):	$(OBJS)
-	@echo 'Building: $(EXE)'
+	@echo Building: $(EXE)
 	$(CC) -o $@ $^ $(LIBS)
 	
 %.o : %.c
-	@echo 'Building:' "$@"
+	@echo Building: "$@"
 	$(CC) $(CFLAGS) -o"$@" "$<"
 
 # Other Targets
 clean:
-	-@echo 'Clean up:' $(OBJS) $(EXE)
+	-@echo Clean up: $(OBJS) $(EXE)
 	-$(RM) $(OBJS) $(EXE)
 
 .PHONY: all clean
