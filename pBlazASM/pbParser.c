@@ -1107,19 +1107,30 @@ static bool error( const error_t e ) {
 }
 
 // dump code in mem file format
-static void dump_code( FILE * f ) {
-	int h = 0 ;
+static void dump_code( FILE * f, bool hex ) {
+	int h, l = 0 ;
 	bool b_addr = true ;
 
-	for ( h = 0 ; h < 1024 + 256 / 2 ; h += 1 ) {
-		if ( gCode[ h ] == 0xFFFC0000 )
-			b_addr = true ;
-		else {
-			if ( b_addr ) {
-				fprintf( f, "@%08X\n", h ) ;
-				b_addr = false ;
+	if ( hex ) {
+		// find last used entry
+		for ( h = 0 ; h < 1024 ; h += 1 )
+			if ( gCode[ h ] != 0xFFFC0000 )
+				l = h ;
+		// list all
+		for ( h = 0 ; h <= l ; h += 1 )
+			fprintf( f, "%05X\n", gCode[ h ] & 0x3FFFF ) ;
+	} else {
+		// list used entries, prepend an origin
+		for ( h = 0 ; h < 1024 + 256 / 2 ; h += 1 ) {
+			if ( gCode[ h ] == 0xFFFC0000 )
+				b_addr = true ;
+			else {
+				if ( b_addr ) {
+						fprintf( f, "@%08X\n", h ) ;
+					b_addr = false ;
+				}
+				fprintf( f, "%05X\n", gCode[ h ] ) ;
 			}
-			fprintf( f, "%05X\n", gCode[ h ] ) ;
 		}
 	}
 }
@@ -1218,7 +1229,7 @@ static void print_line( FILE * f, error_t e, uint32_t addr, uint32_t code ) {
 }
 
 // main entry for the 2-pass assembler
-bool assembler( char ** sourcefilenames, char * codefilename, char * listfilename, bool mode, bool listcode ) {
+bool assembler( char ** sourcefilenames, char * codefilename, char * listfilename, bool mode, bool listcode, bool hex ) {
 	FILE * fsrc = NULL ;
 	FILE * fmem = NULL ;
 	FILE * flist = NULL ;
@@ -1238,7 +1249,7 @@ bool assembler( char ** sourcefilenames, char * codefilename, char * listfilenam
 		gCode[ h ] = 0xFFFC0000 ;
 
 	Sources = sourcefilenames ;
-	for ( gSource = *Sources++, gLinenr = 1, gPC = 0, gSCR = 2048, bMode = mode ; gSource != NULL ; gSource
+	for ( gSource = *Sources++, gPC = 0, gSCR = 2048, bMode = mode ; gSource != NULL ; gSource
 		= *Sources++ ) {
 		// open source file
 		fsrc = fopen( gSource, "r" ) ;
@@ -1249,7 +1260,7 @@ bool assembler( char ** sourcefilenames, char * codefilename, char * listfilenam
 		}
 
 		// pass 1, add symbols from source
-		for ( ; fgets( line, sizeof( line ), fsrc ) != NULL ; gLinenr += 1 ) {
+		for ( gLinenr = 1 ; fgets( line, sizeof( line ), fsrc ) != NULL ; gLinenr += 1 ) {
 			if ( lex( line, mode ) ) {
 				result &= error( build() ) ;
 				tok_free() ;
@@ -1269,7 +1280,7 @@ bool assembler( char ** sourcefilenames, char * codefilename, char * listfilenam
 
 	bCode = listcode ;
 	Sources = sourcefilenames ;
-	for ( gSource = *Sources++, gLinenr = 1, gPC = 0, gSCR = 2048, bMode = mode ; gSource != NULL ; gSource
+	for ( gSource = *Sources++, gPC = 0, gSCR = 2048, bMode = mode ; gSource != NULL ; gSource
 		= *Sources++ ) {
 
 		fsrc = fopen( gSource, "r" ) ;
@@ -1280,7 +1291,7 @@ bool assembler( char ** sourcefilenames, char * codefilename, char * listfilenam
 		}
 
 		// pass 2, build code and scratchpad
-		for ( ; fgets( line, sizeof( line ), fsrc ) != NULL ; gLinenr += 1 ) {
+		for ( gLinenr = 1 ; fgets( line, sizeof( line ), fsrc ) != NULL ; gLinenr += 1 ) {
 			if ( lex( line, mode ) ) {
 				result &= error( e = assemble( &addr, &code ) ) ;
 				if ( flist != NULL )
@@ -1302,7 +1313,7 @@ bool assembler( char ** sourcefilenames, char * codefilename, char * listfilenam
 			fprintf( stderr, "? unable to create MEM file '%s'", codefilename ) ;
 			result = false ;
 		} else {
-			dump_code( fmem ) ;
+			dump_code( fmem, hex ) ;
 			fclose( fmem ) ;
 		}
 	}

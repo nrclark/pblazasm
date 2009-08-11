@@ -42,7 +42,8 @@ static void usage( char * text ) {
 	printf( "\nUSAGE:\n" ) ;
 	printf( "   pBlazASM [-m[<MEMfile>]] [-l[<LSTfile>]] [-k] [-v] [-f] <input file> <input file> <input file> ...\n"
 		"   where:\n"
-		"         -m      creates a MEM file for further processing by pBlazMRG\n"
+		"         -m      creates a MEM file (not in combo with -x)\n"
+		"         -x      creates a HEX file (not in combo with -m)\n"
 		"         -l      creates a LST file\n"
 		"         -k      to select KCPSM mode with limited expression handling\n"
 		"         -v      generates verbose reporting\n"
@@ -71,6 +72,7 @@ int main( int argc, char **argv ) {
 	bool bList_mode = true ;
 	bool bOptErr = false ;
 	bool bWantMEM = false ;
+	bool bWantHEX = false ;
 	bool bWantLST = false ;
 	bool bVerbose = false ;
 
@@ -78,7 +80,7 @@ int main( int argc, char **argv ) {
 	extern int optind, optopt ;
 	int optch ;
 
-	while ( ( optch = getopt( argc, argv, "fhkl::m::v" ) ) != -1 ) {
+	while ( ( optch = getopt( argc, argv, "fhkl::m::vx::" ) ) != -1 ) {
 		switch ( optch ) {
 		case 'f' :
 			bList_mode = false ;
@@ -87,9 +89,24 @@ int main( int argc, char **argv ) {
 			bOptErr = true ;
 			break ;
 		case 'm' :
-			bWantMEM = true ;
-			if ( optarg != NULL )
-				strcpy( mem_filename, optarg ) ;
+			if ( bWantHEX ) {
+				fprintf( stderr, "? conflicting option -%c\n", optch ) ;
+				bOptErr = true ;
+			} else {
+				bWantMEM = true ;
+				if ( optarg != NULL )
+					strcpy( mem_filename, optarg ) ;
+		    }
+			break ;
+		case 'x' :
+			if ( bWantMEM ) {
+				fprintf( stderr, "? conflicting option -%c\n", optch ) ;
+				bOptErr = true ;
+			} else {
+				bWantHEX = true ;
+				if ( optarg != NULL )
+					strcpy( mem_filename, optarg ) ;
+			}
 			break ;
 		case 'l' :
 			bWantLST = true ;
@@ -139,19 +156,19 @@ int main( int argc, char **argv ) {
 			fprintf( stdout, "! Sourcefile: %s\n", src_filenames[ nInputfile ] ) ;
 	}
 
-	if ( bWantMEM ) {
+	if ( bWantMEM || bWantHEX ) {
 		if ( strlen( mem_filename ) == 0 ) {
 			pfile = filename( src_filenames[ nInputfile - 1 ] ) ;
 			ppath = dirname( src_filenames[ nInputfile - 1 ] ) ;
 			strcpy( mem_filename, ppath ) ;
 			strcat( mem_filename, "/" ) ;
 			strcat( mem_filename, pfile ) ;
-			strcat( mem_filename, ".mem" ) ;
+			strcat( mem_filename, bWantHEX ? ".hex" : ".mem" ) ;
 			free( ppath ) ;
 			free( pfile ) ;
 		}
 		if ( strrchr( mem_filename, '.' ) == NULL )
-			strcat( mem_filename, ".mem" ) ;
+			strcat( mem_filename, bWantHEX ? ".hex" : ".mem" ) ;
 		if ( bVerbose )
 			fprintf( stdout, "! MEM file: %s\n", mem_filename ) ;
 	}
@@ -173,7 +190,7 @@ int main( int argc, char **argv ) {
 			fprintf( stdout, "! LST file: %s\n", list_filename ) ;
 	}
 
-	if ( assembler( src_filenames, mem_filename, list_filename, bKCPSM_mode, bList_mode ) )
+	if ( assembler( src_filenames, mem_filename, list_filename, bKCPSM_mode, bList_mode, bWantHEX ) )
 		result = 0 ;
 	else
 		result = -1 ;
