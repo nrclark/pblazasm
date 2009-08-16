@@ -141,14 +141,14 @@ bool lex( char * line, const bool mode ) {
 				start = ++s ;
 				state = lsBin ;
 			} else if ( *s == '.' ) {
-				// indexing '.X++' etc
-				start = s ;
+				// directives, indexing, local labels, etc
+				start = s++ ;
 				state = lsIndex ;
 			} else if ( *s == ':' || *s == ',' || *s == '(' || *s == ')' ) {
 				// punctuation ',', ':', '(', ')', '~'
 				start = s++ ;
 				state = lsPunct ;
-			} else if ( *s == '*' || *s == '/' || *s == '+' || *s == '-' ||
+			} else if ( *s == '*' || *s == '/' || *s == '#' || *s == '+' || *s == '-' ||
 					*s == '|' || *s == '&' || *s == '^' || *s == '~' ) {
 				// operators
 				start = s++ ;
@@ -217,6 +217,7 @@ bool lex( char * line, const bool mode ) {
 			else {
 				end = s ;
 				ptok->type = tIDENT ;
+				ptok->subtype = stNONE ;
 				state = lsCopy ;
 			}
 			break ;
@@ -271,6 +272,9 @@ bool lex( char * line, const bool mode ) {
 				break ;
 			case '/' :
 				ptok->subtype = stDIV ;
+				break ;
+			case '#' :
+				ptok->subtype = stMOD ;
 				break ;
 			case '+' :
 				ptok->subtype = stADD ;
@@ -335,11 +339,12 @@ bool lex( char * line, const bool mode ) {
 
 		case lsIndex :
 			// any of .IX, .IX++, .--IX, .-IX+
-			if ( *s == '.' || isalpha( *s ) || *s == '-' || *s == '+' )
+			if ( isalnum( *s ) || *s == '-' || *s == '+' )
 				s++ ;
 			else {
 				end = s ;
 				ptok->type = tIDENT ;
+				ptok->subtype = stDOT ;
 				state = lsCopy ;
 			}
 			break ;

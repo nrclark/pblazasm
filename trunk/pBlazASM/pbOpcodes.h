@@ -19,32 +19,25 @@
 
 const symbol_t opcodes[] =
 	{
+		// preferred mnemonics
 		 { tOPCODE, stMOVE,   "ADD",      0x18000 },
-		 { tOPCODE, stMOVE,   "ADDCY",    0x1A000 },
 		 { tOPCODE, stMOVE,   "ADDC",     0x1A000 },
 		 { tOPCODE, stMOVE,   "AND",      0x0A000 },
 		 { tOPCODE, stCJMP,   "CALL",     0x30000 },
-		 { tOPCODE, stMOVE,   "COMPARE",  0x14000 },
 		 { tOPCODE, stMOVE,   "COMP",     0x14000 },
-		 { tOPCODE, stINTI,   "DISABLE",  0x3C000 },
 		 { tOPCODE, stINT,    "DINT",     0x3C000 },
-		 { tOPCODE, stINTI,   "ENABLE",   0x3C001 },
 		 { tOPCODE, stINT,    "EINT",     0x3C001 },
-		 { tOPCODE, stIO,     "FETCH",    0x06000 },
-		 { tOPCODE, stIO,     "INPUT",    0x04000 },
 		 { tOPCODE, stIO,     "IN",       0x04000 },
-		 { tOPCODE, stINTE,   "HALT",     0x3C003 },
 		 { tOPCODE, stCJMP,   "JUMP",     0x34000 },
-		 { tOPCODE, stMOVE,   "LOAD",     0x00000 },
+		 { tOPCODE, stIO,     "LD",		  0x06000 },
+		 { tOPCODE, stMOVE,   "MOVE",     0x00000 },
 		 { tOPCODE, stMOVE,   "OR",       0x0C000 },
-		 { tOPCODE, stIO,     "OUTPUT",   0x2C000 },
 		 { tOPCODE, stIO,     "OUT",      0x2C000 },
-		 { tOPCODE, stCRET,   "RETURN",   0x2A000 },
 		 { tOPCODE, stCRET,   "RET",      0x2A000 },
-		 { tOPCODE, stINTE,   "RETURNI",  0x38001 },
 		 { tOPCODE, stINTE,   "RETI",     0x38001 },
 		 { tOPCODE, stSHIFT,  "RL",       0x20002 },
 		 { tOPCODE, stSHIFT,  "RR",       0x2000C },
+		 { tOPCODE, stCSKP,   "SKIP",     0x34000 },
 		 { tOPCODE, stSHIFT,  "SL0",      0x20006 },
 		 { tOPCODE, stSHIFT,  "SL1",      0x20007 },
 		 { tOPCODE, stSHIFT,  "SLA",      0x20000 },
@@ -53,14 +46,28 @@ const symbol_t opcodes[] =
 		 { tOPCODE, stSHIFT,  "SR1",      0x2000F },
 		 { tOPCODE, stSHIFT,  "SRA",      0x20008 },
 		 { tOPCODE, stSHIFT,  "SRX",      0x2000A },
-		 { tOPCODE, stIO,     "STORE",    0x2E000 },
+		 { tOPCODE, stIO,     "ST",		  0x06000 },
 		 { tOPCODE, stMOVE,   "SUB",      0x1C000 },
-		 { tOPCODE, stMOVE,   "SUBCY",    0x1E000 },
 		 { tOPCODE, stMOVE,   "SUBC",     0x1E000 },
 		 { tOPCODE, stMOVE,   "TEST",     0x12000 },
 		 { tOPCODE, stMOVE,   "XOR",      0x0E000 },
+		 { tOPCODE, stINST,   "INST",     0x00000 },
 
-		 { tOPCODE, stINST,   "INST",     0x00000 } } ;
+		// alternative mnemonics
+		 { tOPCODE, stMOVE,   "ADDCY",    0x1A000 },
+		 { tOPCODE, stMOVE,   "COMPARE",  0x14000 },
+		 { tOPCODE, stINTI,   "DISABLE",  0x3C000 },
+		 { tOPCODE, stINTI,   "ENABLE",   0x3C001 },
+		 { tOPCODE, stIO,     "FETCH",    0x06000 },
+		 { tOPCODE, stIO,     "INPUT",    0x04000 },
+		 { tOPCODE, stINTE,   "HALT",     0x3C003 },
+		 { tOPCODE, stMOVE,   "LOAD",     0x00000 },
+		 { tOPCODE, stIO,     "OUTPUT",   0x2C000 },
+		 { tOPCODE, stCRET,   "RETURN",   0x2A000 },
+		 { tOPCODE, stINTE,   "RETURNI",  0x38001 },
+		 { tOPCODE, stIO,     "STORE",    0x2E000 },
+		 { tOPCODE, stMOVE,   "SUBCY",    0x1E000 }
+ } ;
 
 const symbol_t conditions[] =
 	{

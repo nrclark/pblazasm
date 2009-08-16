@@ -58,6 +58,7 @@ typedef enum {
 	stINTI,
 	stINTE,
 	stCJMP,
+	stCSKP,
 	stCRET,
 	stIO,
 	stSHIFT,
@@ -73,6 +74,7 @@ typedef enum {
 	stSHR,
 	stMUL,
 	stDIV,
+	stMOD,
 	stTILDA,
 
 	// equate types
@@ -82,6 +84,7 @@ typedef enum {
 
 	// directives
 	stORG,
+	stPAGE,
 
 	stIOSP,
 	stSCRATCHPAD,
@@ -89,6 +92,10 @@ typedef enum {
 
 	stEQU,
 	stBYTE,
+	stWORD_BE,
+	stWORD_LE,
+	stLONG_BE,
+	stLONG_LE,
 	stTEXT,
 	stBUFFER,
 	stSFR,
@@ -109,7 +116,9 @@ typedef enum {
 	stXDL,
 	stMEM,
 	stCOE,
-	stHEX
+	stHEX,
+
+	stDOT
 } subtype_e ;
 
 // token and symbol type

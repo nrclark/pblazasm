@@ -29,6 +29,7 @@ typedef enum {
 	etEXPR,
 	etOPERAND,
 	etVALUE,
+	etOVERFLOW,
 	etOPERATOR,
 	etREGISTER,
 	etCOMMA,
