@@ -6,7 +6,7 @@
 
 ## defines
 
-RM = "C:/MSYS/1.0/bin/rm" -f
+RM = rm -f -v
 MP = "C:/MinGW"
 CC = "C:/MinGW/bin/gcc"
  
@@ -34,14 +34,14 @@ $(EXE):	$(OBJS)
 	@echo Building: $(EXE)
 	$(CC) -o $@ $^ $(LIBS)
 	
-%.o: %.c
+%.o: %.c %.h
 	@echo Building: "$@"
 	$(CC) $(CFLAGS) -o"$@" "$<"
 
 # Other Targets
 clean:
-	-@echo 'Clean up:' $(OBJS) $(EXE)
-	-$(RM) $(OBJS) $(EXE)
+	$(RM) $(EXE)
+	$(RM) $(OBJS)
 
 .PHONY: all clean
 .SECONDARY:

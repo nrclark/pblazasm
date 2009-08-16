@@ -27,12 +27,17 @@ const symbol_t directives[] =
 	// pBlazASM
 			{ tDIRECTIVE, stORG,        ".ORG",     0 },
 			{ tDIRECTIVE, stEND,        ".END",     0 },
+			{ tDIRECTIVE, stPAGE,       ".PAG",     0 },
 
 			{ tDIRECTIVE, stSCRATCHPAD, ".SCR",     0 },
 			{ tDIRECTIVE, stSFR,        ".SFR",     0 },
 
 			{ tDIRECTIVE, stEQU,        ".EQU",     0 },
 			{ tDIRECTIVE, stBYTE,       ".BYT",     0 },
+			{ tDIRECTIVE, stWORD_BE,    ".WBE",     0 },
+			{ tDIRECTIVE, stWORD_LE,    ".WLE",     0 },
+			{ tDIRECTIVE, stLONG_BE,    ".LBE",     0 },
+			{ tDIRECTIVE, stLONG_LE,    ".LLE",     0 },
 			{ tDIRECTIVE, stBUFFER,     ".BUF",     0 },
 			{ tDIRECTIVE, stTEXT,       ".TXT",     0 },
 

@@ -59,7 +59,7 @@ static uint32_t gSCR = 2048 ; // current scratchpad counter
 static const char * s_errors[] =
 	{
 		"<none>", "unexpected tokens", "doubly defined", "undefined", "phasing error", "missing symbol",
-		"syntax error", "syntax error in expression", "syntax error in operand", "syntax error in value",
+		"syntax error", "syntax error in expression", "syntax error in operand", "syntax error in value", "value out of range",
 		"syntax error in operator", "syntax error, register expected", "comma expected", "unexpected characters",
 		"expression expected", "code size > 1024", "<not-implemented>", "<internal error>" } ;
 
@@ -84,6 +84,9 @@ static bool processOperator( unsigned int * result, unsigned int term, symbol_t 
 		break ;
 	case stDIV :
 		*result /= term ;
+		break ;
+	case stMOD :
+		*result %= term ;
 		break ;
 	case stADD :
 		*result += term ;
@@ -535,12 +538,22 @@ static error_t build( void ) {
 			state = bsEND ;
 			break ;
 
-			// opcode or symbol definition
+		// opcode or symbol definition
 		case tIDENT :
 			// opcode or directive?
 			h = find_symbol( tok_current()->text, false ) ;
 			if ( h != NULL ) {
 				switch ( h->type ) {
+				case tLABEL :
+					if ( state != bsINIT )
+						return etSYNTAX ;
+					if ( h->subtype != stDOT )
+						return etSYNTAX ;
+					h->value = gPC ;
+					symtok = tok_current() ;
+					state = bsLABEL ;
+					break ;
+
 				case tOPCODE :
 					if ( state != bsINIT && state != bsLABELED )
 						return etSYNTAX ;
@@ -550,6 +563,10 @@ static error_t build( void ) {
 
 				case tDIRECTIVE :
 					switch ( h->subtype ) {
+
+					case stPAGE :
+						state = bsEND ;
+						break ;
 
 					// ORG
 					case stADDRESS :
@@ -666,8 +683,10 @@ static error_t build( void ) {
 						state = bsEND ;
 						break ;
 
-						// _BYT
+						// .BYT etc
 					case stBYTE :
+					case stWORD_BE : case stWORD_LE :
+					case stLONG_BE : case stLONG_LE :
 						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
 						tok_next() ;
@@ -680,12 +699,21 @@ static error_t build( void ) {
 								else
 									return e ;
 							}
-							gSCR += 1 ;
+							switch ( h->subtype ) {
+							case stLONG_BE :
+							case stLONG_LE :
+								gSCR += 2 ;
+							case stWORD_BE :
+							case stWORD_LE :
+								gSCR += 1 ;
+							default :
+								gSCR += 1 ;
+							}
 						} while ( comma() ) ;
 						state = bsEND ;
 						break ;
 
-						// _BUFFER
+						// .BUF
 					case stBUFFER :
 						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
@@ -702,7 +730,7 @@ static error_t build( void ) {
 						state = bsEND ;
 						break ;
 
-						// _TXT
+						// .TXT
 					case stTEXT :
 						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
@@ -738,13 +766,24 @@ static error_t build( void ) {
 				// not known yet, label or symbol definition?
 				symtok = tok_current() ;
 				state = bsSYMBOL ;
+			} else {
+				h = find_symbol( tok_current()->text, true ) ;
+				// opcode mnemonic in lower/mixed case?
+				if ( h != NULL && h->type == tOPCODE ) {
+					if ( state != bsINIT && state != bsLABELED )
+						return etSYNTAX ;
+					gPC += 1 ;
+					state = bsEND ; // we know enough for now
+				}
 			}
 			break ;
 
 		case tCOLON :
-			if ( state != bsSYMBOL )
+			if ( state == bsLABEL )
+				;
+			else if ( state != bsSYMBOL )
 				return etSYNTAX ;
-			if ( !add_symbol( tLABEL, stNONE, symtok->text, gPC ) )
+			else if ( !add_symbol( tLABEL, symtok->subtype, symtok->text, gPC ) )
 				return etDOUBLE ;
 			state = bsLABELED ;
 			break ;
@@ -788,6 +827,12 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 
 		case tIDENT :
 			h = find_symbol( tok_current()->text, false ) ;
+			// opcode mnemonic in lower/mixed case?
+			if ( h == NULL ) {
+				h = find_symbol( tok_current()->text, true ) ;
+				if ( h == NULL || h->type != tOPCODE )
+					h = NULL ;
+			}
 			if ( h != NULL ) {
 				switch ( h->type ) {
 				// opcodes
@@ -823,6 +868,11 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 						if ( ( e = expression( &operand2 ) ) != etNONE )
 							return e ;
 						opcode = h->value | operand1 | ( operand2 & 0x3FF ) ;
+						break ;
+
+					case stCSKP :
+						condition( &operand1 ) ;
+						opcode = h->value | operand1 | ( oPC + 2 ) ;
 						break ;
 
 					case stCRET :
@@ -895,6 +945,9 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 					tok_next() ;
 					switch ( h->subtype ) {
 
+					case stPAGE :
+						break ;
+
 					case stADDRESS :
 						if ( !bMode )
 							return etNOTIMPL ;
@@ -956,20 +1009,100 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 						*addr = gSCR ;
 						do {
 							if ( ( e = expression( &result ) ) == etNONE ) {
+								if ( result > 0xFF )
+									return etOVERFLOW ;
 								if ( ( gSCR & 1 ) == 0 )
-									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x0FF00 ) | ( result & 0xFF ) ;
+									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x0FF00 ) | ( ( result >> 0 ) & 0x00FF ) ;
 								else
-									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x000FF ) | ( ( result & 0xFF ) << 8 ) ;
+									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x000FF ) | ( ( result << 8 ) & 0xFF00 ) ;
+								gSCR += 1 ;
 							} else if ( e == etEMPTY ) {
 								// allow an empty expression list for generating a symbol only
 								*code = 0xFFFFFFFF ;
+								gSCR += 1 ;
 								break ;
 							} else
 								return e ;
 							// only show the first 2 bytes as a 'uint18'
-							if ( ( gSCR & 0xFFFE ) == ( *addr & 0xFFFE ) )
+							if ( ( ( gSCR - 1 ) & 0xFFFE ) == ( *addr & 0xFFFE ) )
 								*code = gCode[ gSCR / 2 ] ;
-							gSCR += 1 ;
+						} while ( comma() ) ;
+						break ;
+
+					case stWORD_BE : case stWORD_LE :
+						if ( state != bsINIT && state != bsSYMBOL )
+							return etSYNTAX ;
+						*addr = gSCR ;
+						do {
+							if ( ( e = expression( &result ) ) == etNONE ) {
+								if ( result > 0xFFFF )
+									return etOVERFLOW ;
+								result &= 0xFFFF ;
+								if ( h->subtype == stWORD_BE )
+									result = ( ( result & 0xFF00FF00 ) >> 8 ) | ( ( result & 0x00FF00FF ) << 8 ) ;
+								if ( ( gSCR & 1 ) == 0 )
+									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x0FF00 ) | ( ( result >> 0 ) & 0x00FF ) ;
+								else
+									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x000FF ) | ( ( result << 8 ) & 0xFF00 ) ;
+								gSCR += 1 ;
+								if ( ( gSCR & 1 ) == 0 )
+									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x0FF00 ) | ( ( result >> 8 ) & 0x00FF ) ;
+								else
+									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x000FF ) | ( ( result >> 0 ) & 0xFF00 ) ;
+								gSCR += 1 ;
+							} else if ( e == etEMPTY ) {
+								// allow an empty expression list for generating a symbol only
+								*code = 0xFFFFFFFF ;
+								gSCR += 2 ;
+								break ;
+							} else
+								return e ;
+							// only show the first 2 bytes as a 'uint18'
+							if ( ( ( gSCR - 2 ) & 0xFFFE ) == ( *addr & 0xFFFE ) )
+								*code = gCode[ ( gSCR - 2 ) / 2 ] ;
+						} while ( comma() ) ;
+						break ;
+
+					case stLONG_BE : case stLONG_LE :
+						if ( state != bsINIT && state != bsSYMBOL )
+							return etSYNTAX ;
+						*addr = gSCR ;
+						do {
+							if ( ( e = expression( &result ) ) == etNONE ) {
+								if ( h->subtype == stLONG_BE ) {
+									result = ( ( result & 0xFFFF0000 ) >> 16 ) | ( ( result & 0x0000FFFF ) << 16 ) ;
+									result = ( ( result & 0xFF00FF00 ) >> 8 ) | ( ( result & 0x00FF00FF ) << 8 ) ;
+								}
+								if ( ( gSCR & 1 ) == 0 )
+									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x0FF00 ) | ( ( result >>  0 ) & 0x00FF ) ;
+								else
+									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x000FF ) | ( ( result <<  8 ) & 0xFF00 ) ;
+								gSCR += 1 ;
+								if ( ( gSCR & 1 ) == 0 )
+									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x0FF00 ) | ( ( result >>  8 ) & 0x00FF ) ;
+								else
+									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x000FF ) | ( ( result >>  0 ) & 0xFF00 ) ;
+								gSCR += 1 ;
+								if ( ( gSCR & 1 ) == 0 )
+									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x0FF00 ) | ( ( result >> 16 ) & 0x00FF ) ;
+								else
+									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x000FF ) | ( ( result >>  8 ) & 0xFF00 ) ;
+								gSCR += 1 ;
+								if ( ( gSCR & 1 ) == 0 )
+									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x0FF00 ) | ( ( result >> 24 ) & 0x00FF ) ;
+								else
+									gCode[ gSCR / 2 ] = ( gCode[ gSCR / 2 ] & 0x000FF ) | ( ( result >> 16 ) & 0xFF00 ) ;
+								gSCR += 1 ;
+							} else if ( e == etEMPTY ) {
+								// allow an empty expression list for generating a symbol only
+								*code = 0xFFFFFFFF ;
+								gSCR += 4 ;
+								break ;
+							} else
+								return e ;
+							// only show the first 2 bytes as a 'uint18'
+							if ( ( ( gSCR - 4 ) & 0xFFFE ) == ( *addr & 0xFFFE ) )
+								*code = gCode[ ( gSCR - 4 ) / 2 ] ;
 						} while ( comma() ) ;
 						break ;
 
@@ -1055,9 +1188,10 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 				case tLABEL :
 					if ( state != bsINIT )
 						return etSYNTAX ;
-					if ( h->value != gPC )
+					if ( h->value != gPC && h->subtype != stDOT )
 						return etPHASING ;
 					tok_next()->type = tLABEL ; // just for formatting
+					h->value = gPC ;
 					*addr = h->value ;
 					state = bsLABEL ;
 					break ;
@@ -1144,6 +1278,11 @@ static void print_line( FILE * f, error_t e, uint32_t addr, uint32_t code ) {
 
 	if ( e != etNONE )
 		fprintf( f, "?? %s:\n", s_errors[ e ] ) ;
+
+	if ( tok_current()->type == tDIRECTIVE && tok_current()->subtype == stPAGE ) {
+		fprintf( f, "\f" ) ;
+		return ;
+	}
 
 	if ( bCode ) {
 		// address info
@@ -1264,11 +1403,16 @@ bool assembler( char ** sourcefilenames, char * codefilename, char * listfilenam
 			if ( lex( line, mode ) ) {
 				result &= error( build() ) ;
 				tok_free() ;
-			} else
+			} else {
 				result &= error( etLEX ) ;
+			}
 		}
 		fclose( fsrc ) ;
 	}
+
+	// give up if errors in pass 1
+	if ( !result )
+		goto finally ;
 
 	if ( strlen( listfilename ) > 0 ) {
 		flist = fopen( listfilename, "w" ) ;
