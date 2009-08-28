@@ -253,7 +253,7 @@ int main( int argc, char *argv[] ) {
 
 	// template filename
 	if ( argv[ optind ] == NULL ) {
-		strcpy( tpl_filename, "ROM_form_template.vhd" ) ;
+		strcpy( tpl_filename, "template.vhd" ) ;
 	} else {
 		strcpy( tpl_filename, argv[ optind++ ] ) ;
 	}
