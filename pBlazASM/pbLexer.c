@@ -54,7 +54,7 @@ symbol_t * tok_first( void ) {
 	return ptok ;
 }
 
-inline symbol_t * tok_current( void ) {
+symbol_t * tok_current( void ) {
 	return ptok ;
 }
 

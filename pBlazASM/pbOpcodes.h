@@ -46,7 +46,7 @@ const symbol_t opcodes[] =
 		 { tOPCODE, stSHIFT,  "SR1",      0x2000F },
 		 { tOPCODE, stSHIFT,  "SRA",      0x20008 },
 		 { tOPCODE, stSHIFT,  "SRX",      0x2000A },
-		 { tOPCODE, stIO,     "ST",		  0x06000 },
+		 { tOPCODE, stIO,     "ST",		  0x2E000 },
 		 { tOPCODE, stMOVE,   "SUB",      0x1C000 },
 		 { tOPCODE, stMOVE,   "SUBC",     0x1E000 },
 		 { tOPCODE, stMOVE,   "TEST",     0x12000 },
