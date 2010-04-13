@@ -1424,8 +1424,7 @@ bool assembler( char ** sourcefilenames, char * codefilename, char * listfilenam
 
 	bCode = listcode ;
 	Sources = sourcefilenames ;
-	for ( gSource = *Sources++, gPC = 0, gSCR = 2048, bMode = mode ; gSource != NULL ; gSource
-		= *Sources++ ) {
+	for ( gSource = *Sources++, gPC = 0, gSCR = 2048, bMode = mode ; gSource != NULL ; gSource = *Sources++ ) {
 
 		fsrc = fopen( gSource, "r" ) ;
 		if ( fsrc == NULL ) {
@@ -1443,7 +1442,7 @@ bool assembler( char ** sourcefilenames, char * codefilename, char * listfilenam
 			} else {
 				result &= error( etLEX ) ;
 				if ( flist != NULL )
-					print_line( flist, etLEX, addr, code ) ;
+					print_line( flist, etLEX, 0xFFFFFFFF, 0xFFFFFFFF ) ;
 			}
 			tok_free() ;
 		}
