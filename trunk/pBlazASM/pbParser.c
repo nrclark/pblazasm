@@ -1019,7 +1019,6 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 							} else if ( e == etEMPTY ) {
 								// allow an empty expression list for generating a symbol only
 								*code = 0xFFFFFFFF ;
-								gSCR += 1 ;
 								break ;
 							} else
 								return e ;
@@ -1053,7 +1052,6 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 							} else if ( e == etEMPTY ) {
 								// allow an empty expression list for generating a symbol only
 								*code = 0xFFFFFFFF ;
-								gSCR += 2 ;
 								break ;
 							} else
 								return e ;
@@ -1096,7 +1094,6 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 							} else if ( e == etEMPTY ) {
 								// allow an empty expression list for generating a symbol only
 								*code = 0xFFFFFFFF ;
-								gSCR += 4 ;
 								break ;
 							} else
 								return e ;
@@ -1388,8 +1385,10 @@ bool assembler( char ** sourcefilenames, char * codefilename, char * listfilenam
 		gCode[ h ] = 0xFFFC0000 ;
 
 	Sources = sourcefilenames ;
-	for ( gSource = *Sources++, gPC = 0, gSCR = 2048, bMode = mode ; gSource != NULL ; gSource
-		= *Sources++ ) {
+	gPC = 0 ;
+	gSCR = 2048 ;
+	bMode = mode ;
+	for ( gSource = *Sources++ ; gSource != NULL ; gSource = *Sources++ ) {
 		// open source file
 		fsrc = fopen( gSource, "r" ) ;
 		if ( fsrc == NULL ) {
