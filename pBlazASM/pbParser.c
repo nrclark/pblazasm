@@ -1007,6 +1007,7 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
 						*addr = gSCR ;
+						*code = 0xFFFFFFFF ;
 						do {
 							if ( ( e = expression( &result ) ) == etNONE ) {
 								if ( result > 0xFF )
@@ -1018,20 +1019,21 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 								gSCR += 1 ;
 							} else if ( e == etEMPTY ) {
 								// allow an empty expression list for generating a symbol only
-								*code = 0xFFFFFFFF ;
 								break ;
 							} else
 								return e ;
 							// only show the first 2 bytes as a 'uint18'
 							if ( ( ( gSCR - 1 ) & 0xFFFE ) == ( *addr & 0xFFFE ) )
-								*code = gCode[ gSCR / 2 ] ;
+								*code = gCode[ ( gSCR - 1 ) / 2 ] ;
 						} while ( comma() ) ;
 						break ;
 
-					case stWORD_BE : case stWORD_LE :
+					case stWORD_BE :
+					case stWORD_LE :
 						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
 						*addr = gSCR ;
+						*code = 0xFFFFFFFF ;
 						do {
 							if ( ( e = expression( &result ) ) == etNONE ) {
 								if ( result > 0xFFFF )
@@ -1051,7 +1053,6 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 								gSCR += 1 ;
 							} else if ( e == etEMPTY ) {
 								// allow an empty expression list for generating a symbol only
-								*code = 0xFFFFFFFF ;
 								break ;
 							} else
 								return e ;
@@ -1061,10 +1062,12 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 						} while ( comma() ) ;
 						break ;
 
-					case stLONG_BE : case stLONG_LE :
+					case stLONG_BE :
+					case stLONG_LE :
 						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
 						*addr = gSCR ;
+						*code = 0xFFFFFFFF ;
 						do {
 							if ( ( e = expression( &result ) ) == etNONE ) {
 								if ( h->subtype == stLONG_BE ) {
@@ -1093,7 +1096,6 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 								gSCR += 1 ;
 							} else if ( e == etEMPTY ) {
 								// allow an empty expression list for generating a symbol only
-								*code = 0xFFFFFFFF ;
 								break ;
 							} else
 								return e ;
