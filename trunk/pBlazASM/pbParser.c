@@ -542,6 +542,11 @@ static error_t build( void ) {
 		case tIDENT :
 			// opcode or directive?
 			h = find_symbol( tok_current()->text, false ) ;
+			if ( h == NULL ) {
+				h = find_symbol( tok_current()->text, true ) ;
+				if ( h == NULL || h->type != tOPCODE )
+					h = NULL ;
+			}
 			if ( h != NULL ) {
 				switch ( h->type ) {
 				case tLABEL :

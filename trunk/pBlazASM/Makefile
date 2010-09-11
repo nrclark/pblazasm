@@ -7,9 +7,9 @@
 
 ## defines
 
-RM = "C:/Xilinx/11.1/EDK/cygwin/bin/rm"
-MP = "C:/Qt/2009.04/mingw/include"
-CC = "C:/Qt/2009.04/mingw/bin/gcc"
+RM = rm
+MP = "C:/Qt/2010.04/mingw/include"
+CC = "C:/Qt/2010.04/mingw/bin/gcc"
 
 
 C_SRCS += \
