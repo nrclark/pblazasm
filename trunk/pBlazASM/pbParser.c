@@ -1245,21 +1245,34 @@ static bool error( const error_t e ) {
 }
 
 // dump code in mem file format
-static void dump_code( FILE * f, bool hex ) {
+static void dump_code( FILE * f, bool hex, bool zeros ) {
 	int h, l = 0 ;
 	bool b_addr = true ;
 
 	if ( hex ) {
 		// find last used entry
-		for ( h = 0 ; h < 1024 ; h += 1 )
+		for ( h = 0, l = 1024 ; h < 1024 && ! zeros ; h += 1 )
 			if ( gCode[ h ] != 0xFFFC0000 )
 				l = h ;
 		// list all
 		for ( h = 0 ; h <= l ; h += 1 )
 			fprintf( f, "%05X\n", gCode[ h ] & 0x3FFFF ) ;
 	} else {
-		// list used entries, prepend an origin
-		for ( h = 0 ; h < 1024 + 256 / 2 ; h += 1 ) {
+		// list used code entries, prepend an origin
+		for ( h = 0 ; h < 1024 ; h += 1 ) {
+			if ( gCode[ h ] == 0xFFFC0000 && ! zeros )
+				b_addr = true ;
+			else {
+				if ( b_addr ) {
+						fprintf( f, "@%08X\n", h ) ;
+					b_addr = false ;
+				}
+				fprintf( f, "%05X\n", gCode[ h ] & 0x3FFFF ) ;
+			}
+		}
+		// list used scratchpad entries, prepend an origin
+		b_addr = true ;
+		for ( h = 1024 ; h < 1024 + 256 / 2 ; h += 1 ) {
 			if ( gCode[ h ] == 0xFFFC0000 )
 				b_addr = true ;
 			else {
@@ -1267,7 +1280,7 @@ static void dump_code( FILE * f, bool hex ) {
 						fprintf( f, "@%08X\n", h ) ;
 					b_addr = false ;
 				}
-				fprintf( f, "%05X\n", gCode[ h ] ) ;
+				fprintf( f, "%05X\n", gCode[ h ] & 0x3FFFF ) ;
 			}
 		}
 	}
@@ -1372,7 +1385,7 @@ static void print_line( FILE * f, error_t e, uint32_t addr, uint32_t code ) {
 }
 
 // main entry for the 2-pass assembler
-bool assembler( char ** sourcefilenames, char * codefilename, char * listfilename, bool mode, bool listcode, bool hex ) {
+bool assembler( char ** sourcefilenames, char * codefilename, char * listfilename, bool mode, bool listcode, bool hex, bool zeros ) {
 	FILE * fsrc = NULL ;
 	FILE * fmem = NULL ;
 	FILE * flist = NULL ;
@@ -1462,7 +1475,7 @@ bool assembler( char ** sourcefilenames, char * codefilename, char * listfilenam
 			fprintf( stderr, "? unable to create MEM file '%s'", codefilename ) ;
 			result = false ;
 		} else {
-			dump_code( fmem, hex ) ;
+			dump_code( fmem, hex, zeros ) ;
 			fclose( fmem ) ;
 		}
 	}

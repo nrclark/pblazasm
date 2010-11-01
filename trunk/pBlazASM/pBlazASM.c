@@ -33,17 +33,21 @@
 #include "pbParser.h"
 #include "pbLibgen.h"
 
+#ifdef TCC
+#include "getopt.h"
+#endif
+
 /**
  * usage prints usage text
  * @param text application name
  */
 static void usage( char * text ) {
-	printf( "\n%s - %s\n", text, "Picoblaze Assembler V1.1" ) ;
+	printf( "\n%s - %s\n", text, "Picoblaze Assembler V1.2" ) ;
 	printf( "\nUSAGE:\n" ) ;
 	printf( "   pBlazASM [-m[<MEMfile>]] [-l[<LSTfile>]] [-k] [-v] [-f] <input file> <input file> <input file> ...\n"
 		"   where:\n"
-		"         -m      creates a MEM file (not in combo with -x)\n"
-		"         -x      creates a HEX file (not in combo with -m)\n"
+		"         -m/-M   creates a MEM file (not in combo with -x)\n"
+		"         -x/-X   creates a HEX file (not in combo with -m)\n"
 		"         -l      creates a LST file\n"
 		"         -k      to select KCPSM mode with limited expression handling\n"
 		"         -v      generates verbose reporting\n"
@@ -75,12 +79,13 @@ int main( int argc, char **argv ) {
 	bool bWantHEX = false ;
 	bool bWantLST = false ;
 	bool bVerbose = false ;
+	bool bWantZEROs = false ;
 
 	extern char * optarg ;
 	extern int optind, optopt ;
 	int optch ;
 
-	while ( ( optch = getopt( argc, argv, "fhkl::m::vx::" ) ) != -1 ) {
+	while ( ( optch = getopt( argc, argv, "fhkl::m::M::vx::X::" ) ) != -1 ) {
 		switch ( optch ) {
 		case 'f' :
 			bList_mode = false ;
@@ -104,6 +109,28 @@ int main( int argc, char **argv ) {
 				bOptErr = true ;
 			} else {
 				bWantHEX = true ;
+				if ( optarg != NULL )
+					strcpy( mem_filename, optarg ) ;
+			}
+			break ;
+		case 'M' :
+			if ( bWantHEX ) {
+				fprintf( stderr, "? conflicting option -%c\n", optch ) ;
+				bOptErr = true ;
+			} else {
+				bWantMEM = true ;
+				bWantZEROs = true ;
+				if ( optarg != NULL )
+					strcpy( mem_filename, optarg ) ;
+		    }
+			break ;
+		case 'X' :
+			if ( bWantMEM ) {
+				fprintf( stderr, "? conflicting option -%c\n", optch ) ;
+				bOptErr = true ;
+			} else {
+				bWantHEX = true ;
+				bWantZEROs = true ;
 				if ( optarg != NULL )
 					strcpy( mem_filename, optarg ) ;
 			}
@@ -190,7 +217,7 @@ int main( int argc, char **argv ) {
 			fprintf( stdout, "! LST file: %s\n", list_filename ) ;
 	}
 
-	if ( assembler( src_filenames, mem_filename, list_filename, bKCPSM_mode, bList_mode, bWantHEX ) )
+	if ( assembler( src_filenames, mem_filename, list_filename, bKCPSM_mode, bList_mode, bWantHEX, bWantZEROs ) )
 		result = 0 ;
 	else
 		result = -1 ;
