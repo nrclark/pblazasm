@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2003..2008 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2003..2010 : Henk van Kampen <henk@mediatronix.com>
  *
- *	This file is part of pBlazMRG.
+ *	This file is part of pBlazASM.
  *
  *  pBlazMRG is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
