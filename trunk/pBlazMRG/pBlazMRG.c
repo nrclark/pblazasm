@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2003..2008 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2003..2010 : Henk van Kampen <henk@mediatronix.com>
  *
  *	This file is part of pBlazMRG.
  *
@@ -14,7 +14,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with pBlazMRG.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>
@@ -26,6 +26,10 @@
 
 #include "pbTypes.h"
 #include "pbLibgen.h"
+
+#ifdef TCC
+#include "getopt.h"
+#endif
 
 uint8_t INIT[ 64 + 8 ][ 32 ] ;
 uint8_t INITP[ 8 + 2 ][ 128 ] ;
