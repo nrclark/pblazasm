@@ -27,8 +27,6 @@ EXE = "./pBlazASM.exe"
 OBJS = $(C_SRCS:.c=.o)
 LIBS = 
 INCS = -I$(MP) -I"../inc"
-#CFLAGS = $(INCS) -g3 -DWINDOWS -Wall -std=c99 -c -O3
-#CFLAGS = $(INCS) -g3 -DWINDOWS -Wall -c -O3
 CFLAGS = $(INCS) -g3 -DWINDOWS -Wall -c -O3 -DTCC -DHAVE_STRING_H
 
 
@@ -38,7 +36,7 @@ CFLAGS = $(INCS) -g3 -DWINDOWS -Wall -c -O3 -DTCC -DHAVE_STRING_H
 all:	test
 
 test:	$(EXE)
-	$(EXE) -l -M pBlazASM_Syntax.psm
+	$(EXE) -l -m pBlazASM_Syntax.psm
 
 # Tool invocations
 $(EXE):	$(OBJS)
