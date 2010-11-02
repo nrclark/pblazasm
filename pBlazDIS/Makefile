@@ -2,6 +2,7 @@
 # makefile for compiling for Windoze using MinGW w/o eclipse
 # 16-jul-09	hvk	initial
 # 24-jul-09	hvk	fixed echo
+# 15-oct-10	hvk	using ''tcc' of http://bellard.org/tcc/ and 'rm' of Xilinx/cygwin
 #
 
 ## defines
