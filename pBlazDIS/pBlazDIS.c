@@ -56,7 +56,7 @@ bool loadMEM( const char * strMEMfile ) {
 	for ( i = 0 ; i < MEMSIZE ; i++ )
 		Code[ i ] = 0 ;
 
-	for ( addr = -1 ; addr < 1024 + 128 && fgets( line, sizeof( line ), infile ) != NULL; ) {
+	for ( addr = -1 ; addr < MEMSIZE + 128 && fgets( line, sizeof( line ), infile ) != NULL; ) {
 		if ( ( p = strchr( line, '@' ) ) != NULL ) {
 			if ( sscanf( ++p, "%X", &addr ) != 1 ) {
 				fprintf( stderr, "? Error in address in MEM file '%s'", strMEMfile ) ;
