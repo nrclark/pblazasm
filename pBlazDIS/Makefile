@@ -28,7 +28,8 @@ CFLAGS = $(INCS) -g3 -DWINDOWS -Wall -c -O3 -DTCC -DHAVE_STRING_H
 all:	test
 
 test:	$(EXE)
-	$(EXE) ..\\\pBlazASM\\\pBlazASM_Syntax.mem
+#	$(EXE) -v ../pBlazASM/pBlazASM_Syntax.mem
+	$(EXE) -v -6 C:/Users/henk/Documents/KCPSM6_v115/all_kcpsm6_syntax_disasm.hex
 
 # Tool invocations
 $(EXE):	$(OBJS)
