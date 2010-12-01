@@ -249,7 +249,7 @@ static error_t term( uint32_t * result ) {
 		h = find_symbol( s, false ) ;
 		if ( h == NULL )
 			return etUNDEF ;
-		val = h->value & 0xFFFF ;
+		val = h->value ;
 		if ( h->type != tVALUE && h->type != tLABEL )
 			return etVALUE ;
 		break ;
@@ -987,6 +987,7 @@ static error_t assemble( uint32_t * addr, uint32_t * code ) {
 						// NO-OP, just eat tokens in an orderly way
 						if ( destreg( &result ) ) {
 						} else if ( ( e = expression( &result ) ) == etNONE ) {
+							*code = result ;
 						} else
 							return e ;
 						break ;
@@ -1264,7 +1265,7 @@ static void dump_code( FILE * f, bool hex, bool zeros ) {
 				b_addr = true ;
 			else {
 				if ( b_addr ) {
-						fprintf( f, "@%08X\n", h ) ;
+					fprintf( f, "@%08X\n", h ) ;
 					b_addr = false ;
 				}
 				fprintf( f, "%05X\n", gCode[ h ] & 0x3FFFF ) ;
@@ -1302,25 +1303,28 @@ static void print_line( FILE * f, error_t e, uint32_t addr, uint32_t code ) {
 	}
 
 	if ( bCode ) {
-		// address info
-		if ( addr != 0xFFFFFFFF ) {
-			n += fprintf( f, "%03X ", addr ) ;
-		} else
-			n += fprintf( f, "%4s", "" ) ;
-
 		// code info
 		if ( code != 0xFFFFFFFF ) {
 			if ( addr != 0xFFFFFFFF ) {
+		        // address info
+				n += fprintf( f, "%03X ", addr ) ;
 				if ( code <= 0xFFFFF )
 					n += fprintf( f, "%05X ", code ) ;
 				else
 					n += fprintf( f, "  %02X  ", code & 0xFF ) ;
-			} else if ( code > 0xFF )
-				n += fprintf( f, "%04X  ", code ) ;
+			} else if ( code > 0xFFFF )
+				n += fprintf( f, "%08X  ", code ) ;
+			else if ( code > 0xFF )
+				n += fprintf( f, "    %04X  ", code & 0xFFFF ) ;
 			else
-				n += fprintf( f, "  %02X  ", code & 0xFF ) ;
-		} else
-			n += fprintf( f, "%6s", "" ) ;
+				n += fprintf( f, "      %02X  ", code & 0xFF ) ;
+		} else {
+			if ( addr != 0xFFFFFFFF ) {
+				// address info
+				n += fprintf( f, "%03X       ", addr ) ;
+			} else
+				n += fprintf( f, "          " ) ;
+		}
 	}
 
 	if ( tok_current()->type == tLABEL ) {

@@ -126,5 +126,5 @@ typedef struct {
 	type_e type ;
 	subtype_e subtype ;
 	char * text ;
-	int value ;
+	int32_t value ;
 } symbol_t ;
