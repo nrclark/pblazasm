@@ -75,7 +75,6 @@ bool loadMEM( const char * strMEMfile ) {
 	}
 
 	fclose( infile ) ;
-
 	return true ;
 }
 
@@ -117,7 +116,7 @@ static bool writePSM3( const char * strPSMfile ) {
 		fprintf( stderr, "? Unable to open output file '%s'", strPSMfile ) ;
 		return false ;
 	}
-	for ( pc = 0 ; pc < MEMSIZE ; ) {
+	for ( pc = 0 ; pc < 1024 ; ) {
 		c = Code[ pc ] & 0x3FFFF ;
 		switch ( state ) {
 		case stIDLE :
@@ -324,6 +323,8 @@ static bool writePSM3( const char * strPSMfile ) {
 			break ;
 		}
 	}
+	fclose( outfile ) ;
+	return true ;
 }
 
 static bool writePSM6( const char * strPSMfile ) {
@@ -509,16 +510,16 @@ static bool writePSM6( const char * strPSMfile ) {
 					fprintf( outfile, "\tCALL\t0x%.3X\t; 0x%.5X\n", Address12( c ), c ) ;
 					break ;
 				case 0x30000 ... 0x30FFF :
-					fprintf( outfile, "\tCALL\tZ, 0x%.3X\t; 0x%.5X\n", "Z", Address12( c ), c ) ;
+					fprintf( outfile, "\tCALL\tZ, 0x%.3X\t; 0x%.5X\n", Address12( c ), c ) ;
 					break ;
 				case 0x34000 ... 0x34FFF :
-					fprintf( outfile, "\tCALL\tNZ, 0x%.3X\t; 0x%.5X\n", "NZ", Address12( c ), c ) ;
+					fprintf( outfile, "\tCALL\tNZ, 0x%.3X\t; 0x%.5X\n", Address12( c ), c ) ;
 					break ;
 				case 0x38000 ... 0x38FFF :
-					fprintf( outfile, "\tCALL\tC, 0x%.3X\t; 0x%.5X\n", "C", Address12( c ), c ) ;
+					fprintf( outfile, "\tCALL\tC, 0x%.3X\t; 0x%.5X\n", Address12( c ), c ) ;
 					break ;
 				case 0x3C000 ... 0x3CFFF :
-					fprintf( outfile, "\tCALL\tNC, 0x%.3X\t; 0x%.5X\n", "NC", Address12( c ), c ) ;
+					fprintf( outfile, "\tCALL\tNC, 0x%.3X\t; 0x%.5X\n", Address12( c ), c ) ;
 					break ;
 				case 0x24000 ... 0x24FFF :
 					fprintf( outfile, "\tCALL\ts%X, s%X\t; 0x%.5X\n", DestReg( c ), SrcReg( c ), c ) ;
@@ -565,7 +566,7 @@ static bool writePSM6( const char * strPSMfile ) {
 					fprintf( outfile, "\tOUT \ts%X, 0x%.2X\t; 0x%.5X\n", DestReg( c ), Constant( c ), c ) ;
 					break ;
 				case 0x2B000 ... 0x2BFFF :
-					fprintf( outfile, "\tOUTK\t%.2X, 0x%X\t; 0x%.5X\n", ( c >> 4 ) & 0xFF, c & 0xF, c ) ;
+					fprintf( outfile, "\tOUTK\t0x%.2X, 0x%X\t; 0x%.5X\n", ( c >> 4 ) & 0xFF, c & 0xF, c ) ;
 					break ;
 
 				case 0x08000 ... 0x08FFF :
@@ -611,6 +612,8 @@ static bool writePSM6( const char * strPSMfile ) {
 			break ;
 		}
 	}
+	fclose( outfile ) ;
+	return true ;
 }
 
 int main( int argc, char *argv[] ) {
