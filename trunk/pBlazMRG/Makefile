@@ -22,8 +22,7 @@ LIBS =
 INCS = -I$(MP)"/include" -I"./inc"
 CFLAGS = $(INCS) -g3 -DWINDOWS -Wall -c -O3 -DTCC -DHAVE_STRING_H
 
-MGFLAGS =
-TEMPLATE = template
+MGFLAGS = -stest_data.mem -v
 ENTITY = test
 
 ## rules
@@ -32,7 +31,13 @@ ENTITY = test
 all:	test
 
 test:	$(EXE)
-	$(EXE) $(MGFLAGS) -e$(ENTITY) $(ENTITY).mem $(TEMPLATE).vhd $(ENTITY).vhd 
+	$(EXE) $(MGFLAGS) -e$(ENTITY) $(ENTITY).mem ROM_form_S6_1K_16Sept10.vhd S6_1k.vhd 
+	$(EXE) $(MGFLAGS) -e$(ENTITY) $(ENTITY).mem ROM_form_S6_2K_16Sept10.vhd S6_2k.vhd 
+	$(EXE) $(MGFLAGS) -e$(ENTITY) $(ENTITY).mem ROM_form_V6_1K_16Sept10.vhd V6_1k.vhd 
+	$(EXE) $(MGFLAGS) -e$(ENTITY) $(ENTITY).mem ROM_form_V6_2K_16Sept10.vhd V6_2k.vhd 
+	$(EXE) $(MGFLAGS) -e$(ENTITY) $(ENTITY).mem ROM_form_V6_4K_17Sept10.vhd V6_4k.vhd 
+	$(EXE) $(MGFLAGS) -e$(ENTITY) $(ENTITY).mem ROM_form_64.vhd D64.vhd 
+	$(EXE) $(MGFLAGS) -e$(ENTITY) $(ENTITY).mem ROM_form_256_10Nov10.vhd D256.vhd 
 
 # Tool invocations
 $(EXE):	$(OBJS)

@@ -31,59 +31,89 @@
 #include "getopt.h"
 #endif
 
-uint8_t INIT[ 64 + 8 ][ 32 ] ;
-uint8_t INITP[ 8 + 2 ][ 128 ] ;
+#define MAXMEM	4096
+
+uint32_t Code[ 4096 ] ;
 
 static void usage( char * text ) {
-	printf( "\n%s - %s\n", text, "Picoblaze Assembler merge utility V1.0" ) ;
+	printf( "\n%s - %s\n", text, "Picoblaze Assembler merge utility V1.1" ) ;
 	printf( "\nUSAGE:\n" ) ;
-	printf( "   pBlazMRG [-v] -e<entity_name> <MEM inputfile> <TPL inputfile> <ROM outputfile>\n" ) ;
+	printf( "   pBlazMRG [-v] [-s<MEM data inputfile] -e<entity_name> <MEM code inputfile> <TPL inputfile> <ROM outputfile>\n" ) ;
 }
 
-bool loadMEM( const char * strMEMfile ) {
+bool loadMEM( const char * strCodefile, const char * strDatafile ) {
 	int i, j, addr ;
 	uint32_t code ;
 	char line[ 256 ], *p ;
 	FILE * infile = NULL ;
 
-	infile = fopen( strMEMfile, "r" ) ;
+	infile = fopen( strCodefile, "r" ) ;
 	if ( infile == NULL ) {
-		fprintf( stderr, "? Unable to open MEM file '%s'", strMEMfile ) ;
+		fprintf( stderr, "? Unable to open code MEM file '%s'", strCodefile ) ;
 		return false ;
 	}
 
-	for ( i = 0 ; i < 64; i++ )
-		for ( j = 0 ; j < 32; j++ )
-			INIT[ i ][ j ] = 0 ;
+	for ( i = 0 ; i < MAXMEM; i++ )
+		Code[ i ] = 0 ;
 
-	for ( i = 0 ; i < 8; i++ )
-		for ( j = 0 ; j < 128; j++ )
-			INITP[ i ][ j ] = 0 ;
-
-	for ( addr = -1 ; addr < 1024 + 128 && fgets( line, sizeof( line ), infile ) != NULL; ) {
+	for ( addr = -1 ; addr < MAXMEM && fgets( line, sizeof( line ), infile ) != NULL; ) {
 		if ( ( p = strchr( line, '@' ) ) != NULL ) {
 			if ( sscanf( ++p, "%X", &addr ) != 1 ) {
-				fprintf( stderr, "? Missing address in MEM file '%s'", strMEMfile ) ;
+				fprintf( stderr, "? Missing address in code MEM file '%s'", strCodefile ) ;
 				return false ;
 			}
 		} else {
 			if ( addr == -1 ) {
-				fprintf( stderr, "? Missing address in MEM file '%s'", strMEMfile ) ;
+				fprintf( stderr, "? Missing address in code MEM file '%s'", strCodefile ) ;
 				return false ;
 			}
 			sscanf( line, "%X", &code ) ;
-
-			// INIT00 .. INIT3F
-			INIT[ addr / 16 ][ ( addr % 16 ) * 2 + 0 ] = code & 0xFF ;
-			INIT[ addr / 16 ][ ( addr % 16 ) * 2 + 1 ] = ( code >> 8 ) & 0xFF ;
-			// INITP00 .. INITP07
-			INITP[ addr / 128 ][ addr % 128 ] = ( code >> 16 ) & 0x3 ;
+			Code[ addr ] = code ;
 
 			addr += 1 ;
 		}
 	}
 
 	fclose( infile ) ;
+
+	if (strlen( strDatafile ) == 0 )
+		return true ;
+
+	infile = fopen( strDatafile, "r" ) ;
+	if ( infile == NULL ) {
+		fprintf( stderr, "? Unable to open data MEM file '%s'", strDatafile ) ;
+		return false ;
+	}
+
+	for ( i = 0 ; i < MAXMEM; i++ )
+		Code[ i ] = 0 ;
+
+	for ( addr = -1 ; addr < MAXMEM && fgets( line, sizeof( line ), infile ) != NULL; ) {
+		if ( ( p = strchr( line, '@' ) ) != NULL ) {
+			if ( sscanf( ++p, "%X", &addr ) != 1 ) {
+				fprintf( stderr, "? Missing address in data MEM file '%s'", strDatafile ) ;
+				return false ;
+			}
+		} else {
+			if ( addr == -1 ) {
+				fprintf( stderr, "? Missing address in data MEM file '%s'", strDatafile ) ;
+				return false ;
+			}
+			sscanf( line, "%X", &code ) ;
+			if ( addr & 1 )
+				Code[ addr / 2 ] |= ( Code[ addr / 2 ] & 0x001FF ) | ( ( code & 0xFF ) << 9 ) ;
+			else
+				Code[ addr / 2 ] |= ( Code[ addr / 2 ] & 0x3FF00 ) | ( ( code & 0xFF ) << 0 ) ;
+
+			addr += 1 ;
+		}
+	}
+
+	fclose( infile ) ;
+
+// debug values
+//for ( i = 0 ; i < MAXMEM; i++ )
+//Code[ i ] = i | ( i << 6 ) | ( i << 12 ) ;
 
 	return true ;
 }
@@ -95,7 +125,7 @@ bool mergeTPL( const char * strTPLfile, const char * strROMfile, const char * st
 		stIDLE, stCOPY, stMERGE
 	} state = stIDLE ;
 	char buffer[ 65 ] ;
-	uint32_t code, line ;
+	uint32_t code, line, bit ;
 	int c ;
 	int p = 0 ;
 	int i ;
@@ -139,30 +169,118 @@ bool mergeTPL( const char * strTPLfile, const char * strROMfile, const char * st
 					buffer[ p ] = '\0' ;
 				}
 			} else if ( strlen( buffer ) > 0 ) {
-				if ( strncmp( "INIT_", buffer, 5 ) == 0 ) {
-					sscanf( buffer, "INIT_%02X", &line ) ;
-					if ( line < 64 )
+				// BYTE based INITs
+				if ( strncmp( "[8:0]_INIT_", buffer, 11 ) == 0 ) {
+					sscanf( buffer, "[8:0]_INIT_%02X", &line ) ;
+					if ( line < 128 )
 						for ( i = 31 ; i >= 0; i-- ) {
-							fprintf( outfile, "%02X", INIT[ line ][ i ] ) ;
-					}
+							fprintf( outfile, "%02X", ( Code[ line * 32 + i ] >> 0 ) & 0xFF ) ;
+						}
 					state = stCOPY ;
-				} else if ( strncmp( "INITP_", buffer, 6 ) == 0 ) {
-					sscanf( buffer, "INITP_%02X", &line ) ;
-					if ( line < 8 )
+				// parity bits
+				} else if ( strncmp( "[8:0]_INITP_", buffer, 12 ) == 0 ) {
+					// accumulate all bits 8
+					sscanf( buffer, "[8:0]_INITP_%02X", &line ) ;
+					if ( line < 16 )
 						for ( i = 31 ; i >= 0; i-- ) {
-							code = INITP[ line ][ i * 4 + 0 ] | ( INITP[ line ][ i * 4 + 1 ] << 2 )
-									| ( INITP[ line ][ i * 4 + 2 ] << 4 ) | ( INITP[ line ][ i * 4 + 3 ] << 6 ) ;
+							code  =  ( Code[ ( line * 32 + i ) * 8 + 0 ] >> 8 ) & 0x01 ;
+							code |= (( Code[ ( line * 32 + i ) * 8 + 1 ] >> 8 ) & 0x01 ) << 1 ;
+							code |= (( Code[ ( line * 32 + i ) * 8 + 2 ] >> 8 ) & 0x01 ) << 2 ;
+							code |= (( Code[ ( line * 32 + i ) * 8 + 3 ] >> 8 ) & 0x01 ) << 3 ;
+							code |= (( Code[ ( line * 32 + i ) * 8 + 4 ] >> 8 ) & 0x01 ) << 4 ;
+							code |= (( Code[ ( line * 32 + i ) * 8 + 5 ] >> 8 ) & 0x01 ) << 5 ;
+							code |= (( Code[ ( line * 32 + i ) * 8 + 6 ] >> 8 ) & 0x01 ) << 6 ;
+							code |= (( Code[ ( line * 32 + i ) * 8 + 7 ] >> 8 ) & 0x01 ) << 7 ;
 							fprintf( outfile, "%02X", code ) ;
 						}
 					state = stCOPY ;
-				} else if ( strncmp( "INITD_", buffer, 6 ) == 0 ) {
-					sscanf( buffer, "INITD_%02X", &line ) ;
-					if ( line < 8 ) {
-						for ( i = 31 ; i >= 0 ; i -= 1 )
-							fprintf( outfile, "%c", (INIT[ 64 + 1 ][ i ] & ( 1 << line ) ) ? '1' : '0' ) ;
-						for ( i = 31 ; i >= 0 ; i -= 1 )
-							fprintf( outfile, "%c", (INIT[ 64 + 0 ][ i ] & ( 1 << line ) ) ? '1' : '0' ) ;
+
+				} else if ( strncmp( "[17:9]_INIT_", buffer, 12 ) == 0 ) {
+					sscanf( buffer, "[17:9]_INIT_%02X", &line ) ;
+					if ( line < 128 )
+						for ( i = 31 ; i >= 0; i-- ) {
+							fprintf( outfile, "%02X", ( Code[ line * 32 + i ] >> 9 ) & 0xFF ) ;
+						}
+					state = stCOPY ;
+				// parity bits
+				} else if ( strncmp( "[17:9]_INITP_", buffer, 13 ) == 0 ) {
+					// accumulate all bits 17
+					sscanf( buffer, "[17:9]_INITP_%02X", &line ) ;
+					if ( line < 16 )
+						for ( i = 31 ; i >= 0; i-- ) {
+							code  =  ( Code[ ( line * 32 + i ) * 8 + 0 ] >> 17 ) & 0x01 ;
+							code |= (( Code[ ( line * 32 + i ) * 8 + 1 ] >> 17 ) & 0x01 ) << 1 ;
+							code |= (( Code[ ( line * 32 + i ) * 8 + 2 ] >> 17 ) & 0x01 ) << 2 ;
+							code |= (( Code[ ( line * 32 + i ) * 8 + 3 ] >> 17 ) & 0x01 ) << 3 ;
+							code |= (( Code[ ( line * 32 + i ) * 8 + 4 ] >> 17 ) & 0x01 ) << 4 ;
+							code |= (( Code[ ( line * 32 + i ) * 8 + 5 ] >> 17 ) & 0x01 ) << 5 ;
+							code |= (( Code[ ( line * 32 + i ) * 8 + 6 ] >> 17 ) & 0x01 ) << 6 ;
+							code |= (( Code[ ( line * 32 + i ) * 8 + 7 ] >> 17 ) & 0x01 ) << 7 ;
+							fprintf( outfile, "%02X", code ) ;
+						}
+					state = stCOPY ;
+
+				// WORD based INITs
+				} else if ( strncmp( "INIT_", buffer, 5 ) == 0 ) {
+					sscanf( buffer, "INIT_%02X", &line ) ;
+					if ( line < 128 )
+						for ( i = 15 ; i >= 0; i-- ) {
+							fprintf( outfile, "%04X", ( Code[ line * 16 + i ] >> 0 ) & 0xFFFF ) ;
+						}
+					state = stCOPY ;
+				// parity bits
+				} else if ( strncmp( "INITP_", buffer, 6 ) == 0 ) {
+					sscanf( buffer, "INITP_%02X", &line ) ;
+					if ( line < 16 )
+						for ( i = 31 ; i >= 0; i-- ) {
+							code  =  ( Code[ ( line * 32 + i ) * 4 + 0 ] >> 16 ) & 0x03 ;
+							code |= (( Code[ ( line * 32 + i ) * 4 + 1 ] >> 16 ) & 0x03 ) << 2 ;
+							code |= (( Code[ ( line * 32 + i ) * 4 + 2 ] >> 16 ) & 0x03 ) << 4 ;
+							code |= (( Code[ ( line * 32 + i ) * 4 + 3 ] >> 16 ) & 0x03 ) << 6 ;
+							fprintf( outfile, "%02X", code ) ;
+						}
+					state = stCOPY ;
+
+				// bit based INITs
+				} else if ( strncmp( "INIT64_", buffer, 6 ) == 0 ) {
+					sscanf( buffer, "INIT64_%d", &bit ) ;
+					if ( bit < 18 ) {
+						for ( i = 15 ; i >= 0 ; i -= 1 ) {
+							code  = ( ( ( Code[ i * 4 + 0 ] >> bit ) & 1 ) << 0 ) ;
+							code |=	( ( ( Code[ i * 4 + 1 ] >> bit ) & 1 ) << 1 ) ;
+							code |=	( ( ( Code[ i * 4 + 2 ] >> bit ) & 1 ) << 2 ) ;
+							code |=	( ( ( Code[ i * 4 + 2 ] >> bit ) & 1 ) << 3 ) ;
+							fprintf( outfile, "%1X", code ) ;
+						}
 					}
+					state = stCOPY ;
+				} else if ( strncmp( "INIT128_", buffer, 6 ) == 0 ) {
+					sscanf( buffer, "INIT128_%d", &bit ) ;
+					if ( bit < 18 ) {
+						for ( i = 31 ; i >= 0 ; i -= 1 ) {
+							code  = ( ( ( Code[ i * 4 + 0 ] >> bit ) & 1 ) << 0 ) ;
+							code |=	( ( ( Code[ i * 4 + 1 ] >> bit ) & 1 ) << 1 ) ;
+							code |=	( ( ( Code[ i * 4 + 2 ] >> bit ) & 1 ) << 2 ) ;
+							code |=	( ( ( Code[ i * 4 + 2 ] >> bit ) & 1 ) << 3 ) ;
+							fprintf( outfile, "%1X", code ) ;
+						}
+					}
+					state = stCOPY ;
+				} else if ( strncmp( "INIT256_", buffer, 8 ) == 0 ) {
+					sscanf( buffer, "INIT256_%d", &bit ) ;
+					if ( bit < 18 ) {
+						for ( i = 63 ; i >= 0 ; i -= 1 ) {
+							code  = ( ( ( Code[ i * 4 + 0 ] >> bit ) & 1 ) << 0 ) ;
+							code |=	( ( ( Code[ i * 4 + 1 ] >> bit ) & 1 ) << 1 ) ;
+							code |=	( ( ( Code[ i * 4 + 2 ] >> bit ) & 1 ) << 2 ) ;
+							code |=	( ( ( Code[ i * 4 + 2 ] >> bit ) & 1 ) << 3 ) ;
+							fprintf( outfile, "%1X", code ) ;
+						}
+					}
+					state = stCOPY ;
+
+				} else if ( strcmp( "psmname", buffer ) == 0 ) {
+					fprintf( outfile, "%s", strEntity ) ;
 					state = stCOPY ;
 				} else if ( strcmp( "name", buffer ) == 0 ) {
 					fprintf( outfile, "%s", strEntity ) ;
@@ -171,11 +289,11 @@ bool mergeTPL( const char * strTPLfile, const char * strROMfile, const char * st
 					fprintf( outfile, "pBlazMRG" ) ;
 					state = stCOPY ;
 				} else if ( strcmp( "timestamp", buffer ) == 0 ) {
-									char date_str[9], time_str[9] ;
+					char date_str[9], time_str[9] ;
 
-									_strdate( date_str ) ;
-									_strtime( time_str ) ;
-									fprintf( outfile, "%s %s", date_str, time_str ) ;
+					_strdate( date_str ) ;
+					_strtime( time_str ) ;
+					fprintf( outfile, "%s %s", date_str, time_str ) ;
 					state = stCOPY ;
 				} else if ( strcmp( "begin template", buffer ) == 0 ) {
 					state = stCOPY ;
@@ -194,7 +312,8 @@ bool mergeTPL( const char * strTPLfile, const char * strROMfile, const char * st
 }
 
 int main( int argc, char *argv[] ) {
-	char mem_filename[ 256 ] = { '\0' } ;
+	char code_filename[ 256 ] = { '\0' } ;
+	char data_filename[ 256 ] = { '\0' } ;
 	char tpl_filename[ 256 ] = { '\0' } ;
 	char rom_filename[ 256 ] = { '\0' } ;
 	char entity_name[ 256 ] = { '\0' } ;
@@ -207,11 +326,17 @@ int main( int argc, char *argv[] ) {
 	int optch ;
 
 	opterr = -1 ;
-	while ( ( optch = getopt( argc, argv, ":e:hv" ) ) != -1 ) {
+	while ( ( optch = getopt( argc, argv, ":e:hs:v" ) ) != -1 ) {
 		switch ( optch ) {
 		case 'e' :
 			if ( optarg != NULL )
 				strcpy( entity_name, optarg ) ;
+			else
+				bOptErr = true ;
+			break ;
+		case 's' :
+			if ( optarg != NULL )
+				strcpy( data_filename, optarg ) ;
 			else
 				bOptErr = true ;
 			break ;
@@ -243,17 +368,24 @@ int main( int argc, char *argv[] ) {
 		usage( basename( argv[ 0 ] ) ) ;
 		exit( -1 ) ;
 	}
-	strcpy( mem_filename, argv[ optind++ ] ) ;
-	if ( strrchr( mem_filename, '.' ) == NULL )
-		strcat( mem_filename, ".mem" ) ;
+	strcpy( code_filename, argv[ optind++ ] ) ;
+	if ( strrchr( code_filename, '.' ) == NULL )
+		strcat( code_filename, ".mem" ) ;
 	if ( bVerbose )
-		printf( "! MEM file: %s\n", mem_filename ) ;
+		printf( "! code MEM file: %s\n", code_filename ) ;
 
 	if ( strlen( entity_name ) == 0 ) {
-		strcpy( entity_name, filename( mem_filename ) ) ;
+		strcpy( entity_name, filename( code_filename ) ) ;
 	}
 	if ( bVerbose )
 		printf( "! entity name: %s\n", entity_name ) ;
+
+	if ( strlen( data_filename ) > 0 ) {
+		if ( strrchr( data_filename, '.' ) == NULL )
+			strcat( data_filename, ".mem" ) ;
+		if ( bVerbose )
+			printf( "! dataMEM file: %s\n", data_filename ) ;
+	}
 
 	// template filename
 	if ( argv[ optind ] == NULL ) {
@@ -268,7 +400,7 @@ int main( int argc, char *argv[] ) {
 
 	// output filename
 	if ( argv[ optind ] == NULL ) {
-		strcpy( rom_filename, filename( mem_filename ) ) ;
+		strcpy( rom_filename, filename( code_filename ) ) ;
 	} else {
 		strcpy( rom_filename, argv[ optind++ ] ) ;
 	}
@@ -277,7 +409,7 @@ int main( int argc, char *argv[] ) {
 	if ( bVerbose )
 		printf( "! output file: %s\n", rom_filename ) ;
 
-	if ( loadMEM( mem_filename ) ) {
+	if ( loadMEM( code_filename, data_filename ) ) {
 		mergeTPL( tpl_filename, rom_filename, entity_name ) ;
 		exit( 0 ) ;
 	} else
