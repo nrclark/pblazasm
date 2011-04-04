@@ -42,19 +42,19 @@ static void usage( char * text ) {
 }
 
 bool loadMEM( const char * strCodefile, const char * strDatafile ) {
-	int i, j, addr ;
+	int i, addr ;
 	uint32_t code ;
 	char line[ 256 ], *p ;
 	FILE * infile = NULL ;
+
+	for ( i = 0 ; i < MAXMEM; i++ )
+		Code[ i ] = 0 ;
 
 	infile = fopen( strCodefile, "r" ) ;
 	if ( infile == NULL ) {
 		fprintf( stderr, "? Unable to open code MEM file '%s'", strCodefile ) ;
 		return false ;
 	}
-
-	for ( i = 0 ; i < MAXMEM; i++ )
-		Code[ i ] = 0 ;
 
 	for ( addr = -1 ; addr < MAXMEM && fgets( line, sizeof( line ), infile ) != NULL; ) {
 		if ( ( p = strchr( line, '@' ) ) != NULL ) {
@@ -84,9 +84,6 @@ bool loadMEM( const char * strCodefile, const char * strDatafile ) {
 		fprintf( stderr, "? Unable to open data MEM file '%s'", strDatafile ) ;
 		return false ;
 	}
-
-	for ( i = 0 ; i < MAXMEM; i++ )
-		Code[ i ] = 0 ;
 
 	for ( addr = -1 ; addr < MAXMEM && fgets( line, sizeof( line ), infile ) != NULL; ) {
 		if ( ( p = strchr( line, '@' ) ) != NULL ) {
