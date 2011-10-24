@@ -81,24 +81,24 @@ bool loadMEM( const char * strCodefile, const char * strDatafile ) {
 
 	infile = fopen( strDatafile, "r" ) ;
 	if ( infile == NULL ) {
-		fprintf( stderr, "? Unable to open data MEM file '%s'", strDatafile ) ;
+		fprintf( stderr, "? Unable to open data SCR file '%s'", strDatafile ) ;
 		return false ;
 	}
 
 	for ( addr = -1 ; addr < MAXMEM && fgets( line, sizeof( line ), infile ) != NULL; ) {
 		if ( ( p = strchr( line, '@' ) ) != NULL ) {
 			if ( sscanf( ++p, "%X", &addr ) != 1 ) {
-				fprintf( stderr, "? Missing address in data MEM file '%s'", strDatafile ) ;
+				fprintf( stderr, "? Missing address in data SCR file '%s'", strDatafile ) ;
 				return false ;
 			}
 		} else {
 			if ( addr == -1 ) {
-				fprintf( stderr, "? Missing address in data MEM file '%s'", strDatafile ) ;
+				fprintf( stderr, "? Missing address in data SCR file '%s'", strDatafile ) ;
 				return false ;
 			}
 			sscanf( line, "%X", &code ) ;
 			if ( addr & 1 )
-				Code[ addr / 2 ] |= ( Code[ addr / 2 ] & 0x001FF ) | ( ( code & 0xFF ) << 9 ) ;
+				Code[ addr / 2 ] |= ( Code[ addr / 2 ] & 0x001FF ) | ( ( code & 0xFF ) << 8 ) ;
 			else
 				Code[ addr / 2 ] |= ( Code[ addr / 2 ] & 0x3FF00 ) | ( ( code & 0xFF ) << 0 ) ;
 
