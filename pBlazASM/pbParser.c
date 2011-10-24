@@ -1252,8 +1252,8 @@ static void dump_code( FILE * f, bool hex, bool zeros ) {
 
 	if ( hex ) {
 		// find last used entry
-		for ( h = 0, l = 1024 ; h < 1024 && ! zeros ; h += 1 )
-			if ( gCode[ h ] != 0xFFFC0000 )
+		for ( h = 0, l = 1024 ; h < 1024 ; h += 1 )
+			if ( gCode[ h ] != 0xFFFC0000 && ! zeros )
 				l = h ;
 		// list all
 		for ( h = 0 ; h <= l ; h += 1 )
