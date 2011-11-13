@@ -32,86 +32,82 @@
 #endif
 
 #define MAXMEM	4096
+#define MAXFILES 16
 
-uint32_t Code[ 4096 ] ;
+uint32_t Code[ MAXMEM ] ;
 
 static void usage( char * text ) {
-	printf( "\n%s - %s\n", text, "Picoblaze Assembler merge utility V1.1" ) ;
+	printf( "\n%s - %s\n", text, "Picoblaze Assembler merge utility V2.0" ) ;
 	printf( "\nUSAGE:\n" ) ;
-	printf( "   pBlazMRG [-v] [-s<MEM data inputfile] -e<entity_name> <MEM code inputfile> <TPL inputfile> <ROM outputfile>\n" ) ;
+	printf( "   pBlazMRG [-v] [-s<MEM data inputfile>[+offset]]* -e<entity_name> [-m<MEM code inputfile>[+offset]]* -t<TPL inputfile> <ROM outputfile>\n" ) ;
 }
 
-bool loadMEM( const char * strCodefile, const char * strDatafile ) {
-	int i, addr ;
+bool loadCode( const char * strCodefile, const int offset ) {
+	int addr ;
 	uint32_t code ;
 	char line[ 256 ], *p ;
 	FILE * infile = NULL ;
 
-	for ( i = 0 ; i < MAXMEM; i++ )
-		Code[ i ] = 0 ;
-
 	infile = fopen( strCodefile, "r" ) ;
 	if ( infile == NULL ) {
-		fprintf( stderr, "? Unable to open code MEM file '%s'", strCodefile ) ;
+		fprintf( stderr, "? Unable to open code MEM file '%s'\n", strCodefile ) ;
 		return false ;
 	}
 
 	for ( addr = -1 ; addr < MAXMEM && fgets( line, sizeof( line ), infile ) != NULL; ) {
 		if ( ( p = strchr( line, '@' ) ) != NULL ) {
 			if ( sscanf( ++p, "%X", &addr ) != 1 ) {
-				fprintf( stderr, "? Missing address in code MEM file '%s'", strCodefile ) ;
+				fprintf( stderr, "? Bad address in code MEM file '%s'\n", strCodefile ) ;
 				return false ;
 			}
 		} else {
 			if ( addr == -1 ) {
-				fprintf( stderr, "? Missing address in code MEM file '%s'", strCodefile ) ;
+				fprintf( stderr, "? Missing address in code MEM file '%s'\n", strCodefile ) ;
 				return false ;
 			}
 			sscanf( line, "%X", &code ) ;
-			Code[ addr ] = code ;
-
+			Code[ addr + offset ] = code ;
 			addr += 1 ;
 		}
 	}
 
 	fclose( infile ) ;
+	return true ;
+}
 
-	if (strlen( strDatafile ) == 0 )
-		return true ;
+bool loadData( const char * strDatafile, const int offset ) {
+	int addr ;
+	uint32_t code ;
+	char line[ 256 ], *p ;
+	FILE * infile = NULL ;
 
 	infile = fopen( strDatafile, "r" ) ;
 	if ( infile == NULL ) {
-		fprintf( stderr, "? Unable to open data SCR file '%s'", strDatafile ) ;
+		fprintf( stderr, "? Unable to open data MEM file '%s'\n", strDatafile ) ;
 		return false ;
 	}
 
 	for ( addr = -1 ; addr < MAXMEM && fgets( line, sizeof( line ), infile ) != NULL; ) {
 		if ( ( p = strchr( line, '@' ) ) != NULL ) {
 			if ( sscanf( ++p, "%X", &addr ) != 1 ) {
-				fprintf( stderr, "? Missing address in data SCR file '%s'", strDatafile ) ;
+				fprintf( stderr, "? Bad address in data MEM file '%s'\n", strDatafile ) ;
 				return false ;
 			}
 		} else {
 			if ( addr == -1 ) {
-				fprintf( stderr, "? Missing address in data SCR file '%s'", strDatafile ) ;
+				fprintf( stderr, "? Missing address in data MEM file '%s'\n", strDatafile ) ;
 				return false ;
 			}
 			sscanf( line, "%X", &code ) ;
-			if ( addr & 1 )
-				Code[ addr / 2 ] |= ( Code[ addr / 2 ] & 0x001FF ) | ( ( code & 0xFF ) << 8 ) ;
+			if ( ( addr & 1 ) != 0 )
+				Code[ addr / 2 + offset ] |= ( Code[ addr / 2 + offset ] & 0x001FF ) | ( ( code & 0xFF ) << 8 ) ;
 			else
-				Code[ addr / 2 ] |= ( Code[ addr / 2 ] & 0x3FF00 ) | ( ( code & 0xFF ) << 0 ) ;
-
+				Code[ addr / 2 + offset ] |= ( Code[ addr / 2 + offset ] & 0x3FF00 ) | ( ( code & 0xFF ) << 0 ) ;
 			addr += 1 ;
 		}
 	}
 
 	fclose( infile ) ;
-
-// debug values
-//for ( i = 0 ; i < MAXMEM; i++ )
-//Code[ i ] = i | ( i << 6 ) | ( i << 12 ) ;
-
 	return true ;
 }
 
@@ -129,13 +125,13 @@ bool mergeTPL( const char * strTPLfile, const char * strROMfile, const char * st
 
 	infile = fopen( strTPLfile, "r" ) ;
 	if ( infile == NULL ) {
-		fprintf( stderr, "? Unable to open template file '%s'", strTPLfile ) ;
+		fprintf( stderr, "? Unable to open template file '%s'\n", strTPLfile ) ;
 		return false ;
 	}
 
 	outfile = fopen( strROMfile, "w" ) ;
 	if ( outfile == NULL ) {
-		fprintf( stderr, "? Unable to open output file '%s'", strROMfile ) ;
+		fprintf( stderr, "? Unable to open output file '%s'\n", strROMfile ) ;
 		fclose( infile ) ;
 		return false ;
 	}
@@ -286,11 +282,14 @@ bool mergeTPL( const char * strTPLfile, const char * strROMfile, const char * st
 					fprintf( outfile, "pBlazMRG" ) ;
 					state = stCOPY ;
 				} else if ( strcmp( "timestamp", buffer ) == 0 ) {
-					char date_str[9], time_str[9] ;
+                    time_t rawtime;
+                    struct tm * timeinfo;
+                    char date_str[ 256 ] ;
 
-					_strdate( date_str ) ;
-					_strtime( time_str ) ;
-					fprintf( outfile, "%s %s", date_str, time_str ) ;
+                    time( &rawtime ) ;
+                    timeinfo = localtime( &rawtime ) ;
+                    strftime( date_str, 256, "%d-%b-%Y %X", timeinfo ) ;
+					fprintf( outfile, "%s", date_str ) ;
 					state = stCOPY ;
 				} else if ( strcmp( "begin template", buffer ) == 0 ) {
 					state = stCOPY ;
@@ -309,32 +308,72 @@ bool mergeTPL( const char * strTPLfile, const char * strROMfile, const char * st
 }
 
 int main( int argc, char *argv[] ) {
-	char code_filename[ 256 ] = { '\0' } ;
-	char data_filename[ 256 ] = { '\0' } ;
-	char tpl_filename[ 256 ] = { '\0' } ;
-	char rom_filename[ 256 ] = { '\0' } ;
-	char entity_name[ 256 ] = { '\0' } ;
+	char * code_filenames[ MAXFILES ] ;
+	char * data_filenames[ MAXFILES ] ;
+	char * tpl_filename = NULL ;
+	char * rom_filename = NULL ;
+	char * entity_name = NULL ;
 
 	bool bOptErr = false ;
 	bool bVerbose = false ;
 
+	int iCodeFileIdx = 0 ;
+	int iDataFileIdx = 0 ;
+	int iCodeOffsets[ MAXFILES ] = { 0 } ;
+	int iDataOffsets[ MAXFILES ] = { 0 } ;
+
 	extern char * optarg ;
 	extern int optind, optopt ;
-	int optch ;
+	int err, i, optch ;
 
 	opterr = -1 ;
-	while ( ( optch = getopt( argc, argv, ":e:hs:v" ) ) != -1 ) {
+    err = -1 ;
+	while ( ( optch = getopt( argc, argv, ":e:hm:s:t:v" ) ) != -1 ) {
 		switch ( optch ) {
 		case 'e' :
 			if ( optarg != NULL )
-				strcpy( entity_name, optarg ) ;
+                entity_name	= strdup( optarg ) ;
 			else
 				bOptErr = true ;
 			break ;
+		case 'm' :
+			if ( optarg != NULL ) {
+			    if ( iCodeFileIdx >= MAXFILES ) {
+                    fprintf( stderr, "? Maximum of code files reached: %d\n", iCodeFileIdx ) ;
+			    } else {
+                    code_filenames[ iCodeFileIdx ] = strdup( optarg ) ;
+                    if ( strrchr( code_filenames[ iCodeFileIdx ], '.' ) == NULL )
+                        strcat( code_filenames[ iCodeFileIdx ], ".mem" ) ;
+                    if ( bVerbose )
+                        printf( "! code MEM file: %s\n", code_filenames[ iCodeFileIdx ] ) ;
+                    iCodeFileIdx += 1 ;
+			    }
+			} else
+				bOptErr = true ;
+			break ;
 		case 's' :
-			if ( optarg != NULL )
-				strcpy( data_filename, optarg ) ;
-			else
+			if ( optarg != NULL ) {
+			    if ( iDataFileIdx >= MAXFILES ) {
+                    fprintf( stderr, "? Maximum of data files reached: %d", iDataFileIdx ) ;
+			    } else {
+                    data_filenames[ iDataFileIdx ] = strdup( optarg ) ;
+                    if ( strrchr( data_filenames[ iDataFileIdx ], '.' ) == NULL )
+                        strcat( data_filenames[ iDataFileIdx ], ".mem" ) ;
+                    if ( bVerbose )
+                        printf( "! data MEM file: %s\n", data_filenames[ iDataFileIdx ] ) ;
+                    iDataFileIdx += 1 ;
+			    }
+			} else
+				bOptErr = true ;
+			break ;
+		case 't' :
+			if ( optarg != NULL ) {
+				tpl_filename = strdup( optarg ) ;
+                if ( strrchr( tpl_filename, '.' ) == NULL )
+                    strcat( tpl_filename, ".vhd" ) ;
+                if ( bVerbose )
+                    printf( "! template VHD file: %s\n", tpl_filename ) ;
+			} else
 				bOptErr = true ;
 			break ;
 		case 'h' :
@@ -356,59 +395,60 @@ int main( int argc, char *argv[] ) {
 
 	if ( bOptErr ) {
 		usage( basename( argv[ 0 ] ) ) ;
-		exit( -1 ) ;
+        err = 0 ;
+		goto finally ;
 	}
 
-	// source filename
-	if ( argv[ optind ] == NULL ) {
-		fprintf( stderr, "? source file missing\n" ) ;
-		usage( basename( argv[ 0 ] ) ) ;
-		exit( -1 ) ;
-	}
-	strcpy( code_filename, argv[ optind++ ] ) ;
-	if ( strrchr( code_filename, '.' ) == NULL )
-		strcat( code_filename, ".mem" ) ;
-	if ( bVerbose )
-		printf( "! code MEM file: %s\n", code_filename ) ;
+    err = -2 ;
+	if ( ! tpl_filename ) {
+        fprintf( stderr, "? missing template VHD file\n" ) ;
+		goto finally ;
+    }
 
-	if ( strlen( entity_name ) == 0 ) {
-		strcpy( entity_name, filename( code_filename ) ) ;
-	}
+	if ( ! entity_name && iCodeFileIdx > 0  )
+		entity_name = strdup( filename( code_filenames[ 0 ] ) ) ;
 	if ( bVerbose )
 		printf( "! entity name: %s\n", entity_name ) ;
 
-	if ( strlen( data_filename ) > 0 ) {
-		if ( strrchr( data_filename, '.' ) == NULL )
-			strcat( data_filename, ".mem" ) ;
-		if ( bVerbose )
-			printf( "! dataMEM file: %s\n", data_filename ) ;
-	}
-
-	// template filename
-	if ( argv[ optind ] == NULL ) {
-		strcpy( tpl_filename, "template.vhd" ) ;
-	} else {
-		strcpy( tpl_filename, argv[ optind++ ] ) ;
-	}
-	if ( strrchr( tpl_filename, '.' ) == NULL )
-		strcat( tpl_filename, ".vhd" ) ;
-	if ( bVerbose )
-		printf( "! template file: %s\n", tpl_filename ) ;
-
 	// output filename
-	if ( argv[ optind ] == NULL ) {
-		strcpy( rom_filename, filename( code_filename ) ) ;
-	} else {
-		strcpy( rom_filename, argv[ optind++ ] ) ;
-	}
+	if ( argv[ optind ] == NULL && iCodeFileIdx > 0 )
+		rom_filename = strdup( filename( code_filenames[ 0 ] ) ) ;
+	else
+		rom_filename = strdup( argv[ optind++ ] ) ;
 	if ( strrchr( rom_filename, '.' ) == NULL )
 		strcat( rom_filename, ".vhd" ) ;
 	if ( bVerbose )
 		printf( "! output file: %s\n", rom_filename ) ;
 
-	if ( loadMEM( code_filename, data_filename ) ) {
-		mergeTPL( tpl_filename, rom_filename, entity_name ) ;
-		exit( 0 ) ;
-	} else
-		exit( -2 ) ;
+    // load code and data
+	for ( i = 0 ; i < MAXMEM ; i++ )
+		Code[ i ] = 0 ;
+
+    err = -3 ;
+    for ( i = 0 ; i < iCodeFileIdx ; i += 1 )
+        if ( ! loadCode( code_filenames[ i ], iCodeOffsets[ i ] ) )
+            goto finally ;
+    for ( i = 0 ; i < iDataFileIdx ; i += 1 )
+        if ( ! loadData( data_filenames[ i ], iDataOffsets[ i ] ) )
+            goto finally ;
+
+    // merge in template
+    err = -1 ;
+    if ( mergeTPL( tpl_filename, rom_filename, entity_name ) )
+        err = 0 ;
+
+finally:
+    for ( i = 0 ; i < iCodeFileIdx ; i += 1 )
+        if ( code_filenames[ i ] )
+            free( code_filenames[ i ] ) ;
+    for ( i = 0 ; i < iDataFileIdx ; i += 1 )
+        if ( data_filenames[ i ] )
+            free( data_filenames[ i ] ) ;
+    if ( tpl_filename )
+        free( tpl_filename ) ;
+    if ( rom_filename )
+        free( rom_filename ) ;
+    if ( entity_name )
+        free( entity_name ) ;
+    exit( err ) ;
 }
