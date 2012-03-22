@@ -33,7 +33,12 @@ const uint64_t _Digests[] = {
     0xb4b147bc52282873, 0x1f1a016bfa72c073,
     0x96a3be3cf272e017, 0x046d1b2674a52bd3,
     0xa2ef406e2c2351e0, 0xb9e80029c909242d,
-    0xe45ee7ce7e88149a, 0xf8dd32b27f9512ce
+    0xe45ee7ce7e88149a, 0xf8dd32b27f9512ce,
+
+    0x7d0665438e81d8ec, 0xeb98c1e31fca80c1,
+    0x751d31dd6b56b26b, 0x29dac2c0e1839e34,
+    0xfaeac4e1eef307c2, 0xab7b0a3821e6c667,
+    0xd72d187df41e10ea, 0x7d9fcdc7f5909205
 } ;
 
 typedef enum _BitStreamType {
@@ -64,6 +69,7 @@ typedef struct _SpartanBitfileHeader {
     char * part ;
     char * date ;
     char * time ;
+    bool bBit ;
 } SpartanBitfileHeader_t ;
 
 typedef struct _Spartan3Packet {
@@ -150,27 +156,37 @@ void put_string ( char * b ) {
     put_byte ( 0 ) ;
 }
 
-bool parse_header ( void ) {
+bool parse_header ( int len ) {
     bool result = true ;
     int i ;
 
-    result &= get_word() == sizeof ( InitialHeader ) ;
-    for ( i = 0 ; result && i < sizeof ( InitialHeader ) ; i += 1 )
-        result &= InitialHeader[ i ] == get_byte() ;
-    if ( ! result )
-        return result ;
+    if ( ( * ( uint32_t * ) current ) != 0xFFFFFFFF ) {
+        result &= get_word() == sizeof ( InitialHeader ) ;
+        for ( i = 0 ; result && i < sizeof ( InitialHeader ) ; i += 1 )
+            result &= InitialHeader[ i ] == get_byte() ;
+        if ( ! result )
+            return result ;
 
-    result = result && get_word() == 1 ;
-    result = result && get_byte() == 'a' ;
-    bit_file.header.info = get_string() ;
-    result = result && get_byte() == 'b' ;
-    bit_file.header.part = get_string() ;
-    result = result && get_byte() == 'c' ;
-    bit_file.header.date = get_string() ;
-    result = result && get_byte() == 'd' ;
-    bit_file.header.time = get_string() ;
-    result = result && get_byte() == 'e' ;
-    bit_file.length = get_long() ;
+        result = result && get_word() == 1 ;
+        result = result && get_byte() == 'a' ;
+        bit_file.header.info = get_string() ;
+        result = result && get_byte() == 'b' ;
+        bit_file.header.part = get_string() ;
+        result = result && get_byte() == 'c' ;
+        bit_file.header.date = get_string() ;
+        result = result && get_byte() == 'd' ;
+        bit_file.header.time = get_string() ;
+        result = result && get_byte() == 'e' ;
+        bit_file.length = get_long() ;
+        bit_file.header.bBit = true ;
+    } else {
+        bit_file.header.info = NULL ;
+        bit_file.header.part = NULL ;
+        bit_file.header.date = NULL ;
+        bit_file.header.time = NULL ;
+        bit_file.length = len ;
+        bit_file.header.bBit = false ;
+    }
 
     return result ;
 }
@@ -399,20 +415,23 @@ void build_header ( void ) {
     // build bitfile header
     int i ;
 
-    put_word ( sizeof ( InitialHeader ) ) ;
-    for ( i = 0 ; i < sizeof ( InitialHeader ) ; i += 1 )
-        put_byte ( InitialHeader[ i ] ) ;
-    put_word ( 1 ) ;
-    put_byte ( 'a' ) ;
-    put_string ( bit_file.header.info ) ;
-    put_byte ( 'b' ) ;
-    put_string ( bit_file.header.part ) ;
-    put_byte ( 'c' ) ;
-    put_string ( bit_file.header.date ) ;
-    put_byte ( 'd' ) ;
-    put_string ( bit_file.header.time ) ;
-    put_byte ( 'e' ) ;
-    put_long ( bit_file.length ) ;
+    // not for BIN files
+    if ( bit_file.header.bBit ) {
+        put_word ( sizeof ( InitialHeader ) ) ;
+        for ( i = 0 ; i < sizeof ( InitialHeader ) ; i += 1 )
+            put_byte ( InitialHeader[ i ] ) ;
+        put_word ( 1 ) ;
+        put_byte ( 'a' ) ;
+        put_string ( bit_file.header.info ) ;
+        put_byte ( 'b' ) ;
+        put_string ( bit_file.header.part ) ;
+        put_byte ( 'c' ) ;
+        put_string ( bit_file.header.date ) ;
+        put_byte ( 'd' ) ;
+        put_string ( bit_file.header.time ) ;
+        put_byte ( 'e' ) ;
+        put_long ( bit_file.length ) ;
+    }
 }
 
 void build_sync ( void ) {
@@ -474,7 +493,8 @@ bool parse_file ( const char * strBitfile, bool bSpartan6, bool bVerbose ) {
     current = pRaw ;
 
     // parse header
-    result &= parse_header() ;
+    result &= parse_header( nLength ) ;
+
     // rest of file
     bit_file.header_length = current - pRaw ;
     if ( bSpartan6 ) {
@@ -488,21 +508,25 @@ bool parse_file ( const char * strBitfile, bool bSpartan6, bool bVerbose ) {
     // sync words should follow
     while ( result ) {
         sync = get_long() ;
-        if ( sync == 0xFFFFFFFF ) {
-        } else if ( sync == 0xAA995566 ) {
+        if ( sync == 0xFFFFFFFF )
+            ;
+        else if ( sync == 0xAA995566 )
             break ;
-        } else
-            printf ( "??\n" ) ;
+        else {
+            fprintf ( stderr, "? sync word not found\n" ) ;
+            goto _free ;
+        }
     }
 
+    // the actual work
     if ( bSpartan6 )
         result = result && parse_packets6() ;
     else
         result = result && parse_packets3() ;
+
+    // report
     if ( result && bVerbose )
         show_file() ;
-
-//    nCRC = crc32 ( 0, pRaw, nLength ) ;
 
     free ( pRaw ) ;
     fclose ( infile ) ;
