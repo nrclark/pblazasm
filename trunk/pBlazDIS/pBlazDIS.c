@@ -208,104 +208,104 @@ static bool writePSM3( const char * strPSMfile ) {
 					fprintf( outfile, "\tMOVE\ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 				case 0x01000 ... 0x01FFF :
-					fprintf( outfile, "\tMOVE\ts%X, s%X\t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
+					fprintf( outfile, "\tMOVE\ts%X, s%X  \t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
 					break ;
 
 				case 0x0A000 ... 0x0AFFF :
 					fprintf( outfile, "\tAND \ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 				case 0x0B000 ... 0x0BFFF :
-					fprintf( outfile, "\tAND \ts%X, s%X\t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
+					fprintf( outfile, "\tAND \ts%X, s%X  \t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
 					break ;
 
 				case 0x0C000 ... 0x0CFFF :
 					fprintf( outfile, "\tOR  \ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 				case 0x0D000 ... 0x0DFFF :
-					fprintf( outfile, "\tOR  \ts%X, s%X\t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
+					fprintf( outfile, "\tOR  \ts%X, s%X  \t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
 					break ;
 
 				case 0x0E000 ... 0x0EFFF :
 					fprintf( outfile, "\tXOR \ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 				case 0x0F000 ... 0x0FFFF :
-					fprintf( outfile, "\tXOR \ts%X, s%X\t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
+					fprintf( outfile, "\tXOR \ts%X, s%X  \t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
 					break ;
 
 				case 0x12000 ... 0x12FFF :
 					fprintf( outfile, "\tTEST\ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 				case 0x13000 ... 0x13FFF :
-					fprintf( outfile, "\tTEST\ts%X, s%X\t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
+					fprintf( outfile, "\tTEST\ts%X, s%X  \t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
 					break ;
 
 				case 0x18000 ... 0x18FFF :
 					fprintf( outfile, "\tADD \ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 				case 0x19000 ... 0x19FFF :
-					fprintf( outfile, "\tADD \ts%X, s%X\t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
+					fprintf( outfile, "\tADD \ts%X, s%X  \t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
 					break ;
 
 				case 0x1A000 ... 0x1AFFF :
 					fprintf( outfile, "\tADDC\ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 				case 0x1B000 ... 0x1BFFF :
-					fprintf( outfile, "\tADDC\ts%X, s%X\t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
+					fprintf( outfile, "\tADDC\ts%X, s%X  \t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
 					break ;
 
 				case 0x1C000 ... 0x1CFFF :
 					fprintf( outfile, "\tSUB \ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 				case 0x1D000 ... 0x1DFFF :
-					fprintf( outfile, "\tSUB \ts%X, s%X\t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
+					fprintf( outfile, "\tSUB \ts%X, s%X  \t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
 					break ;
 
 				case 0x1E000 ... 0x1EFFF :
 					fprintf( outfile, "\tSUBC\ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 				case 0x1F000 ... 0x1FFFF :
-					fprintf( outfile, "\tSUBC\ts%X, s%X\t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
+					fprintf( outfile, "\tSUBC\ts%X, s%X  \t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
 					break ;
 
 				case 0x14000 ... 0x14FFF :
 					fprintf( outfile, "\tCOMP\ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 				case 0x15000 ... 0x15FFF :
-					fprintf( outfile, "\tCOMP\ts%X, s%X\t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
+					fprintf( outfile, "\tCOMP\ts%X, s%X  \t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
 					break ;
 
 				case 0x20000 ... 0x20FFF :
 					switch ( c & 0xF ) {
 					case 0x2 :
-						fprintf( outfile, "\tRL  \ts%X   \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
+						fprintf( outfile, "\tRL  \ts%X      \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
 						break ;
 					case 0x6 :
-						fprintf( outfile, "\tSL0 \ts%X   \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
+						fprintf( outfile, "\tSL0 \ts%X      \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
 						break ;
 					case 0x7 :
-						fprintf( outfile, "\tSL1 \ts%X   \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
+						fprintf( outfile, "\tSL1 \ts%X      \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
 						break ;
 					case 0x0 :
-						fprintf( outfile, "\tSLA \ts%X   \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
+						fprintf( outfile, "\tSLA \ts%X      \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
 						break ;
 					case 0x4 :
-						fprintf( outfile, "\tSLX \ts%X   \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
+						fprintf( outfile, "\tSLX \ts%X      \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
 						break ;
 
 					case 0xC :
-						fprintf( outfile, "\tRR  \ts%X   \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
+						fprintf( outfile, "\tRR  \ts%X      \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
 						break ;
 					case 0xE :
-						fprintf( outfile, "\tSR0 \ts%X   \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
+						fprintf( outfile, "\tSR0 \ts%X      \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
 						break ;
 					case 0xF :
-						fprintf( outfile, "\tSR1 \ts%X   \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
+						fprintf( outfile, "\tSR1 \ts%X      \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
 						break ;
 					case 0x8 :
-						fprintf( outfile, "\tSRA \ts%X   \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
+						fprintf( outfile, "\tSRA \ts%X      \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
 						break ;
 					case 0xA :
-						fprintf( outfile, "\tSRX \ts%X   \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
+						fprintf( outfile, "\tSRX \ts%X      \t; %.3X : %.5X\n", DestReg( c ), pc, c ) ;
 						break ;
 
 					default :
@@ -314,52 +314,52 @@ static bool writePSM3( const char * strPSMfile ) {
 					break ;
 
 				case 0x34000 ... 0x34FFF :
-					fprintf( outfile, "\tJUMP\t0x%.3X\t; %.3X : %.5X\n", Address10( c ), pc, c ) ;
+					fprintf( outfile, "\tJUMP\t0x%.3X   \t; %.3X : %.5X\n", Address10( c ), pc, c ) ;
 					break ;
 				case 0x35000 ... 0x35FFF :
 					fprintf( outfile, "\tJUMP\t%s, 0x%.3X\t; %.3X : %.5X\n", Condition( c ), Address10( c ), pc, c ) ;
 					break ;
 
 				case 0x30000 ... 0x30FFF :
-					fprintf( outfile, "\tCALL\t0x%.3X\t; %.3X : %.5X\n", Address10( c ), pc, c ) ;
+					fprintf( outfile, "\tCALL\t0x%.3X   \t; %.3X : %.5X\n", Address10( c ), pc, c ) ;
 					break ;
 				case 0x31000 ... 0x31FFF :
 					fprintf( outfile, "\tCALL\t%s, 0x%.3X\t; %.3X : %.5X\n", Condition( c ), Address10( c ), pc, c ) ;
 					break ;
 
 				case 0x2A000 ... 0x2AFFF :
-					fprintf( outfile, "\tRET\t \t; %.3X : %.5X\n", pc, c ) ;
+					fprintf( outfile, "\tRET \t         \t; %.3X : %.5X\n", pc, c ) ;
 					break ;
 				case 0x2B000 ... 0x2BFFF :
-					fprintf( outfile, "\tRET\t%s \t; %.3X : %.5X\n", Condition( c ), pc, c ) ;
+					fprintf( outfile, "\tRET \t%s       \t; %.3X : %.5X\n", Condition( c ), pc, c ) ;
 					break ;
 
 				case 0x2E000 ... 0x2EFFF :
 					fprintf( outfile, "\tST  \ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 				case 0x2F000 ... 0x2FFFF :
-					fprintf( outfile, "\tST  \ts%X, s%X\t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
+					fprintf( outfile, "\tST  \ts%X, s%X  \t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
 					break ;
 
 				case 0x06000 ... 0x06FFF :
 					fprintf( outfile, "\tLD  \ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 				case 0x07000 ... 0x07FFF :
-					fprintf( outfile, "\tLD  \ts%X, s%X\t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
+					fprintf( outfile, "\tLD  \ts%X, s%X  \t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
 					break ;
 
 				case 0x2C000 ... 0x2CFFF :
 					fprintf( outfile, "\tOUT \ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 				case 0x2D000 ... 0x2DFFF :
-					fprintf( outfile, "\tOUT \ts%X, s%X\t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
+					fprintf( outfile, "\tOUT \ts%X, s%X  \t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
 					break ;
 
 				case 0x04000 ... 0x04FFF :
 					fprintf( outfile, "\tIN  \ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 				case 0x05000 ... 0x05FFF :
-					fprintf( outfile, "\tIN  \ts%X, s%X\t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
+					fprintf( outfile, "\tIN  \ts%X, s%X  \t; %.3X : %.5X\n", DestReg( c ), SrcReg( c ), pc, c ) ;
 					break ;
 
 				case 0x3C000 :
@@ -594,22 +594,22 @@ static bool writePSM6( const char * strPSMfile ) {
 					break ;
 
 				case 0x25000 ... 0x25FFF :
-					fprintf( outfile, "\tRET\t         \t; %.3X : %.5X\n\n", pc, c ) ;
+					fprintf( outfile, "\tRET \t         \t; %.3X : %.5X\n\n", pc, c ) ;
 					break ;
 				case 0x31000 ... 0x31FFF :
-					fprintf( outfile, "\tRET\t%s        \t; %.3X : %.5X\n", "Z", pc, c ) ;
+					fprintf( outfile, "\tRET \t%s        \t; %.3X : %.5X\n", "Z", pc, c ) ;
 					break ;
 				case 0x35000 ... 0x35FFF :
-					fprintf( outfile, "\tRET\t%s       \t; %.3X : %.5X\n", "NZ", pc, c ) ;
+					fprintf( outfile, "\tRET \t%s       \t; %.3X : %.5X\n", "NZ", pc, c ) ;
 					break ;
 				case 0x39000 ... 0x39FFF :
-					fprintf( outfile, "\tRET\t%s        \t; %.3X : %.5X\n", "C", pc, c ) ;
+					fprintf( outfile, "\tRET \t%s        \t; %.3X : %.5X\n", "C", pc, c ) ;
 					break ;
 				case 0x3D000 ... 0x3DFFF :
-					fprintf( outfile, "\tRET\t%s       \t; %.3X : %.5X\n", "NC", pc, c ) ;
+					fprintf( outfile, "\tRET \t%s       \t; %.3X : %.5X\n", "NC", pc, c ) ;
 					break ;
 				case 0x21000 ... 0x21FFF :
-					fprintf( outfile, "\tRET \ts%X, 0x%.2X\t; %.3X : %.5X\n", DestReg( c ), Constant( c ), pc, c ) ;
+					fprintf( outfile, "\tRET \ts%X, 0x%.2X\t; %.3X : %.5X\n\n", DestReg( c ), Constant( c ), pc, c ) ;
 					break ;
 
 
