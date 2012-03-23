@@ -41,7 +41,7 @@ uint16_t Data[ MAXMEM * 18 / 16 ] ;
 
 
 static void usage ( char * text ) {
-    printf ( "\n%s - %s\n", text, "Picoblaze Assembler bitstream update utility V0.0" ) ;
+    printf ( "\n%s - %s\n", text, "Picoblaze Assembler bitstream update utility V0.1" ) ;
     printf ( "\nUSAGE:\n" ) ;
     printf ( "   pBlazBS6 [-3] [-v] -b<nr_blockram> -c<MEM code inputfile> [-s<MEM data inputfile] -o<BIT outputfile> <BIT inputfile>\\n" ) ;
 }
@@ -117,15 +117,15 @@ bool loadMEM ( const char * strCodefile, const char * strDatafile ) {
 
     // rebuilt array[MAXMEM] with 18 bit values to array[MAXMEM * 18 / 16] with 16 bit values
     for ( i = 0, j = 0 ; i < MAXMEM * 18 / 16 ; i += 9, j += 8 ) {
-        Data[ i + 0 ] =                             Code[ i + 0 ] >> 2  ;
-        Data[ i + 1 ] = ( Code[ i + 0 ] << 14 ) | ( Code[ i + 1 ] >>  4 ) ;
-        Data[ i + 2 ] = ( Code[ i + 1 ] << 12 ) | ( Code[ i + 2 ] >>  6 ) ;
-        Data[ i + 3 ] = ( Code[ i + 2 ] << 10 ) | ( Code[ i + 3 ] >>  8 ) ;
-        Data[ i + 4 ] = ( Code[ i + 3 ] <<  8 ) | ( Code[ i + 4 ] >> 10 ) ;
-        Data[ i + 5 ] = ( Code[ i + 4 ] <<  6 ) | ( Code[ i + 5 ] >> 12 ) ;
-        Data[ i + 6 ] = ( Code[ i + 5 ] <<  4 ) | ( Code[ i + 6 ] >> 14 ) ;
-        Data[ i + 7 ] = ( Code[ i + 6 ] <<  2 ) | ( Code[ i + 7 ] >> 16 ) ;
-        Data[ i + 8 ] =   Code[ i + 7 ] ;
+        Data[ i + 0 ] =                             Code[ j + 0 ] >> 2  ;
+        Data[ i + 1 ] = ( Code[ j + 0 ] << 14 ) | ( Code[ j + 1 ] >>  4 ) ;
+        Data[ i + 2 ] = ( Code[ j + 1 ] << 12 ) | ( Code[ j + 2 ] >>  6 ) ;
+        Data[ i + 3 ] = ( Code[ j + 2 ] << 10 ) | ( Code[ j + 3 ] >>  8 ) ;
+        Data[ i + 4 ] = ( Code[ j + 3 ] <<  8 ) | ( Code[ j + 4 ] >> 10 ) ;
+        Data[ i + 5 ] = ( Code[ j + 4 ] <<  6 ) | ( Code[ j + 5 ] >> 12 ) ;
+        Data[ i + 6 ] = ( Code[ j + 5 ] <<  4 ) | ( Code[ j + 6 ] >> 14 ) ;
+        Data[ i + 7 ] = ( Code[ j + 6 ] <<  2 ) | ( Code[ j + 7 ] >> 16 ) ;
+        Data[ i + 8 ] =   Code[ j + 7 ] ;
     }
 
 

@@ -29,18 +29,6 @@
 
 #include "bsParse.h"
 
-const uint64_t _Digests[] = {
-    0xb4b147bc52282873, 0x1f1a016bfa72c073,
-    0x96a3be3cf272e017, 0x046d1b2674a52bd3,
-    0xa2ef406e2c2351e0, 0xb9e80029c909242d,
-    0xe45ee7ce7e88149a, 0xf8dd32b27f9512ce,
-
-    0x7d0665438e81d8ec, 0xeb98c1e31fca80c1,
-    0x751d31dd6b56b26b, 0x29dac2c0e1839e34,
-    0xfaeac4e1eef307c2, 0xab7b0a3821e6c667,
-    0xd72d187df41e10ea, 0x7d9fcdc7f5909205
-} ;
-
 typedef enum _BitStreamType {
     bstSpartan3, bstSpartan6
 } BitStreamType_e ;
@@ -62,7 +50,7 @@ const char * sOpcodeNames[] = {
 static size_t nLength ;
 static void * pRaw, * current ;
 
-static uint8_t InitialHeader[ 9 ] = {0x0F, 0xF0, 0x0F, 0xF0, 0x0F, 0xF0, 0x0F, 0xF0, 0x00 } ;
+static uint8_t InitialHeader[ 9 ] = { 0x0F, 0xF0, 0x0F, 0xF0, 0x0F, 0xF0, 0x0F, 0xF0, 0x00 } ;
 
 typedef struct _SpartanBitfileHeader {
     char * info ;
@@ -278,11 +266,13 @@ bool parse_packets6 ( void ) {
 void show_file ( void ) {
     int i, j ;
 
-    printf ( "! header:\n" ) ;
-    printf ( "! info: %s\n", bit_file.header.info ) ;
-    printf ( "! part: %s\n", bit_file.header.part ) ;
-    printf ( "! date: %s\n", bit_file.header.date ) ;
-    printf ( "! time: %s\n", bit_file.header.time ) ;
+    if ( bit_file.header.bBit ) {
+        printf ( "! header:\n" ) ;
+        printf ( "! info: %s\n", bit_file.header.info ) ;
+        printf ( "! part: %s\n", bit_file.header.part ) ;
+        printf ( "! date: %s\n", bit_file.header.date ) ;
+        printf ( "! time: %s\n", bit_file.header.time ) ;
+    }
 
     printf ( "! number of packets: %d\n", bit_file.count ) ;
     for ( i = 0 ; i < bit_file.count ; i += 1 ) {
@@ -318,6 +308,7 @@ bool merge_code ( uint16_t * code, int len, int nr ) {
     int state = 0 ;
 
     // find bulk frame
+
     n = 0 ;
     for ( i = 0 ; i < bit_file.count ; i += 1 ) {
         if ( bit_file.packets6[ i ].header == 0x5060 ) {
@@ -326,75 +317,228 @@ bool merge_code ( uint16_t * code, int len, int nr ) {
                 if ( state == -1 )
                     s = j ;
                 switch ( data ) {
-                case 0xf01c:
+                    /* 0 */
+                case 0xf01c :
                     if ( nr == 0 )
                         state = 0 ;
                     break ;
-                case 0xcaf4:
+                case 0xcaf4 :
                     if ( nr == 1 )
                         state = 0 ;
                     break ;
-                case 0xc90b:
+                case 0xc90b :
                     if ( nr == 2 )
                         state = 0 ;
                     break ;
-                case 0xc4b3:
+                case 0xc4b3 :
                     if ( nr == 3 )
                         state = 0 ;
                     break ;
-                case 0xffa7:
-                case 0xf74a:
-                case 0x7c90:
-                case 0xb7f9:
+                case 0xe030 :
+                    if ( nr == 4 )
+                        state = 0 ;
+                    break ;
+                case 0xe78d :
+                    if ( nr == 5 )
+                        state = 0 ;
+                    break ;
+                case 0xf199 :
+                    if ( nr == 6 )
+                        state = 0 ;
+                    break ;
+                case 0xe481 :
+                    if ( nr == 7 )
+                        state = 0 ;
+                    break ;
+                case 0xcac2 :
+                    if ( nr == 8 )
+                        state = 0 ;
+                    break ;
+                case 0xc991 :
+                    if ( nr == 9 )
+                        state = 0 ;
+                    break ;
+                case 0xe1eb :
+                    if ( nr == 10 )
+                        state = 0 ;
+                    break ;
+                case 0xd3ec :
+                    if ( nr == 11 )
+                        state = 0 ;
+                    break ;
+                case 0xefa9 :
+                    if ( nr == 12 )
+                        state = 0 ;
+                    break ;
+                case 0xe83b :
+                    if ( nr == 13 )
+                        state = 0 ;
+                    break ;
+                case 0xe5dc :
+                    if ( nr == 14 )
+                        state = 0 ;
+                    break ;
+                case 0xd366 :
+                    if ( nr == 15 )
+                        state = 0 ;
+                    break ;
+                    /* 1 */
+                case 0xffa7 :
+                case 0xf74a :
+                case 0x7c90 :
+                case 0xb7f9 :
+                case 0x71fc :
+                case 0x3e18 :
+                case 0xf21e :
+                case 0x7f59 :
+                case 0x7666 :
+                case 0xb961 :
+                case 0xfbde :
+                case 0xf81b :
+                case 0x7c4a :
+                case 0x78df :
+                case 0xf0ab :
+                case 0xbfda :
                     if ( state == 0 )
                         state = 1 ;
                     break ;
-                case 0x2c05:
-                case 0x5c6c:
-                case 0x9c00:
-                case 0x5cca:
+                    /* 2 */
+                case 0x2c05 :
+                case 0x5c6c :
+                case 0x9c00 :
+                case 0x5cca :
+                case 0xaf07 :
+                case 0x3f0b :
+                case 0x6c28 :
+                case 0x0f37 :
+                case 0xdc92 :
+                case 0x9e31 :
+                case 0xcfa1 :
+                case 0xce1d :
+                case 0xde18 :
+                case 0xbce8 :
+                case 0x1cb4 :
+                case 0xafc9 :
                     if ( state == 1 )
                         state = 2 ;
                     break ;
-                case 0xaf1f:
-                case 0x9b04:
-                case 0xa7b9:
-                case 0xcbf8:
+                    /* 3 */
+                case 0xaf1f :
+                case 0x9b04 :
+                case 0xa7b9 :
+                case 0xcbf8 :
+                case 0x8feb :
+                case 0x0329 :
+                case 0xe3ab :
+                case 0x1f7d :
+                case 0x6b0c :
+                case 0x8741 :
+                case 0xbf49 :
+                case 0x67af :
+                case 0x97fe :
+                case 0x9f3f :
+                case 0xd767 :
+                case 0x3f25 :
                     if ( state == 2 )
                         state = 3 ;
                     break ;
-                case 0x1aca:
-                case 0x6df8:
-                case 0xe8d4:
-                case 0xddc5:
+                    /* 4 */
+                case 0x1aca :
+                case 0x6df8 :
+                case 0xe8d4 :
+                case 0xddc5 :
+                case 0x98f6 :
+                case 0xdaec :
+                case 0x7bc1 :
+                case 0x9fc4 :
+                case 0x67c4 :
+                case 0xf8f5 :
+                case 0x12ce :
+                case 0x91e8 :
+                case 0x65d0 :
+                case 0xd2e8 :
+                case 0xeafc :
+                case 0x13e4 :
                     if ( state == 3 )
                         state = 4 ;
                     break ;
-                case 0x1cf5:
-                case 0x05ff:
-                case 0x7832:
-                case 0x26b7:
+                    /* 5 */
+                case 0x1cf5 :
+                case 0x05ff :
+                case 0x7832 :
+                case 0x26b7 :
+                case 0x3b38 :
+                case 0x9af6 :
+                case 0xf0be :
+                case 0x3abf :
+                case 0xba31 :
+                case 0x9c35 :
+                case 0x0c72 :
+                case 0x8bf1 :
+                case 0x3b35 :
+                case 0x4bfb :
+                case 0xe7ba :
+                case 0x04b8 :
                     if ( state == 4 )
                         state = 5 ;
                     break ;
-                case 0x228d:
-                case 0x272e:
-                case 0xc23d:
-                case 0xe88f:
+                    /* 6 */
+                case 0x228d :
+                case 0x272e :
+                case 0xc23d :
+                case 0xe88f :
+                case 0xe81d :
+                case 0xb56c :
+                case 0xef3f :
+                case 0x41ec :
+                case 0x4a2f :
+                case 0x94bc :
+                case 0x7d3e :
+                case 0xe37c :
+                case 0x4abf :
+                case 0x546c :
+                case 0x8dec :
+                case 0xeb9d :
                     if ( state == 5 )
                         state = 6 ;
                     break ;
-                case 0x1ef3:
-                case 0xf8f3:
-                case 0x01bb:
-                case 0x9f3b:
+                    /* 7 */
+                case 0x1ef3 :
+                case 0xf8f3 :
+                case 0x01bb :
+                case 0x9f3b :
+                case 0x950f :
+                case 0xc777 :
+                case 0x1387 :
+                case 0x61f7 :
+                case 0xd39b :
+                case 0x17d7 :
+                case 0xccdf :
+                case 0x5ff7 :
+                case 0xf167 :
+                case 0x9b43 :
+                case 0x32e7 :
+                case 0x472b :
                     if ( state == 6 )
                         state = 7 ;
                     break ;
-                case 0xb4b1:
-                case 0x96a3:
-                case 0xa2ef:
-                case 0xe45e:
+                    /* 8 */
+                case 0xb4b1 :
+                case 0x96a3 :
+                case 0xa2ef :
+                case 0xe45e :
+                case 0x7d06 :
+                case 0x751d :
+                case 0xfaea :
+                case 0xd72d :
+                case 0xfad6 :
+                case 0x0a80 :
+                case 0xe99b :
+                case 0x3470 :
+                case 0x0fa2 :
+                case 0x23a3 :
+                case 0xe50c :
+                case 0x7dff :
                     if ( state == 7 ) {
                         memcpy ( &bit_file.packets6[ i ].data[ s ], code, len * 18 / 16 ) ;
                         state = -1 ;
@@ -461,12 +605,12 @@ void build_packets ( void ) {
 bool parse_file ( const char * strBitfile, bool bSpartan6, bool bVerbose ) {
     bool result = true ;
     size_t nSize ;
-    uint32_t nCRC, sync ;
+    uint32_t sync ;
     FILE * infile = NULL ;
 
     infile = fopen ( strBitfile, "rb" ) ;
     if ( infile == NULL ) {
-        fprintf ( stderr, "? Unable to open bitstream file '%s'\n", strBitfile ) ;
+        fprintf ( stderr, "? Unable to open source bitstream file '%s'\n", strBitfile ) ;
         return false ;
     }
 
@@ -493,7 +637,7 @@ bool parse_file ( const char * strBitfile, bool bSpartan6, bool bVerbose ) {
     current = pRaw ;
 
     // parse header
-    result &= parse_header( nLength ) ;
+    result &= parse_header ( nLength ) ;
 
     // rest of file
     bit_file.header_length = current - pRaw ;
@@ -543,12 +687,11 @@ _close:
 
 bool write_file ( const char * strBitfile ) {
     size_t nSize ;
-    uint32_t nCRC ;
     FILE * outfile ;
 
     outfile = fopen ( strBitfile, "wb" ) ;
     if ( outfile == NULL ) {
-        fprintf ( stderr, "? Unable to open bitstream file '%s'\n", strBitfile ) ;
+        fprintf ( stderr, "? Unable to open or create output bitstream file '%s'\n", strBitfile ) ;
         return false ;
     }
     pRaw = calloc ( bit_file.length + bit_file.header_length, sizeof ( char ) ) ;
