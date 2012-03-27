@@ -91,7 +91,7 @@ bool loadMEM ( const char * strCodefile, const char * strDatafile ) {
             return false ;
         }
 
-        for ( addr = -1 ; addr < MAXMEM && fgets ( line, sizeof ( line ), infile ) != NULL; ) {
+        for ( addr = -1 ; addr < MAXMEM * 2 && fgets ( line, sizeof ( line ), infile ) != NULL; ) {
             if ( ( p = strchr ( line, '@' ) ) != NULL ) {
                 if ( sscanf ( ++p, "%X", &addr ) != 1 ) {
                     fprintf ( stderr, "? Missing address in data MEM file '%s'", strDatafile ) ;
@@ -103,11 +103,10 @@ bool loadMEM ( const char * strCodefile, const char * strDatafile ) {
                     return false ;
                 }
                 sscanf ( line, "%X", &code ) ;
-                if ( addr & 1 )
-                    Code[ addr / 2 ] |= ( Code[ addr / 2 ] & 0x001FF ) | ( ( code & 0xFF ) << 9 ) ;
+                if ( ( addr & 1 ) != 0 )
+                    Code[ addr / 2 ] |= ( Code[ addr / 2 ] & 0x001FF ) | ( ( code & 0xFF ) << 8 ) ;
                 else
                     Code[ addr / 2 ] |= ( Code[ addr / 2 ] & 0x3FF00 ) | ( ( code & 0xFF ) << 0 ) ;
-
                 addr += 1 ;
             }
         }
@@ -116,7 +115,7 @@ bool loadMEM ( const char * strCodefile, const char * strDatafile ) {
     }
 
     // rebuilt array[MAXMEM] with 18 bit values to array[MAXMEM * 18 / 16] with 16 bit values
-    for ( i = 0, j = 0 ; i < MAXMEM * 18 / 16 ; i += 9, j += 8 ) {
+    for ( i = 0, j = 0 ; j < MAXMEM ; i += 9, j += 8 ) {
         Data[ i + 0 ] =                             Code[ j + 0 ] >> 2  ;
         Data[ i + 1 ] = ( Code[ j + 0 ] << 14 ) | ( Code[ j + 1 ] >>  4 ) ;
         Data[ i + 2 ] = ( Code[ j + 1 ] << 12 ) | ( Code[ j + 2 ] >>  6 ) ;
@@ -232,9 +231,9 @@ int main ( int argc, char * argv[] ) {
 
     if ( strlen ( data_filename ) > 0 ) {
         if ( strrchr ( data_filename, '.' ) == NULL )
-            strcat ( data_filename, ".mem" ) ;
+            strcat ( data_filename, ".scr" ) ;
         if ( bVerbose )
-            printf ( "! dataMEM file: %s\n", data_filename ) ;
+            printf ( "! data MEM file: %s\n", data_filename ) ;
     }
 
 

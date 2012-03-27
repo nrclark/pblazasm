@@ -305,13 +305,14 @@ void show_file ( void ) {
 bool merge_code ( uint16_t * code, int len, int nr ) {
     int i, j, n, s ;
     uint16_t data ;
-    int state = 0 ;
+    int state ;
 
     // find bulk frame
 
     n = 0 ;
     for ( i = 0 ; i < bit_file.count ; i += 1 ) {
         if ( bit_file.packets6[ i ].header == 0x5060 ) {
+            state = -1 ;
             for ( j = 0 ; j < bit_file.packets6[ i ].count ; j += 1 ) {
                 data = bit_file.packets6[ i ].data[ j ] ;
                 if ( state == -1 )
@@ -540,7 +541,7 @@ bool merge_code ( uint16_t * code, int len, int nr ) {
                 case 0xe50c :
                 case 0x7dff :
                     if ( state == 7 ) {
-                        memcpy ( &bit_file.packets6[ i ].data[ s ], code, len * 18 / 16 ) ;
+                        memcpy ( &bit_file.packets6[ i ].data[ s ], code, sizeof( uint16_t ) * len * 18 / 16 ) ;
                         state = -1 ;
                         return true ;
                     }
