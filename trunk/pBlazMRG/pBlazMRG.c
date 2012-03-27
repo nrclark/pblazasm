@@ -39,7 +39,13 @@ uint32_t Code[ MAXMEM ] ;
 static void usage( char * text ) {
 	printf( "\n%s - %s\n", text, "Picoblaze Assembler merge utility V2.0" ) ;
 	printf( "\nUSAGE:\n" ) ;
-	printf( "   pBlazMRG [-v] [-s<MEM data inputfile>[+offset]]* -e<entity_name> [-m<MEM code inputfile>[+offset]]* -t<TPL inputfile> <ROM outputfile>\n" ) ;
+	printf( "   pBlazMRG [-v] [-s<MEM data inputfile>[+offset]]* [-c<MEM code inputfile>[+offset]]* -e<entity_name> -t<TPL inputfile> <ROM outputfile>\n"
+             "   where:\n"
+             "         -v      generates verbose reporting\n"
+             "         -s      loads one or more a data MEM file\n"
+             "         -c      loads one or more a code MEM file\n"
+             "         -e      name of the VHD entity\n"
+             "         -t      template file for the code rom\n" ) ;
 }
 
 bool loadCode( const char * strCodefile, const int offset ) {
@@ -87,7 +93,7 @@ bool loadData( const char * strDatafile, const int offset ) {
 		return false ;
 	}
 
-	for ( addr = -1 ; addr < MAXMEM && fgets( line, sizeof( line ), infile ) != NULL; ) {
+	for ( addr = -1 ; addr < MAXMEM * 2 && fgets( line, sizeof( line ), infile ) != NULL; ) {
 		if ( ( p = strchr( line, '@' ) ) != NULL ) {
 			if ( sscanf( ++p, "%X", &addr ) != 1 ) {
 				fprintf( stderr, "? Bad address in data MEM file '%s'\n", strDatafile ) ;
@@ -307,7 +313,7 @@ bool mergeTPL( const char * strTPLfile, const char * strROMfile, const char * st
 	return true ;
 }
 
-int main( int argc, char *argv[] ) {
+int main( int argc, char * argv[] ) {
 	char * code_filenames[ MAXFILES ] ;
 	char * data_filenames[ MAXFILES ] ;
 	char * tpl_filename = NULL ;
@@ -328,7 +334,7 @@ int main( int argc, char *argv[] ) {
 
 	opterr = -1 ;
     err = -1 ;
-	while ( ( optch = getopt( argc, argv, ":e:hm:s:t:v" ) ) != -1 ) {
+	while ( ( optch = getopt( argc, argv, ":c:e:hm:s:t:v" ) ) != -1 ) {
 		switch ( optch ) {
 		case 'e' :
 			if ( optarg != NULL )
@@ -336,6 +342,7 @@ int main( int argc, char *argv[] ) {
 			else
 				bOptErr = true ;
 			break ;
+		case 'c' :
 		case 'm' :
 			if ( optarg != NULL ) {
 			    if ( iCodeFileIdx >= MAXFILES ) {
