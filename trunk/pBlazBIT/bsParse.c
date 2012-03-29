@@ -304,7 +304,7 @@ void show_file ( void ) {
 
 bool merge_code ( uint16_t * code, int len, int nr ) {
     int i, j, n, s ;
-    uint16_t data ;
+    uint16_t data, * packet, * p ;
     int state ;
 
     // find bulk frame
@@ -541,7 +541,16 @@ bool merge_code ( uint16_t * code, int len, int nr ) {
                 case 0xe50c :
                 case 0x7dff :
                     if ( state == 7 ) {
-                        memcpy ( &bit_file.packets6[ i ].data[ s ], code, sizeof( uint16_t ) * len * 18 / 16 ) ;
+                        packet = &bit_file.packets6[ i ].data[ s ] ;
+                        // check whether the rest of the block is zero
+                        for ( i = 0, data = 0, p = packet + 9 ; i < len * 18 / 16 - 9 ; i += 1 )
+                            data |= *p++ ;
+                        if ( data != 0 ) {
+                            fprintf ( stderr, "? Could not find correctly pre-initialized blockram nr: '%d' in bitfile\n", nr ) ;
+                            return false ;
+                        }
+
+                        memcpy ( packet, code, sizeof ( uint16_t ) * len * 18 / 16 ) ;
                         state = -1 ;
                         return true ;
                     }
@@ -552,7 +561,7 @@ bool merge_code ( uint16_t * code, int len, int nr ) {
             }
         }
     }
-    fprintf ( stderr, "? Could not find uninitialized blockram nr: '%d' in bitfile\n", nr ) ;
+    fprintf ( stderr, "? Could not find pre-initialized blockram nr: '%d' in bitfile\n", nr ) ;
     return false ;
 }
 
