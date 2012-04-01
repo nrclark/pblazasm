@@ -31,9 +31,11 @@
 #include "getopt.h"
 #endif
 
-#define MEMSIZE 4096
+#define MAXMEM 4096
+#define MAXSCR 256
 
-uint32_t Code[ MEMSIZE ] ;
+uint32_t Code[ MAXMEM ] ;
+uint32_t Data[ MAXSCR ] ;
 
 static void usage ( char * text ) {
     printf ( "\n%s - %s\n", text, "Picoblaze Disassembler utility V2.1" ) ;
@@ -62,7 +64,7 @@ bool loadMEM ( const char * strMEMfile ) {
         return false ;
     }
 
-    for ( addr = -1 ; addr < MEMSIZE + 128 && fgets ( line, sizeof ( line ), infile ) != NULL; ) {
+    for ( addr = -1 ; addr < MAXMEM && fgets ( line, sizeof ( line ), infile ) != NULL; ) {
         if ( ( p = strchr ( line, '@' ) ) != NULL ) {
             if ( sscanf ( ++p, "%X", &addr ) != 1 ) {
                 fprintf ( stderr, "? Error in address in MEM file '%s'", strMEMfile ) ;
@@ -76,6 +78,39 @@ bool loadMEM ( const char * strMEMfile ) {
             }
             sscanf ( line, "%X", &code ) ;
             Code[ addr ] = code ;
+            addr += 1 ;
+        }
+    }
+
+    fclose ( infile ) ;
+    return true ;
+}
+
+bool loadSCR ( const char * strDatafile, const int offset ) {
+    int addr ;
+    uint32_t data ;
+    char line[ 256 ], *p ;
+    FILE * infile = NULL ;
+
+    infile = fopen ( strDatafile, "r" ) ;
+    if ( infile == NULL ) {
+        fprintf ( stderr, "? Unable to open data MEM file '%s'\n", strDatafile ) ;
+        return false ;
+    }
+
+    for ( addr = -1 ; fgets ( line, sizeof ( line ), infile ) != NULL; ) {
+        if ( ( p = strchr ( line, '@' ) ) != NULL ) {
+            if ( sscanf ( ++p, "%X", &addr ) != 1 ) {
+                fprintf ( stderr, "? Bad address in data MEM file '%s'\n", strDatafile ) ;
+                return false ;
+            }
+        } else {
+            if ( addr == -1 ) {
+                fprintf ( stderr, "? Missing address in data MEM file '%s'\n", strDatafile ) ;
+                return false ;
+            }
+            sscanf ( line, "%X", &data ) ;
+            Data[ addr & ( MAXSCR - 1 ) ] = data ;
             addr += 1 ;
         }
     }
@@ -99,10 +134,7 @@ bool loadXDL ( const char * strXDLfile ) {
         return false ;
     }
 
-    for ( i = 0 ; i < MEMSIZE ; i++ )
-        Code[ i ] = 0 ;
-
-    for ( addr = -1 ; addr < MEMSIZE + 128 && fgets ( line, sizeof ( line ), infile ) != NULL; ) {
+    for ( addr = -1 ; addr < MAXMEM + 128 && fgets ( line, sizeof ( line ), infile ) != NULL; ) {
         if ( ( p = strstr ( line, "INITP_" ) ) != NULL ) {
             p += 6 ;
             strncpy ( t, p, 2 ) ;
@@ -413,7 +445,7 @@ static bool writePSM6 ( const char * strPSMfile ) {
         fprintf ( stderr, "? Unable to open output file '%s'", strPSMfile ) ;
         return false ;
     }
-    for ( pc = 0 ; pc < MEMSIZE ; ) {
+    for ( pc = 0 ; pc < MAXMEM ; ) {
         c = Code[ pc ] & 0x3FFFF ;
         switch ( state ) {
         case stIDLE :
@@ -692,6 +724,7 @@ static bool writePSM6 ( const char * strPSMfile ) {
 static bool writeVHD6 ( const char * strPSMfile ) {
     FILE * outfile = NULL ;
     int pc = 0 ;
+    int i, j ;
     uint32_t c = 0 ;
 
     outfile = fopen ( strPSMfile, "w" ) ;
@@ -708,7 +741,9 @@ static bool writeVHD6 ( const char * strPSMfile ) {
 
               "\n"
               "use work.pb2_pkg.all ; \n"
+            ) ;
 
+    fprintf ( outfile,
               "\n"
               "entity PicoCore is\n"
               "\tport ( \n"
@@ -724,12 +759,15 @@ static bool writeVHD6 ( const char * strPSMfile ) {
               "\t\tPB2_IQA : out std_logic\n"
               "\t ) ; \n"
               "end PicoCore ; \n"
+            ) ;
 
+    fprintf ( outfile,
               "\n"
               "architecture mix of PicoCore is\n"
               "\t-- types\n"
               "\tsubtype PC_t is unsigned( 11 downto 0 ) ; \n"
               "\tsubtype SP_t is unsigned( 4 downto 0 ) ; \n"
+              "\tsubtype IN_t is unsigned( 19 downto 0 ) ; \n"
 
               "\n"
               "\t-- state\n"
@@ -751,11 +789,15 @@ static bool writeVHD6 ( const char * strPSMfile ) {
 
               "\n"
               "\t-- data and address paths\n"
-              "\tsignal sx_addr : unsigned ( 3 downto 0 ) ; \n"
-              "\tsignal sy_addr : unsigned ( 3 downto 0 ) ; \n"
+              "\tsignal instruction : IN_t ; \n"
+              "\talias sx_addr is instruction( 11 downto 8 ) ; \n"
+              "\talias sy_addr is instruction( 7 downto 4 ) ; \n"
+              "\talias kk is instruction( 7 downto 0 ) ; \n"
+
               "\tsignal sx : std_logic_vector ( 7 downto 0 ) ; \n"
               "\tsignal sy : std_logic_vector ( 7 downto 0 ) ; \n"
               "\tsignal sykk : std_logic_vector ( 7 downto 0 ) ; \n"
+
               "\tsignal io_addr : std_logic_vector ( 7 downto 0 ) ; \n"
               "\tsignal cc : std_logic ; \n"
               "\tsignal reg_di : std_logic_vector ( 7 downto 0 ) ; \n"
@@ -769,17 +811,25 @@ static bool writeVHD6 ( const char * strPSMfile ) {
               "\tsignal nz : boolean ; \n"
 
               "\n"
+              "\t-- io control \n"
               "\tsignal nrd : std_logic ; \n"
               "\tsignal nwr : std_logic ; \n"
+            ) ;
 
+    fprintf ( outfile,
               "begin\n"
+            ) ;
 
+    fprintf ( outfile,
               "\tPB2I.ck <= clk ; \n"
               "\tPB2I.rs <= rst ; \n"
               "\tPB2I.da <= sx ; \n"
-              "\tPB2I.ad <= io_addr ; \n"
+              "\tPB2I.ad <= sykk ; \n"
+            ) ;
 
+    fprintf ( outfile,
               "\n"
+              "\t-- stack\n"
               "\tstack_b : block is \n"
               "\t\ttype STACK_t is array ( 31 downto 0 ) of std_logic_vector( 14 downto 0 ) ; \n"
               "\t\tsignal stack_ram : STACK_t ; \n"
@@ -800,8 +850,11 @@ static bool writeVHD6 ( const char * strPSMfile ) {
               "\n"
               "\t\ttos <= stack_ram ( to_integer ( sp ) ) ; \n"
               "\tend block ; \n"
+            ) ;
 
+    fprintf ( outfile,
               "\n"
+              "\t-- registers\n"
               "\trb : block is\n"
               "\t\ttype REG_t is array ( 15 downto 0 ) of std_logic_vector ( 7 downto 0 ) ; \n"
               "\t\tsignal register_ram : REG_t ; \n"
@@ -819,11 +872,35 @@ static bool writeVHD6 ( const char * strPSMfile ) {
               "\t\tsx <= register_ram ( to_integer ( sx_addr ) ) ; \n"
               "\t\tsy <= register_ram ( to_integer ( sy_addr ) ) ; \n"
               "\tend block ; \n"
+            ) ;
 
+    fprintf ( outfile,
+              "\n"
+              "\t-- scratchpad\n"
+              "\tscratch_ram_di <= sx ; \n"
+              "\tscratch_ram_addr <= unsigned( sykk ) ; \n"
+            ) ;
+
+    fprintf ( outfile,
               "\n"
               "\tsb : block is \n"
               "\t\ttype SCRATCH_t is array ( 255 downto 0 ) of std_logic_vector ( 7 downto 0 ) ; \n"
-              "\t\tsignal scratch_ram : SCRATCH_t ; \n"
+              "\t\tsignal scratch_ram : SCRATCH_t := ( \n"
+            ) ;
+    for ( i = 0 ; i < 16 ; i += 1 ) {
+        fprintf ( outfile, "\t\t\t" ) ;
+        for ( j = 0 ; j < 16 ; j += 1 ) {
+            fprintf ( outfile, "X\"%02X\"", Data[ 16 * i + j ] ) ;
+            if ( j < 15 )
+                fprintf ( outfile, ", " ) ;
+        }
+        if ( i < 15 )
+            fprintf ( outfile, ",\n" ) ;
+        else
+            fprintf ( outfile, "\n" ) ;
+    }
+    fprintf ( outfile,
+              "\t\t ) ; \n"
               "\tbegin \n"
               "\t\tprocess ( clk ) is \n"
               "\t\tbegin \n"
@@ -834,10 +911,13 @@ static bool writeVHD6 ( const char * strPSMfile ) {
               "\t\t\tend if ; \n"
               "\t\tend process ; \n"
               "\n"
-              "\t\tscratch_ram_do <= scratch_ram ( to_integer ( scratch_ram_addr) ) ; \n"
+              "\t\tscratch_ram_do <= scratch_ram ( to_integer ( scratch_ram_addr ) ) ; \n"
               "\tend block ; \n"
+            ) ;
 
+    fprintf ( outfile,
               "\n"
+              "\t-- new state\n"
               "\tprocess ( rst, clk ) is\n"
               "\tbegin\n"
               "\t\tif rst = '1' then\n"
@@ -866,28 +946,21 @@ static bool writeVHD6 ( const char * strPSMfile ) {
 
               "\t\tend if ; \n"
               "\tend process ; \n"
-              "\n" );
+              "\n"
+            ) ;
 
     fprintf ( outfile,
-              "\tprocess ( pc, sp, tos, scratch_ram_do, reg_di, PB2O, sx, sy, sykk, cc, c, z, i ) is\n"
+              "\t-- next state\n"
+              "\tprocess ( pc, sp, tos, scratch_ram_do, reg_di, PB2O, sx, sy, instruction, sykk, cc, c, z, i ) is\n"
               "\t\tvariable adder : unsigned ( 9 downto 0 ) ; \n"
               "\tbegin\n"
               "\t\t\tnpc <= pc + 1 ; \n"
               "\t\t\tnsp <= sp ; \n"
 
-              "\n"
-              "\t\t\tsx_addr <= ( others => '0' ) ; \n"
-              "\t\t\tsy_addr <= ( others => '0' ) ; \n"
-              "\t\t\tscratch_ram_addr <= ( others => '0' ) ; \n"
-
-              "\t\t\tsykk <= X\"00\" ; \n"
-              "\t\t\tscratch_ram_di <= ( others => '0' ) ; \n"
+              "\t\t\treg_di <= sykk ; \n"
 
               "\n"
-              "\t\t\treg_di <= ( others => '0' ) ; \n"
-              "\t\t\tio_addr <= ( others => '0' ) ; \n"
-
-              "\n"
+              "\t\t\tnc <= c ; \n"
               "\t\t\tnz <= z = '1' ; \n"
               "\t\t\tni <= i ; \n"
 
@@ -907,327 +980,260 @@ static bool writeVHD6 ( const char * strPSMfile ) {
 
     for ( pc = 0 ; pc < 1024 ; ) {
         c = Code[ pc ] & 0x3FFFF ;
-        if ( c != 0 )
-            fprintf ( outfile, "\t\t\twhen X\"%03X\" =>\n", pc ) ;
+        if ( c != 0 ) {
+            fprintf ( outfile, "\t\t\twhen X\"%03X\" => \n", pc ) ;
+            fprintf ( outfile, "\t\t\t\tinstruction <= X\"%05X\" ; \n", c ) ;
+            if ( ( c & 0x1000 ) != 0 )
+                fprintf ( outfile, "\t\t\t\tsykk <= std_logic_vector( kk ) ; \n" ) ;
+            else
+                fprintf ( outfile, "\t\t\t\tsykk <= sy ; \n" ) ;
+        }
         switch ( c ) {
         case 0x00000 :
             break ;
         case 0x00001 ... 0x00FFF :
             fprintf ( outfile, "\t\t\t\t-- MOVE\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= sy ; \n"
                       "\t\t\t\treg_di <= sykk ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
         case 0x01000 ... 0x01FFF :
             fprintf ( outfile, "\t\t\t\t-- MOVE\ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= X\"%02X\" ; \n"
                       "\t\t\t\treg_di <= sykk ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ), Constant ( c ) ) ;
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
-        case 0x16000 ... 0x16FFF :
-            fprintf ( outfile, "\t\t\t\t-- STAR\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
-            fprintf ( outfile, "\t\t\t\tassert false ; \n" ) ;
-            break ;
-
+            /*
+                    case 0x16000 ... 0x16FFF :
+                        fprintf ( outfile, "\t\t\t\t-- STAR\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                        fprintf ( outfile, "\t\t\t\tassert false ; \n" ) ;
+                        break ;
+            */
         case 0x02000 ... 0x02FFF :
             fprintf ( outfile, "\t\t\t\t-- AND \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= sy ; \n"
                       "\t\t\t\treg_di <= sx and sykk ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
         case 0x03000 ... 0x03FFF :
             fprintf ( outfile, "\t\t\t\t-- AND \ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= X\"%02X\" ; \n"
                       "\t\t\t\treg_di <= sx and sykk ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ), Constant ( c ) ) ;
+                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
 
         case 0x04000 ... 0x04FFF :
             fprintf ( outfile, "\t\t\t\t-- OR  \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= sy ; \n"
                       "\t\t\t\treg_di <= sx or sykk ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
         case 0x05000 ... 0x05FFF :
             fprintf ( outfile, "\t\t\t\t-- OR  \ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= X\"%02X\" ; \n"
                       "\t\t\t\treg_di <= sx or sykk ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ), Constant ( c ) ) ;
+                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
 
         case 0x06000 ... 0x06FFF :
             fprintf ( outfile, "\t\t\t\t-- XOR \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= sy ; \n"
                       "\t\t\t\treg_di <= sx xor sykk ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
         case 0x07000 ... 0x07FFF :
             fprintf ( outfile, "\t\t\t\t-- XOR \ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= X\"%02X\" ; \n"
                       "\t\t\t\treg_di <= sx xor sykk ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ), Constant ( c ) ) ;
+                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
 
         case 0x0C000 ... 0x0CFFF :
             fprintf ( outfile, "\t\t\t\t-- TEST\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= sy ; \n"
-                      "\t\t\t\treg_di <= sx and sykk ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\treg_di <= sx and sykk ; \n"
+                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                    ) ;
             break ;
         case 0x0D000 ... 0x0DFFF :
             fprintf ( outfile, "\t\t\t\t-- TEST\ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= X\"%02X\" ; \n"
-                      "\t\t\t\treg_di <= sx and sykk ; \n",
-                      DestReg ( c ), SrcReg ( c ), Constant ( c ) ) ;
+                      "\t\t\t\treg_di <= sx and sykk ; \n"
+                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                    ) ;
             break ;
         case 0x0E000 ... 0x0EFFF :
             fprintf ( outfile, "\t\t\t\t-- TSTC\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= sy ; \n"
-                      "\t\t\t\treg_di <= sx and sykk ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\treg_di <= sx and sykk ; \n"
+                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                    ) ;
             break ;
         case 0x0F000 ... 0x0FFFF :
             fprintf ( outfile, "\t\t\t\t-- TSTC\ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= X\"%02X\" ; \n"
-                      "\t\t\t\treg_di <= sx and sykk ; \n",
-                      DestReg ( c ), SrcReg ( c ), Constant ( c ) ) ;
+                      "\t\t\t\treg_di <= sx and sykk ; \n"
+                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                    ) ;
             break ;
 
         case 0x10000 ... 0x10FFF :
             fprintf ( outfile, "\t\t\t\t-- ADD \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= sy ; \n"
                       "\t\t\t\tcc <= '0' ; \n"
-
                       "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) + ( '0' & unsigned(sykk) & cc ) ; \n"
 
                       "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
                       "\t\t\t\tnc <= adder( 9 ) ; \n"
                       "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
-                      "\t\t\t\tnreg_we <= '1' ;",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnreg_we <= '1' ;"
+                    ) ;
             break ;
         case 0x11000 ... 0x11FFF :
             fprintf ( outfile, "\t\t\t\t-- ADD \ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= X\"%02X\" ; \n"
                       "\t\t\t\tcc <= '0' ; \n"
-
                       "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) + ( '0' & unsigned(sykk) & cc ) ; \n"
 
                       "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
                       "\t\t\t\tnc <= adder( 9 ) ; \n"
                       "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ), Constant ( c ) ) ;
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
 
         case 0x12000 ... 0x12FFF :
             fprintf ( outfile, "\t\t\t\t-- ADDC\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= sy ; \n"
                       "\t\t\t\tcc <= c ; \n"
-
                       "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) + ( '0' & unsigned(sykk) & cc ) ; \n"
 
                       "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
                       "\t\t\t\tnc <= adder( 9 ) ; \n"
                       "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
-                      "\t\t\t\tnreg_we <= '1' ;",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnreg_we <= '1' ;"
+                    ) ;
             break ;
         case 0x13000 ... 0x13FFF :
             fprintf ( outfile, "\t\t\t\t-- ADDC\ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= X\"%02X\" ; \n"
                       "\t\t\t\tcc <= c ; \n"
-
                       "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) + ( '0' & unsigned(sykk) & cc ) ; \n"
 
                       "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
                       "\t\t\t\tnc <= adder( 9 ) ; \n"
                       "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ), Constant ( c ) ) ;
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
 
         case 0x18000 ... 0x18FFF :
             fprintf ( outfile, "\t\t\t\t-- SUB \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= sy ; \n"
                       "\t\t\t\tcc <= '0' ; \n"
-
                       "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
 
                       "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
                       "\t\t\t\tnc <= adder( 9 ) ; \n"
                       "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
-                      "\t\t\t\tnreg_we <= '1' ;",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnreg_we <= '1' ;"
+                    ) ;
             break ;
         case 0x19000 ... 0x19FFF :
             fprintf ( outfile, "\t\t\t\t-- SUB \ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= X\"%02X\" ; \n"
                       "\t\t\t\tcc <= '0' ; \n"
-
                       "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
 
                       "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
                       "\t\t\t\tnc <= adder( 9 ) ; \n"
                       "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ), Constant ( c ) ) ;
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
 
         case 0x1A000 ... 0x1AFFF :
             fprintf ( outfile, "\t\t\t\t-- SUBC\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= sy ; \n"
                       "\t\t\t\tcc <= c ; \n"
-
                       "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
 
                       "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
                       "\t\t\t\tnc <= adder( 9 ) ; \n"
                       "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
-                      "\t\t\t\tnreg_we <= '1' ;",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnreg_we <= '1' ;"
+                    ) ;
             break ;
         case 0x1B000 ... 0x1BFFF :
             fprintf ( outfile, "\t\t\t\t-- SUBC\ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= X\"%02X\" ; \n"
                       "\t\t\t\tcc <= c ; \n"
-
                       "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
 
                       "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
                       "\t\t\t\tnc <= adder( 9 ) ; \n"
                       "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ) , Constant ( c ) ) ;
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
 
         case 0x1C000 ... 0x1CFFF :
             fprintf ( outfile, "\t\t\t\t-- COMP\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= sy ; \n"
                       "\t\t\t\tcc <= '0' ; \n"
-
                       "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
 
                       "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
                       "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                    ) ;
             break ;
         case 0x1D000 ... 0x1DFFF :
             fprintf ( outfile, "\t\t\t\t-- COMP\ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= X\"%02X\" ; \n"
                       "\t\t\t\tcc <= '0' ; \n"
-
                       "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
 
                       "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
                       "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n",
-                      DestReg ( c ), SrcReg ( c ) , Constant ( c ) ) ;
+                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                    ) ;
             break ;
         case 0x1E000 ... 0x1EFFF :
             fprintf ( outfile, "\t\t\t\t-- CMPC\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= sy ; \n"
                       "\t\t\t\tcc <= c ; \n"
-
                       "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
 
                       "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
                       "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                    ) ;
             break ;
         case 0x1F000 ... 0x1FFFF :
             fprintf ( outfile, "\t\t\t\t-- CMPC\ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01X\" ; \n"
-                      "\t\t\t\tsykk <= X\"%02X\" ; \n"
                       "\t\t\t\tcc <= c ; \n"
-
                       "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
 
                       "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
                       "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n",
-                      DestReg ( c ), SrcReg ( c ) , Constant ( c ) ) ;
+                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                    ) ;
             break ;
 
         case 0x14000 ... 0x14FFF :
@@ -1235,114 +1241,102 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                 fprintf ( outfile, "\t\t\t\t-- CORE\ts%X   \t; %03X : %05X\n",
                           DestReg ( c ), pc, c ) ;
                 fprintf ( outfile,
-                          "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                          "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                           "\t\t\t\treg_di <= X\"00\" ; \n"
                           "\t\t\t\tnc <= sx( 7 ) ; \n"
-                          "\t\t\t\tnreg_we <= '1' ; \n",
-                          DestReg ( c ), SrcReg ( c ) ) ;
+                          "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                          "\t\t\t\tnreg_we <= '1' ; \n"
+                        ) ;
             } else
                 switch ( c & 0xF ) {
                 case 0x2 :
                     fprintf ( outfile, "\t\t\t\t-- RL  \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
-                              "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                              "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                               "\t\t\t\treg_di <= sx( 6 downto 0 ) & sx( 7 ) ; \n"
                               "\t\t\t\tnc <= sx( 7 ) ; \n"
-                              "\t\t\t\tnreg_we <= '1' ; \n",
-                              DestReg ( c ), SrcReg ( c ) ) ;
+                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnreg_we <= '1' ; \n"
+                            ) ;
                     break ;
                 case 0x6 :
                     fprintf ( outfile, "\t\t\t\t-- SL0 \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
-                              "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                              "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                               "\t\t\t\treg_di <= sx( 6 downto 0 ) & '0' ; \n"
                               "\t\t\t\tnc <= sx( 7 ) ; \n"
-                              "\t\t\t\tnreg_we <= '1' ; \n",
-                              DestReg ( c ), SrcReg ( c ) ) ;
+                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnreg_we <= '1' ; \n"
+                            ) ;
                     break ;
                 case 0x7 :
                     fprintf ( outfile, "\t\t\t\t-- SL1 \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
-                              "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                              "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                               "\t\t\t\treg_di <= sx( 6 downto 0 ) & '1' ; \n"
                               "\t\t\t\tnc <= sx( 7 ) ; \n"
-                              "\t\t\t\tnreg_we <= '1' ; \n",
-                              DestReg ( c ), SrcReg ( c ) ) ;
+                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnreg_we <= '1' ; \n"
+                            ) ;
                     break ;
                 case 0x0 :
                     fprintf ( outfile, "\t\t\t\t-- SLA \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
-                              "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                              "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                               "\t\t\t\treg_di <= sx( 6 downto 0 ) & c ; \n"
                               "\t\t\t\tnc <= sx( 7 ) ; \n"
-                              "\t\t\t\tnreg_we <= '1' ; \n",
-                              DestReg ( c ), SrcReg ( c ) ) ;
+                              "\t\t\t\tnreg_we <= '1' ; \n"
+                            ) ;
                     break ;
                 case 0x4 :
                     fprintf ( outfile, "\t\t\t\t-- SLX \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
-                              "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                              "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                               "\t\t\t\treg_di <= sx( 6 downto 0 ) & sx( 0 ) ; \n"
                               "\t\t\t\tnc <= sx( 7 ) ; \n"
-                              "\t\t\t\tnreg_we <= '1' ; \n",
-                              DestReg ( c ), SrcReg ( c ) ) ;
+                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnreg_we <= '1' ; \n"
+                            ) ;
                     break ;
 
                 case 0xC :
                     fprintf ( outfile, "\t\t\t\t-- RR  \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
-                              "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                              "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                               "\t\t\t\treg_di <= sx( 0 ) & sx( 7 downto 1 ) ; \n"
                               "\t\t\t\tnc <= sx( 0 ) ; \n"
-                              "\t\t\t\tnreg_we <= '1' ; \n",
-                              DestReg ( c ), SrcReg ( c ) ) ;
+                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnreg_we <= '1' ; \n"
+                            ) ;
                     break ;
                 case 0xE :
                     fprintf ( outfile, "\t\t\t\t-- SR0 \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
-                              "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                              "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                               "\t\t\t\treg_di <= '0' & sx( 7 downto 1 ) ; \n"
                               "\t\t\t\tnc <= sx( 0 ) ; \n"
-                              "\t\t\t\tnreg_we <= '1' ; \n",
-                              DestReg ( c ), SrcReg ( c ) ) ;
+                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnreg_we <= '1' ; \n"
+                            ) ;
                     break ;
                 case 0xF :
                     fprintf ( outfile, "\t\t\t\t-- SR1 \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
-                              "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                              "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                               "\t\t\t\treg_di <= '1' & sx( 7 downto 1 ) ; \n"
                               "\t\t\t\tnc <= sx( 0 ) ; \n"
-                              "\t\t\t\tnreg_we <= '1' ; \n",
-                              DestReg ( c ), SrcReg ( c ) ) ;
+                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnreg_we <= '1' ; \n"
+                            ) ;
                     break ;
                 case 0x8 :
                     fprintf ( outfile, "\t\t\t\t-- SRA \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
-                              "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                              "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                               "\t\t\t\treg_di <= c & sx( 7 downto 1 ) ; \n"
                               "\t\t\t\tnc <= sx( 0 ) ; \n"
-                              "\t\t\t\tnreg_we <= '1' ; \n",
-                              DestReg ( c ), SrcReg ( c ) ) ;
+                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnreg_we <= '1' ; \n"
+                            ) ;
                     break ;
                 case 0xA :
                     fprintf ( outfile, "\t\t\t\t-- SRX \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
-                              "\t\t\t\tsx_addr <= X\"%01X\" ; \n"
-                              "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                               "\t\t\t\treg_di <= sx( 7 ) & sx( 7 downto 1 ) ; \n"
                               "\t\t\t\tnc <= sx( 0 ) ; \n"
-                              "\t\t\t\tnreg_we <= '1' ; \n",
-                              DestReg ( c ), SrcReg ( c ) ) ;
+                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnreg_we <= '1' ; \n"
+                            ) ;
                     break ;
 
                 default :
@@ -1354,310 +1348,236 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x22000 ... 0x22FFF :
             fprintf ( outfile, "\t\t\t\t-- JUMP\t0x%03X      \t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tnpc <= X\"%03X\" ; \n",
-                      DestReg ( c ), SrcReg ( c ), Address12 ( c ) ) ;
+                      "\t\t\t\tnpc <= instruction( 11 downto 0 ) ; \n" ) ;
             break ;
         case 0x32000 ... 0x32FFF :
             fprintf ( outfile, "\t\t\t\t-- JUMP\tZ, 0x%03X\t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tif z = '1' then \n"
-                      "\t\t\t\t\tnpc <= X\"%03X\" ; \n"
-                      "\t\t\t\tend if ; \n",
-                      DestReg ( c ), SrcReg ( c ), Address12 ( c ) ) ;
+                      "\t\t\t\t\tnpc <=  instruction( 11 downto 0 ) ; \n"
+                      "\t\t\t\tend if ; \n"
+                    ) ;
             break ;
         case 0x36000 ... 0x36FFF :
             fprintf ( outfile, "\t\t\t\t-- JUMP\tNZ, 0x%03X\t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tif z = '0' then \n"
-                      "\t\t\t\t\tnpc <= X\"%03X\" ; \n"
-                      "\t\t\t\tend if ; \n",
-                      DestReg ( c ), SrcReg ( c ), Address12 ( c ) ) ;
+                      "\t\t\t\t\tnpc <= instruction( 11 downto 0 ) ; \n"
+                      "\t\t\t\tend if ; \n"
+                    ) ;
             break ;
         case 0x3A000 ... 0x3AFFF :
             fprintf ( outfile, "\t\t\t\t-- JUMP\tC, 0x%03X\t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tif c = '1' then \n"
-                      "\t\t\t\t\tnpc <= X\"%03X\" ; \n"
-                      "\t\t\t\tend if ; \n",
-                      DestReg ( c ), SrcReg ( c ), Address12 ( c ) ) ;
+                      "\t\t\t\t\tnpc <= instruction( 11 downto 0 ) ; \n"
+                      "\t\t\t\tend if ; \n"
+                    ) ;
             break ;
         case 0x3E000 ... 0x3EFFF :
             fprintf ( outfile, "\t\t\t\t-- JUMP\tNC, 0x%03X\t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tif c = '0' then \n"
-                      "\t\t\t\t\tnpc <= X\"%03X\" ; \n"
-                      "\t\t\t\tend if ; \n",
-                      DestReg ( c ), SrcReg ( c ), Address12 ( c ) ) ;
+                      "\t\t\t\t\tnpc <= instruction( 11 downto 0 ) ; \n"
+                      "\t\t\t\tend if ; \n"
+                    ) ;
             break ;
         case 0x26000 ... 0x26FFF :
             fprintf ( outfile, "\t\t\t\t-- JUMP\ts%X, s%X  \t; %03X : %05X\n\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tnpc <= sx & sy ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnpc <= sx & sy ; \n"
+                    ) ;
             break ;
 
         case 0x20000 ... 0x20FFF :
             fprintf ( outfile, "\t\t\t\t-- CALL\t0x%03X      \t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tnpc <= X\"%03X\" ; \n"
+                      "\t\t\t\tnpc <= instruction( 11 downto 0 ) ; \n"
                       "\t\t\t\tnsp <= sp + 1 ; \n"
-                      "\t\t\t\tnstack_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ), Address12 ( c ) ) ;
+                      "\t\t\t\tnstack_we <= '1' ; \n"
+                    ) ;
             break ;
         case 0x30000 ... 0x30FFF :
-            fprintf ( outfile, "\t\t\t\t-- CALL\tZ, 0x%03X\t; %03X : %05X\n",
-                      Address12 ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- CALL\tZ, 0x%03X\t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tif z = '1' then\n"
-                      "\t\t\t\t\tnpc <= X\"%03X\" ; \n"
+                      "\t\t\t\t\tnpc <= instruction( 11 downto 0 ) ; \n"
                       "\t\t\t\t\tnsp <= sp + 1 ; \n"
                       "\t\t\t\t\tnstack_we <= '1' ; \n"
-                      "\t\t\t\tend if ; \n",
-                      DestReg ( c ), SrcReg ( c ), Address12 ( c ) ) ;
+                      "\t\t\t\tend if ; \n"
+                    ) ;
             break ;
         case 0x34000 ... 0x34FFF :
-            fprintf ( outfile, "\t\t\t\t-- CALL\tNZ, 0x%03X\t; %03X : %05X\n",
-                      Address12 ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- CALL\tNZ, 0x%03X\t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tif z = '0' then\n"
-                      "\t\t\t\t\tnpc <= X\"%03X\" ; \n"
+                      "\t\t\t\t\tnpc <= instruction( 11 downto 0 ) ; \n"
                       "\t\t\t\t\tnsp <= sp + 1 ; \n"
                       "\t\t\t\t\tnstack_we <= '1' ; \n"
-                      "\t\t\t\tend if ; \n",
-                      DestReg ( c ), SrcReg ( c ), Address12 ( c ) ) ;
+                      "\t\t\t\tend if ; \n"
+                    ) ;
             break ;
         case 0x38000 ... 0x38FFF :
-            fprintf ( outfile, "\t\t\t\t-- CALL\tC, 0x%03X\t; %03X : %05X\n",
-                      Address12 ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- CALL\tC, 0x%03X\t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tif c = '1' then\n"
-                      "\t\t\t\t\tnpc <= X\"%03X\" ; \n"
+                      "\t\t\t\t\tnpc <= instruction( 11 downto 0 ) ; \n"
 
                       "\t\t\t\t\tnsp <= sp + 1 ; \n"
                       "\t\t\t\t\tnstack_we <= '1' ; \n"
-                      "\t\t\t\tend if ; \n",
-                      DestReg ( c ), SrcReg ( c ), Address12 ( c ) ) ;
+                      "\t\t\t\tend if ; \n"
+                    ) ;
             break ;
         case 0x3C000 ... 0x3CFFF :
-            fprintf ( outfile, "\t\t\t\t-- CALL\tNC, 0x%03X\t; %03X : %05X\n",
-                      Address12 ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- CALL\tNC, 0x%03X\t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tif c = '0' then\n"
-                      "\t\t\t\t\tnpc <= X\"%03X\" ; \n"
+                      "\t\t\t\t\tnpc <= instruction( 11 downto 0 ) ; \n"
 
                       "\t\t\t\t\tnsp <= sp + 1 ; \n"
                       "\t\t\t\t\tnstack_we <= '1' ; \n"
-                      "\t\t\t\tend if ; \n",
-                      DestReg ( c ), SrcReg ( c ), Address12 ( c ) ) ;
+                      "\t\t\t\tend if ; \n"
+                    ) ;
             break ;
         case 0x24000 ... 0x24FFF :
             fprintf ( outfile, "\t\t\t\t-- CALL\ts%X, s%X  \t; %03X : %05X  \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tnpc <= sx & sy ; \n"
 
                       "\t\t\t\tnsp <= sp + 1 ; \n"
-                      "\t\t\t\t\tnstack_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\t\tnstack_we <= '1' ; \n"
+                    ) ;
             break ;
 
         case 0x25000 ... 0x25FFF :
             fprintf ( outfile, "\t\t\t\t-- RET \t         \t; %03X : %05X\n", pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tnpc <= unsigned( tos( 11 downto 0 ) ) ; \n"
-                      "\t\t\t\tnsp <= sp - 1 ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnsp <= sp - 1 ; \n"
+                    ) ;
             break ;
         case 0x31000 ... 0x31FFF :
             fprintf ( outfile, "\t\t\t\t-- RET \t %s        \t; %03X : %05X\n", "Z", pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tif z = '1' then\n"
-                      "\t\t\t\tnpc <= unsigned( tos( 11 downto 0 ) ) ; \n"
+                      "\t\t\t\t\tnpc <= unsigned( tos( 11 downto 0 ) ) ; \n"
                       "\t\t\t\t\tnsp <= sp - 1 ; \n"
-                      "\t\t\t\tend if ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tend if ; \n"
+                    ) ;
             break ;
         case 0x35000 ... 0x35FFF :
             fprintf ( outfile, "\t\t\t\t-- RET \t %s       \t; %03X : %05X\n", "NZ", pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tif z = '0' then\n"
-                      "\t\t\t\tnpc <= unsigned( tos( 11 downto 0 ) ) ; \n"
+                      "\t\t\t\t\tnpc <= unsigned( tos( 11 downto 0 ) ) ; \n"
                       "\t\t\t\t\tnsp <= sp - 1 ; \n"
-                      "\t\t\t\tend if ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tend if ; \n"
+                    ) ;
             break ;
         case 0x39000 ... 0x39FFF :
             fprintf ( outfile, "\t\t\t\t-- RET \t %s        \t; %03X : %05X\n", "C", pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tif c = '1' then\n"
-                      "\t\t\t\tnpc <= unsigned( tos( 11 downto 0 ) ) ; \n"
+                      "\t\t\t\t\tnpc <= unsigned( tos( 11 downto 0 ) ) ; \n"
                       "\t\t\t\t\tnsp <= sp - 1 ; \n"
-                      "\t\t\t\tend if ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tend if ; \n"
+                    ) ;
             break ;
         case 0x3D000 ... 0x3DFFF :
             fprintf ( outfile, "\t\t\t\t-- RET \t %s       \t; %03X : %05X\n", "NC", pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tif c = '0' then\n"
-                      "\t\t\t\tnpc <= unsigned( tos( 11 downto 0 ) ) ; \n"
+                      "\t\t\t\t\tnpc <= unsigned( tos( 11 downto 0 ) ) ; \n"
                       "\t\t\t\t\tnsp <= sp - 1 ; \n"
-                      "\t\t\t\tend if ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tend if ; \n"
+                    ) ;
             break ;
         case 0x21000 ... 0x21FFF :
             fprintf ( outfile, "\t\t\t\t-- RET \ts%X, 0x%02X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
                       "\t\t\t\tnpc <= unsigned( tos( 11 downto 0 ) ) ; \n"
                       "\t\t\t\tnsp <= sp - 1 ; \n"
-                      "\t\t\t\treg_di <= X\"%.2X\" ; \n",
-                      DestReg ( c ), SrcReg ( c ), Constant ( c ) ) ;
+                      "\t\t\t\treg_di <= instruction( 7 downto 0 ) ; \n"
+                    ) ;
             break ;
 
 
         case 0x2E000 ... 0x2EFFF :
             fprintf ( outfile, "\t\t\t\t-- ST  \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tscratch_ram_addr <= unsigned( sy ) ; \n"
-                      "\t\t\t\tscratch_ram_di <= sx ; \n"
-                      "\t\t\t\tnscr_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnscr_we <= '1' ; \n"
+                    ) ;
             break ;
         case 0x2F000 ... 0x2FFFF :
             fprintf ( outfile, "\t\t\t\t-- ST  \ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tscratch_ram_addr <= X\"%02x\" ; \n"
-                      "\t\t\t\tscratch_ram_di <= sx ; \n"
-                      "\t\t\t\tnscr_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ), Constant ( c ) ) ;
+                      "\t\t\t\tnscr_we <= '1' ; \n"
+                    ) ;
             break ;
 
         case 0x0A000 ... 0x0AFFF :
             fprintf ( outfile, "\t\t\t\t-- LD  \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tscratch_ram_addr <= unsigned( sy ) ; \n"
-
-                      "\t\t\t\tnrd <= '1' ; \n"
                       "\t\t\t\treg_di <= scratch_ram_do ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
         case 0x0B000 ... 0x0BFFF :
             fprintf ( outfile, "\t\t\t\t-- LD  \ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tscratch_ram_addr <= X\"%02x\" ; \n"
-
-                      "\t\t\t\tnrd <= '1' ; \n"
                       "\t\t\t\treg_di <= scratch_ram_do ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ), Constant ( c ) ) ;
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
 
         case 0x2C000 ... 0x2CFFF :
             fprintf ( outfile, "\t\t\t\t-- OUT \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tio_addr <= sy ; \n"
-                      "\t\t\t\tnwr <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnwr <= '1' ; \n"
+                    ) ;
             break ;
         case 0x2D000 ... 0x2DFFF :
             fprintf ( outfile, "\t\t\t\t-- OUT \ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tio_addr <= X\"%02x\" ; \n"
-                      "\t\t\t\tnwr <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ) , Constant ( c ) ) ;
+                      "\t\t\t\tnwr <= '1' ; \n"
+                    ) ;
             break ;
-        case 0x2B000 ... 0x2BFFF :
-            fprintf ( outfile, "\t\t\t\t-- OUTK\t0x%.2X, 0x%X\t; %03X : %05X\n", ( c >> 4 ) & 0xFF, c & 0xF, pc, c ) ;
-            fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tio_addr <= X\"%02x\" ; \n"
-                      "\t\t\t\reg_di <= X\"%02x\" ; \n"
-                      "\t\t\t\tPB2I.wr <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ), DestReg ( c ), SrcReg ( c ) ) ;
-            break ;
+            /*
+                    case 0x2B000 ... 0x2BFFF :
+                        fprintf ( outfile, "\t\t\t\t-- OUTK\t0x%.2X, 0x%X\t; %03X : %05X\n", ( c >> 4 ) & 0xFF, c & 0xF, pc, c ) ;
+                        fprintf ( outfile,
+                                  "\t\t\t\nwr <= '1' ; \n" ) ;
+                        break ;
+            */
 
         case 0x08000 ... 0x08FFF :
             fprintf ( outfile, "\t\t\t\t-- IN  \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tio_addr <= sy ; \n"
-
                       "\t\t\t\tnrd <= '1' ; \n"
                       "\t\t\t\treg_di <= PB2O.da ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ) ) ;
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
         case 0x09000 ... 0x09FFF :
             fprintf ( outfile, "\t\t\t\t-- IN  \ts%X, 0x%02X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tsx_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tsy_addr <= X\"%01x\" ; \n"
-                      "\t\t\t\tio_addr <= X\"%02x\" ; \n"
-
                       "\t\t\t\tnrd <= '1' ; \n"
                       "\t\t\t\treg_di <= PB2O.da ; \n"
-                      "\t\t\t\tnreg_we <= '1' ; \n",
-                      DestReg ( c ), SrcReg ( c ), Constant ( c ) ) ;
+                      "\t\t\t\tnreg_we <= '1' ; \n"
+                    ) ;
             break ;
 
         case 0x28000 :
             fprintf ( outfile, "\t\t\t\t-- DINT\t \t; %03X : %05X\n", pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tni <= '0' ; \n" ) ;
+                      "\t\t\t\tni <= '0' ; \n"
+                    ) ;
             break ;
         case 0x28001 :
             fprintf ( outfile, "\t\t\t\t-- EINT\t \t; %03X : %05X\n", pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tni <= '1' ; \n" ) ;
+                      "\t\t\t\tni <= '1' ; \n"
+                    ) ;
             break ;
         case 0x29000 :
             fprintf ( outfile, "\t\t\t\t-- RETI\tDISABLE\t; %03X : %05X\n", pc, c ) ;
@@ -1666,7 +1586,8 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                       "\t\t\t\tnpc <= unsigned( tos( 11 downto 0 ) ) ; \n"
                       "\t\t\t\tnc <= tos( 12 ) ; \n"
                       "\t\t\t\tnz <= tos( 13 ) = '1' ; \n"
-                      "\t\t\t\tnsp <= sp - 1 ; \n" ) ;
+                      "\t\t\t\tnsp <= sp - 1 ; \n"
+                    ) ;
             break ;
         case 0x29001 :
             fprintf ( outfile, "\t\t\t\t-- RETI\tENABLE\t; %03X : %05X\n", pc, c ) ;
@@ -1675,27 +1596,34 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                       "\t\t\t\tnpc <= unsigned( tos( 11 downto 0 ) ) ; \n"
                       "\t\t\t\tnc <= tos( 12 ) ; \n"
                       "\t\t\t\tnz <= tos( 13 ) ; \n"
-                      "\t\t\t\tnsp <= sp - 1 ; \n" ) ;
+                      "\t\t\t\tnsp <= sp - 1 ; \n"
+                    ) ;
             break ;
 
-        case 0x37000 :
-            fprintf ( outfile, "\t\t\t\t-- BANK\tA\t; %03X : %05X\n", pc, c ) ;
-            fprintf ( outfile, "\t\t\t\tassert false ; \n" ) ;
-            break ;
-        case 0x37001 :
-            fprintf ( outfile, "\t\t\t\t-- BANK\tB\t; %03X : %05X\n", pc, c ) ;
-            fprintf ( outfile, "\t\t\t\tassert false ; \n" ) ;
-            break ;
-
+            /*
+                    case 0x37000 :
+                        fprintf ( outfile, "\t\t\t\t-- BANK\tA\t; %03X : %05X\n", pc, c ) ;
+                        fprintf ( outfile, "\t\t\t\tassert false ; \n" ) ;
+                        break ;
+                    case 0x37001 :
+                        fprintf ( outfile, "\t\t\t\t-- BANK\tB\t; %03X : %05X\n", pc, c ) ;
+                        fprintf ( outfile, "\t\t\t\tassert false ; \n" ) ;
+                        break ;
+            */
         default :
             fprintf ( outfile, "\t\t\t\t-- INST\t0x%05X\t; %03X : %05X\n", pc, c, c ) ;
-            fprintf ( outfile, "\t\t\t\tassert false ; \n" ) ;
         }
         pc += 1 ;
     }
 
     // postamble
-    fprintf ( outfile, "\t\t\twhen others =>\n"
+    fprintf ( outfile,
+              "\t\t\twhen others =>\n"
+              "\t\t\t\tinstruction <= ( others => '0' ) ; \n"
+              "\t\t\t\tsykk <= sy ; \n"
+            ) ;
+
+    fprintf ( outfile,
               "\t\t\tend case ; \n"
               "\n"
               "\tend process ; \n"
@@ -1814,13 +1742,16 @@ int main ( int argc, char * argv[] ) {
             printf ( "! output file: %s\n", psm_filename ) ;
     }
 
-    for ( i = 0 ; i < MEMSIZE ; i++ )
+    for ( i = 0 ; i < MAXMEM ; i++ )
         Code[ i ] = 0 ;
+
+    for ( i = 0 ; i < MAXSCR ; i++ )
+        Data[ i ] = 0 ;
 
     if ( bXDL )
         result = loadXDL ( code_filename ) ;
     if ( bMEM )
-        result = loadMEM ( code_filename ) && loadMEM ( data_filename ) ;
+        result = loadMEM ( code_filename ) && loadSCR ( data_filename, 0 ) ;
     if ( ! result )
         exit ( -2 ) ;
 
