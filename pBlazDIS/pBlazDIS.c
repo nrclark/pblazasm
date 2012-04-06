@@ -773,7 +773,7 @@ void quicksort ( int l, int r ) {
 
 static bool writeVHD6 ( const char * strPSMfile ) {
     FILE * outfile = NULL ;
-    int  pc = 0, prev ;
+    int  pc = 0 ;
     int i, j ;
     uint32_t c = 0 ;
 
@@ -821,12 +821,15 @@ static bool writeVHD6 ( const char * strPSMfile ) {
 
               "\n"
               "\t-- state\n"
-              "\tsignal pc : PC_t ; \n"
-              "\tsignal c, z, i : std_logic ; \n"
+              "\tsignal pc : PC_t := ( others => '0' ) ; \n"
+              "\tsignal c : std_logic := '0' ; \n"
+              "\tsignal z : std_logic := '0' ; \n"
+              "\tsignal i : std_logic := '0' ; \n"
 
               "\n"
               "\t-- stack \n"
-              "\tsignal sp_wr, sp_rd : SP_t ; \n"
+              "\tsignal sp_wr : SP_t := ( others => '0' ) ; \n"
+              "\tsignal sp_rd : SP_t := ( others => '1' ) ; \n"
               "\tsignal tos : std_logic_vector( 13 downto 0 ) ; \n"
               "\talias ret_addr : std_logic_vector is tos( 11 downto 0 ) ; \n"
 
@@ -834,14 +837,16 @@ static bool writeVHD6 ( const char * strPSMfile ) {
 
               "\n"
               "\t-- scratchpad\n"
-              "\tsignal scratch_ram_addr : unsigned ( 7 downto 0 ) ; \n"
-              "\tsignal scratch_ram_di : std_logic_vector ( 7 downto 0 ) ; \n"
               "\tsignal scratch_ram_do : std_logic_vector ( 7 downto 0 ) ; \n"
               "\tsignal nscr_we : std_logic := '0' ; \n"
 
               "\n"
               "\t-- data and address paths\n"
-              "\tsignal instruction : IN_t ; \n"
+            ) ;
+    fprintf ( outfile,
+              "\tsignal instruction : IN_t := X\"%05X\" ; \n", Code[ 0 ].code & 0x3FFFF
+            ) ;
+    fprintf ( outfile,
               "\talias new_addr : unsigned is instruction( 11 downto 0 ) ; \n"
               "\talias sx_addr : unsigned is instruction( 11 downto 8 ) ; \n"
               "\talias sy_addr : unsigned is instruction( 7 downto 4 ) ; \n"
@@ -852,15 +857,13 @@ static bool writeVHD6 ( const char * strPSMfile ) {
               "\tsignal sykk : std_logic_vector ( 7 downto 0 ) ; \n"
 
               "\tsignal reg_di : std_logic_vector ( 7 downto 0 ) ; \n"
-
-              "\tsignal cc : std_logic ; \n"
               "\tsignal nreg_we : std_logic := '0' ; \n"
 
               "\n"
               "\t-- next state \n"
-              "\tsignal npc : PC_t ; \n"
-              "\tsignal nc, ni : std_logic ; \n"
-              "\tsignal nz : boolean ; \n"
+              "\tsignal pc1, npc : PC_t ; \n"
+              "\tsignal nc, nz, ni : std_logic ; \n"
+              "\tsignal nrst : std_logic ; \n"
 
               "\n"
               "\tsignal nsp_wr : SP_t ; \n"
@@ -868,19 +871,55 @@ static bool writeVHD6 ( const char * strPSMfile ) {
 
               "\n"
               "\t-- io control \n"
-              "\tsignal nrd : std_logic ; \n"
-              "\tsignal nwr : std_logic ; \n"
+              "\tsignal nio_rd : std_logic ; \n"
+              "\tsignal nio_wr : std_logic ; \n"
+
+              "\n"
+              "\t-- alu \n"
+              "\tsignal op : std_logic_vector( 2 downto 0 ) ; \n"
+              "\tsignal alu : std_logic_vector( 7 downto 0 ) ; \n"
+              "\tsignal ci, co : std_logic ; \n"
+            ) ;
+
+    fprintf ( outfile,
+              "\n"
+              "\tfunction to_std_logic( l : boolean ) return std_ulogic is \n"
+              "\tbegin \n"
+              "\t\tif l then \n"
+              "\t\t\treturn '1' ; \n"
+              "\t\telse \n"
+              "\t\t\treturn '0' ; \n"
+              "\t\tend if ; \n"
+              "\tend function to_std_logic ; \n"
+            ) ;
+
+    fprintf ( outfile,
+              "\n"
+              "\tfunction xor_reduce( arg : std_logic_vector ) return std_logic is \n"
+              "\t\tvariable result : std_logic ; \n"
+              "\tbegin \n"
+              "\t\tresult := '0' ; \n"
+              "\t\tfor i in arg'range loop \n"
+              "\t\t\tresult := result xor arg( i ) ; \n"
+              "\t\tend loop ; \n"
+              "\t\treturn result ; \n"
+              "\tend ; \n"
             ) ;
 
     fprintf ( outfile,
               "begin\n"
-            ) ;
-
-    fprintf ( outfile,
               "\tPB2I.ck <= clk ; \n"
               "\tPB2I.rs <= rst ; \n"
               "\tPB2I.da <= sx ; \n"
               "\tPB2I.ad <= sykk ; \n"
+              "\tPB2I.rd <= nio_rd ; \n"
+              "\tPB2I.wr <= nio_wr ; \n"
+            ) ;
+
+    fprintf ( outfile,
+              "\n"
+              "\t-- next instruction\n"
+              "\t\tpc1 <= pc + 1 ; \n"
             ) ;
 
     fprintf ( outfile,
@@ -932,86 +971,107 @@ static bool writeVHD6 ( const char * strPSMfile ) {
     fprintf ( outfile,
               "\n"
               "\t-- scratchpad\n"
-              "\tscratch_ram_di <= sx ; \n"
-              "\tscratch_ram_addr <= unsigned( sykk ) ; \n"
+              "\tsb : block is \n"
+              "\t\ttype SCRATCH_t is array ( 0 to 255 ) of std_logic_vector ( 7 downto 0 ) ; \n"
+              "\t\tsignal scratch_ram : SCRATCH_t := ( "
+            ) ;
+    fprintf ( outfile, "\n\t\t\t" ) ;
+    for ( i = 0, j = 0 ; i < 256 ; i += 1 ) {
+        if ( Data[ i ] != 0 ) {
+            fprintf ( outfile, "%-3d => X\"%02X\", ", i, Data[ i ] ) ;
+            j += 1 ;
+        }
+        if ( j > 7 ) {
+            fprintf ( outfile, "\n\t\t\t" ) ;
+            j = 0 ;
+        }
+    }
+    fprintf ( outfile,
+              "\n\t\t\tothers => X\"00\" \n"
+              "\t\t ) ; \n"
             ) ;
 
     fprintf ( outfile,
-              "\n"
-              "\tsb : block is \n"
-              "\t\ttype SCRATCH_t is array ( 0 to 255 ) of std_logic_vector ( 7 downto 0 ) ; \n"
-              "\t\tsignal scratch_ram : SCRATCH_t := ( \n"
-            ) ;
-    for ( i = 0 ; i < 16 ; i += 1 ) {
-        fprintf ( outfile, "\t\t\t" ) ;
-        for ( j = 0 ; j < 16 ; j += 1 ) {
-            fprintf ( outfile, "X\"%02X\"", Data[ 16 * i + j ] ) ;
-            if ( j < 15 )
-                fprintf ( outfile, ", " ) ;
-        }
-        if ( i < 15 )
-            fprintf ( outfile, ",\n" ) ;
-        else
-            fprintf ( outfile, "\n" ) ;
-    }
-    fprintf ( outfile,
-              "\t\t ) ; \n"
               "\tbegin \n"
               "\t\tprocess ( clk ) is \n"
               "\t\tbegin \n"
               "\t\t\tif rising_edge ( clk ) then \n"
               "\t\t\t\tif nscr_we = '1' then \n"
-              "\t\t\t\t\tscratch_ram ( to_integer ( scratch_ram_addr ) ) <= scratch_ram_di ; \n"
+              "\t\t\t\t\tscratch_ram ( to_integer ( unsigned( sykk ) ) ) <= sx ; \n"
               "\t\t\t\tend if ; \n"
               "\t\t\tend if ; \n"
               "\t\tend process ; \n"
               "\n"
-              "\t\tscratch_ram_do <= scratch_ram ( to_integer ( scratch_ram_addr ) ) ; \n"
+              "\t\tscratch_ram_do <= scratch_ram ( to_integer ( unsigned( sykk ) ) ) ; \n"
               "\tend block ; \n"
+              "\n"
             ) ;
 
     fprintf ( outfile,
+              "\t-- alu\n"
+              "\talu_b : block is\n"
+              "\t\tsignal mask : std_logic_vector( 7 downto 0 ) ;\n"
+              "\t\tsignal sum : std_logic_vector( 7 downto 0 ) ;\n"
+              "\t\tsignal chain : std_logic_vector( 8 downto 0 ) ;\n"
+              "\tbegin\n"
+              "\t\tchain( 0 ) <= ci ;\n"
               "\n"
+              "\t\t-- Manchester carry chain\n"
+              "\t\talu_g : for i in 0 to 7 generate\n"
+              "\t\tbegin\n"
+              "\t\t\tsum( i ) <=\n"
+              "\t\t\t\tsx( i ) xor sykk( i )        when op = \"1-1\" else\n"
+              "\t\t\t\tnot( sx( i ) xor sykk( i ) ) when op = \"1-0\" else\n"
+              "\n"
+              "\t\t\t\tsx( i ) xor sykk( i )        when op = \"011\" else\n"
+              "\t\t\t\tsx( i )  or sykk( i )        when op = \"010\" else\n"
+              "\t\t\t\tsx( i ) and sykk( i )        when op = \"001\" else\n"
+              "\t\t\t\t            sykk( i )        when op = \"000\" ;\n"
+              "\n"
+              "\t\t\tmask( i ) <= sx( i ) and op( 2 ) ;\n"
+              "\n"
+              "\t\t\tchain( i + 1 ) <=\n"
+              "\t\t\t\tchain( i ) when sum( i ) = '1' else\n"
+              "\t\t\t\tmask( i ) ;\n"
+              "\n"
+              "\t\t\talu( i ) <= sum( i ) xor chain( i ) ;\n"
+              "\t\tend generate ;\n"
+              "\n"
+              "\t\tco <= chain( 8 ) ;\n"
+              "\tend block ;\n"
+              "\n"
+            ) ;
+
+    fprintf ( outfile,
               "\t-- new state\n"
               "\tprocess ( rst, clk ) is\n"
               "\tbegin\n"
+
               "\t\tif rst = '1' then\n"
-              "\t\t\tpc <= ( others => '0' ) ; \n"
-              "\t\t\tsp_wr <= ( others => '0' ) ; \n"
-              "\t\t\tsp_rd <= ( others => '1' ) ; \n"
               "\t\t\tc <= '0' ; \n"
               "\t\t\tz <= '0' ; \n"
               "\t\t\ti <= '0' ; \n"
+              "\t\t\tnrst <= '1' ; \n"
+
+              "\n"
+              "\t\t\tpc <= ( others => '0' ) ; \n"
+              "\t\t\tsp_wr <= ( others => '0' ) ; \n"
+              "\t\t\tsp_rd <= ( others => '1' ) ; \n"
+
               "\t\telsif rising_edge( clk ) then\n"
 
-              "\t\t\tc <= nc ; \n"
-              "\t\t\tif nz then z <= '1' ; else z <= '0' ; end if ; \n"
-              "\t\t\ti <= ni ; \n"
+              "\t\t\tnrst <= '0' ; \n"
+              "\t\t\tif nrst = '0' then \n"
+              "\t\t\t\tc <= nc ; \n"
+              "\t\t\t\tz <= nz ; \n"
+              "\t\t\t\ti <= ni ; \n"
 
               "\n"
-              "\t\t\tpc <= npc ; \n"
-              "\t\t\tsp_wr <= nsp_wr ; \n"
-              "\t\t\tsp_rd <= nsp_rd ; \n"
+              "\t\t\t\tpc <= npc ; \n"
+              "\t\t\t\tsp_wr <= nsp_wr ; \n"
+              "\t\t\t\tsp_rd <= nsp_rd ; \n"
 
-              "\t\tend if ; \n"
-              "\tend process ; \n"
-              "\n"
-            ) ;
-
-    fprintf ( outfile,
-              "\t-- new IO state\n"
-              "\tprocess ( rst, clk ) is\n"
-              "\tbegin\n"
-              "\t\tif rst = '1' then\n"
-
-              "\t\t\tPB2I.wr <= '0' ; \n"
-              "\t\t\tPB2I.rd <= '0' ; \n"
-
-              "\t\telsif falling_edge( clk ) then\n"
-
-              "\t\t\tPB2I.rd <= nrd ; \n"
-              "\t\t\tPB2I.wr <= nwr ; \n"
-
+              "\t\t\tend if ; \n"
               "\t\tend if ; \n"
               "\tend process ; \n"
               "\n"
@@ -1019,23 +1079,24 @@ static bool writeVHD6 ( const char * strPSMfile ) {
 
     fprintf ( outfile,
               "\t-- next state\n"
-              "\tprocess ( pc, sp_wr, sp_rd, tos, scratch_ram_do, reg_di, PB2O, sx, sy, instruction, sykk, cc, c, z, i ) is\n"
-              "\t\tvariable adder : unsigned ( 9 downto 0 ) ; \n"
+              "\tprocess ( pc, sp_wr, sp_rd, tos, scratch_ram_do, reg_di, PB2O, sx, sy, instruction, sykk, alu, co, ci, c, z, i ) is\n"
               "\tbegin\n"
-              "\t\t\tnpc <= pc + 1 ; \n"
+              "\t\t\tnpc <= pc1 ; \n"
               "\t\t\tnsp_wr <= sp_wr ; \n"
               "\t\t\tnsp_rd <= sp_rd ; \n"
 
               "\t\t\treg_di <= sykk ; \n"
+              "\t\t\top <= ( others => '0' ) ; \n"
+              "\t\t\tci <= '0' ; \n"
 
               "\n"
               "\t\t\tnc <= c ; \n"
-              "\t\t\tnz <= z = '1' ; \n"
+              "\t\t\tnz <= z ; \n"
               "\t\t\tni <= i ; \n"
 
               "\n"
-              "\t\t\tnrd <= '0' ; \n"
-              "\t\t\tnwr <= '0' ; \n"
+              "\t\t\tnio_rd <= '0' ; \n"
+              "\t\t\tnio_wr <= '0' ; \n"
               "\t\t\tnscr_we <= '0' ; \n"
               "\t\t\tnreg_we <= '0' ; \n"
               "\t\t\tnstack_we <= '0' ; \n"
@@ -1044,42 +1105,41 @@ static bool writeVHD6 ( const char * strPSMfile ) {
     fprintf ( outfile,
               "\n"
               "\t\t\t-- program\n"
-              "\t\t\tcase to_integer( pc ) is\n"
+              "\t\t\tcase pc is\n"
             ) ;
 
 //    quicksort ( 0, 16 - 1 ) ;
 
     for ( pc = 0 ; pc < MAXMEM ; pc += 1 ) {
         c = Code[ pc ].code & 0x3FFFF ;
-//        for ( prev = pc ; c == ( Code[ pc ].code & 0x3FFFF ) ; pc += 1 )
-//            ;
+
         if ( c != 0 ) {
-//            if ( pc - 1 > prev )
-//                fprintf ( outfile, "\t\t\twhen %d to %d => \n", prev, pc - 1 ) ;
-//            else
-//                fprintf ( outfile, "\t\t\twhen %d => \n", prev ) ;
-            fprintf ( outfile, "\t\t\twhen %d => \n", pc ) ;
+            fprintf ( outfile, "\t\t\twhen X\"%03X\" => \n", pc ) ;
 
             fprintf ( outfile, "\t\t\t\tinstruction <= X\"%05X\" ; \n", c ) ;
             if ( ( c & 0x1000 ) != 0 )
                 fprintf ( outfile, "\t\t\t\tsykk <= std_logic_vector( kk ) ; \n" ) ;
             else
                 fprintf ( outfile, "\t\t\t\tsykk <= sy ; \n" ) ;
-        }
+        } else
+            continue ;
+
         switch ( c ) {
         case 0x00000 :
             break ;
         case 0x00001 ... 0x00FFF :
             fprintf ( outfile, "\t\t\t\t-- MOVE\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\treg_di <= sykk ; \n"
+                      "\t\t\t\top <= B\"000\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
                       "\t\t\t\tnreg_we <= '1' ; \n"
                     ) ;
             break ;
         case 0x01000 ... 0x01FFF :
             fprintf ( outfile, "\t\t\t\t-- MOVE\ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\treg_di <= sykk ; \n"
+                      "\t\t\t\top <= B\"000\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
                       "\t\t\t\tnreg_we <= '1' ; \n"
                     ) ;
             break ;
@@ -1092,16 +1152,20 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x02000 ... 0x02FFF :
             fprintf ( outfile, "\t\t\t\t-- AND \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\treg_di <= sx and sykk ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\top <= B\"001\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
+                      "\t\t\t\tnc <= '0' ; \n"
                       "\t\t\t\tnreg_we <= '1' ; \n"
                     ) ;
             break ;
         case 0x03000 ... 0x03FFF :
             fprintf ( outfile, "\t\t\t\t-- AND \ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\treg_di <= sx and sykk ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\top <= B\"001\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
+                      "\t\t\t\tnc <= '0' ; \n"
                       "\t\t\t\tnreg_we <= '1' ; \n"
                     ) ;
             break ;
@@ -1109,16 +1173,20 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x04000 ... 0x04FFF :
             fprintf ( outfile, "\t\t\t\t-- OR  \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\treg_di <= sx or sykk ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\top <= B\"010\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
+                      "\t\t\t\tnc <= '0' ; \n"
                       "\t\t\t\tnreg_we <= '1' ; \n"
                     ) ;
             break ;
         case 0x05000 ... 0x05FFF :
             fprintf ( outfile, "\t\t\t\t-- OR  \ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\treg_di <= sx or sykk ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\top <= B\"010\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
+                      "\t\t\t\tnc <= '0' ; \n"
                       "\t\t\t\tnreg_we <= '1' ; \n"
                     ) ;
             break ;
@@ -1126,16 +1194,20 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x06000 ... 0x06FFF :
             fprintf ( outfile, "\t\t\t\t-- XOR \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\treg_di <= sx xor sykk ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\top <= B\"011\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
+                      "\t\t\t\tnc <= '0' ; \n"
                       "\t\t\t\tnreg_we <= '1' ; \n"
                     ) ;
             break ;
         case 0x07000 ... 0x07FFF :
             fprintf ( outfile, "\t\t\t\t-- XOR \ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\treg_di <= sx xor sykk ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\top <= B\"011\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
+                      "\t\t\t\tnc <= '0' ; \n"
                       "\t\t\t\tnreg_we <= '1' ; \n"
                     ) ;
             break ;
@@ -1143,57 +1215,59 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x0C000 ... 0x0CFFF :
             fprintf ( outfile, "\t\t\t\t-- TEST\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\treg_di <= sx and sykk ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
-                      "\t\t\t\tnc <= reg_di( 7 ) xor reg_di( 6 ) xor reg_di( 5 ) xor reg_di( 4 ) xor reg_di( 3 ) xor reg_di( 2 ) xor reg_di( 1 ) xor reg_di( 0 ) ; \n"
+                      "\t\t\t\top <= B\"001\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
+                      "\t\t\t\tnc <= xor_reduce( reg_di ) ; \n"
                     ) ;
             break ;
         case 0x0D000 ... 0x0DFFF :
             fprintf ( outfile, "\t\t\t\t-- TEST\ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\treg_di <= sx and sykk ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
-                      "\t\t\t\tnc <= reg_di( 7 ) xor reg_di( 6 ) xor reg_di( 5 ) xor reg_di( 4 ) xor reg_di( 3 ) xor reg_di( 2 ) xor reg_di( 1 ) xor reg_di( 0 ) ; \n"
+                      "\t\t\t\top <= B\"001\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
+                      "\t\t\t\tnc <= xor_reduce( reg_di ) ; \n"
                     ) ;
             break ;
         case 0x0E000 ... 0x0EFFF :
             fprintf ( outfile, "\t\t\t\t-- TSTC\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\treg_di <= sx and sykk ; \n"
+                      "\t\t\t\top <= B\"001\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
                       "\t\t\t\tnz <= ( reg_di = X\"00\" ) and z ; \n"
-                      "\t\t\t\tnc <= reg_di( 7 ) xor reg_di( 6 ) xor reg_di( 5 ) xor reg_di( 4 ) xor reg_di( 3 ) xor reg_di( 2 ) xor reg_di( 1 ) xor reg_di( 0 ) xor c ; \n"
+                      "\t\t\t\tnc <= xor_reduce( reg_di ) xor c ; \n"
                     ) ;
             break ;
         case 0x0F000 ... 0x0FFFF :
             fprintf ( outfile, "\t\t\t\t-- TSTC\ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\treg_di <= sx and sykk ; \n"
+                      "\t\t\t\top <= B\"001\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
                       "\t\t\t\tnz <= ( reg_di = X\"00\" ) and z ; \n"
-                      "\t\t\t\tnc <= reg_di( 7 ) xor reg_di( 6 ) xor reg_di( 5 ) xor reg_di( 4 ) xor reg_di( 3 ) xor reg_di( 2 ) xor reg_di( 1 ) xor reg_di( 0 ) xor c ; \n"
+                      "\t\t\t\tnc <= xor_reduce( reg_di ) xor c ; \n"
                     ) ;
             break ;
 
         case 0x10000 ... 0x10FFF :
             fprintf ( outfile, "\t\t\t\t-- ADD \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tcc <= '0' ; \n"
-                      "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) + ( '0' & unsigned(sykk) & cc ) ; \n"
-
-                      "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
-                      "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\tci <= '0' ; \n"
+                      "\t\t\t\top <= B\"101\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnc <= co ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                       "\t\t\t\tnreg_we <= '1' ;"
                     ) ;
             break ;
         case 0x11000 ... 0x11FFF :
             fprintf ( outfile, "\t\t\t\t-- ADD \ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tcc <= '0' ; \n"
-                      "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) + ( '0' & unsigned(sykk) & cc ) ; \n"
-
-                      "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
-                      "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\tci <= '0' ; \n"
+                      "\t\t\t\top <= B\"101\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnc <= co ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                       "\t\t\t\tnreg_we <= '1' ; \n"
                     ) ;
             break ;
@@ -1201,24 +1275,22 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x12000 ... 0x12FFF :
             fprintf ( outfile, "\t\t\t\t-- ADDC\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tcc <= c ; \n"
-                      "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) + ( '0' & unsigned(sykk) & cc ) ; \n"
-
-                      "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
-                      "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= ( reg_di = X\"00\" ) and z ; \n"
+                      "\t\t\t\tci <= c ; \n"
+                      "\t\t\t\top <= B\"101\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnc <= co ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) and z ; \n"
                       "\t\t\t\tnreg_we <= '1' ;"
                     ) ;
             break ;
         case 0x13000 ... 0x13FFF :
             fprintf ( outfile, "\t\t\t\t-- ADDC\ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tcc <= c ; \n"
-                      "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) + ( '0' & unsigned(sykk) & cc ) ; \n"
-
-                      "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
-                      "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= ( reg_di = X\"00\" ) and z  ; \n"
+                      "\t\t\t\tci <= c ; \n"
+                      "\t\t\t\top <= B\"101\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnc <= co ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) and z  ; \n"
                       "\t\t\t\tnreg_we <= '1' ; \n"
                     ) ;
             break ;
@@ -1226,24 +1298,22 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x18000 ... 0x18FFF :
             fprintf ( outfile, "\t\t\t\t-- SUB \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tcc <= '0' ; \n"
-                      "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
-
-                      "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
-                      "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\tci <= '0' ; \n"
+                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnc <= co ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                       "\t\t\t\tnreg_we <= '1' ;"
                     ) ;
             break ;
         case 0x19000 ... 0x19FFF :
             fprintf ( outfile, "\t\t\t\t-- SUB \ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tcc <= '0' ; \n"
-                      "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
-
-                      "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
-                      "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\tci <= '0' ; \n"
+                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnc <= co ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                       "\t\t\t\tnreg_we <= '1' ; \n"
                     ) ;
             break ;
@@ -1251,24 +1321,22 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x1A000 ... 0x1AFFF :
             fprintf ( outfile, "\t\t\t\t-- SUBC\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tcc <= c ; \n"
-                      "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
-
-                      "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
-                      "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= ( reg_di = X\"00\" ) and z ; \n"
+                      "\t\t\t\tci <= c ; \n"
+                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnc <= co ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) and z ; \n"
                       "\t\t\t\tnreg_we <= '1' ;"
                     ) ;
             break ;
         case 0x1B000 ... 0x1BFFF :
             fprintf ( outfile, "\t\t\t\t-- SUBC\ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tcc <= c ; \n"
-                      "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
-
-                      "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
-                      "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= ( reg_di = X\"00\" ) and z ; \n"
+                      "\t\t\t\tci <= c ; \n"
+                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnc <= co ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) and z ; \n"
                       "\t\t\t\tnreg_we <= '1' ; \n"
                     ) ;
             break ;
@@ -1276,89 +1344,84 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x1C000 ... 0x1CFFF :
             fprintf ( outfile, "\t\t\t\t-- COMP\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tcc <= '0' ; \n"
-                      "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
-
-                      "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
-                      "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\tci <= '0' ; \n"
+                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnc <= co ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                     ) ;
             break ;
         case 0x1D000 ... 0x1DFFF :
             fprintf ( outfile, "\t\t\t\t-- COMP\ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tcc <= '0' ; \n"
-                      "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
-
-                      "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
-                      "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                      "\t\t\t\tci <= '0' ; \n"
+                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnc <= co ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                     ) ;
             break ;
         case 0x1E000 ... 0x1EFFF :
             fprintf ( outfile, "\t\t\t\t-- CMPC\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tcc <= c ; \n"
-                      "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
-
-                      "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
-                      "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= ( reg_di = X\"00\" ) and z ; \n"
+                      "\t\t\t\tci <= c ; \n"
+                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnc <= co ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) and z ; \n"
                     ) ;
             break ;
         case 0x1F000 ... 0x1FFFF :
             fprintf ( outfile, "\t\t\t\t-- CMPC\ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tcc <= c ; \n"
-                      "\t\t\t\tadder := ( '0' & unsigned(sx) & cc ) - ( '0' & unsigned(sykk) & cc ) ; \n"
-
-                      "\t\t\t\treg_di <= std_logic_vector( adder( 8 downto 1 ) ) ; \n"
-                      "\t\t\t\tnc <= adder( 9 ) ; \n"
-                      "\t\t\t\tnz <= ( reg_di = X\"00\" ) and z ; \n"
+                      "\t\t\t\tci <= c ; \n"
+                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\treg_di <= alu ; \n"
+                      "\t\t\t\tnc <= co ; \n"
+                      "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) and z ; \n"
                     ) ;
             break ;
 
         case 0x14000 ... 0x14FFF :
-            if ( c & 0xF0 ) {
-                fprintf ( outfile, "\t\t\t\t-- CORE\ts%X   \t; %03X : %05X\n",
-                          DestReg ( c ), pc, c ) ;
+            if ( ( c & 0xF0 ) == 0x80 ) {
+                fprintf ( outfile, "\t\t\t\t-- CORE\ts%X   \t; %03X : %05X\n", DestReg ( c ), pc, c ) ;
                 fprintf ( outfile,
-                          "\t\t\t\treg_di <= X\"00\" ; \n"
-                          "\t\t\t\tnc <= sx( 7 ) ; \n"
-                          "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                          "\t\t\t\treg_di <= X\"42\" ; \n"
+                          "\t\t\t\tnc <= '1' ; \n"
+                          "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                           "\t\t\t\tnreg_we <= '1' ; \n"
                         ) ;
             } else
                 switch ( c & 0xF ) {
                 case 0x2 :
-                    fprintf ( outfile, "\t\t\t\t-- RL  \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\t\t\t-- RL  \ts%X      \t; %03X : %05X\n", DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
                               "\t\t\t\treg_di <= sx( 6 downto 0 ) & sx( 7 ) ; \n"
                               "\t\t\t\tnc <= sx( 7 ) ; \n"
-                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                               "\t\t\t\tnreg_we <= '1' ; \n"
                             ) ;
                     break ;
                 case 0x6 :
-                    fprintf ( outfile, "\t\t\t\t-- SL0 \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\t\t\t-- SL0 \ts%X      \t; %03X : %05X\n", DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
                               "\t\t\t\treg_di <= sx( 6 downto 0 ) & '0' ; \n"
                               "\t\t\t\tnc <= sx( 7 ) ; \n"
-                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                               "\t\t\t\tnreg_we <= '1' ; \n"
                             ) ;
                     break ;
                 case 0x7 :
-                    fprintf ( outfile, "\t\t\t\t-- SL1 \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\t\t\t-- SL1 \ts%X      \t; %03X : %05X\n", DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
                               "\t\t\t\treg_di <= sx( 6 downto 0 ) & '1' ; \n"
                               "\t\t\t\tnc <= sx( 7 ) ; \n"
-                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                               "\t\t\t\tnreg_we <= '1' ; \n"
                             ) ;
                     break ;
                 case 0x0 :
-                    fprintf ( outfile, "\t\t\t\t-- SLA \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\t\t\t-- SLA \ts%X      \t; %03X : %05X\n", DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
                               "\t\t\t\treg_di <= sx( 6 downto 0 ) & c ; \n"
                               "\t\t\t\tnc <= sx( 7 ) ; \n"
@@ -1366,57 +1429,57 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                             ) ;
                     break ;
                 case 0x4 :
-                    fprintf ( outfile, "\t\t\t\t-- SLX \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\t\t\t-- SLX \ts%X      \t; %03X : %05X\n", DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
                               "\t\t\t\treg_di <= sx( 6 downto 0 ) & sx( 0 ) ; \n"
                               "\t\t\t\tnc <= sx( 7 ) ; \n"
-                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                               "\t\t\t\tnreg_we <= '1' ; \n"
                             ) ;
                     break ;
 
                 case 0xC :
-                    fprintf ( outfile, "\t\t\t\t-- RR  \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\t\t\t-- RR  \ts%X      \t; %03X : %05X\n", DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
                               "\t\t\t\treg_di <= sx( 0 ) & sx( 7 downto 1 ) ; \n"
                               "\t\t\t\tnc <= sx( 0 ) ; \n"
-                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                               "\t\t\t\tnreg_we <= '1' ; \n"
                             ) ;
                     break ;
                 case 0xE :
-                    fprintf ( outfile, "\t\t\t\t-- SR0 \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\t\t\t-- SR0 \ts%X      \t; %03X : %05X\n", DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
                               "\t\t\t\treg_di <= '0' & sx( 7 downto 1 ) ; \n"
                               "\t\t\t\tnc <= sx( 0 ) ; \n"
-                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                               "\t\t\t\tnreg_we <= '1' ; \n"
                             ) ;
                     break ;
                 case 0xF :
-                    fprintf ( outfile, "\t\t\t\t-- SR1 \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\t\t\t-- SR1 \ts%X      \t; %03X : %05X\n", DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
                               "\t\t\t\treg_di <= '1' & sx( 7 downto 1 ) ; \n"
                               "\t\t\t\tnc <= sx( 0 ) ; \n"
-                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                               "\t\t\t\tnreg_we <= '1' ; \n"
                             ) ;
                     break ;
                 case 0x8 :
-                    fprintf ( outfile, "\t\t\t\t-- SRA \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\t\t\t-- SRA \ts%X      \t; %03X : %05X\n", DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
                               "\t\t\t\treg_di <= c & sx( 7 downto 1 ) ; \n"
                               "\t\t\t\tnc <= sx( 0 ) ; \n"
-                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                               "\t\t\t\tnreg_we <= '1' ; \n"
                             ) ;
                     break ;
                 case 0xA :
-                    fprintf ( outfile, "\t\t\t\t-- SRX \ts%X      \t; %03X : %05X\n",                             DestReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\t\t\t-- SRX \ts%X      \t; %03X : %05X\n", DestReg ( c ), pc, c ) ;
                     fprintf ( outfile,
                               "\t\t\t\treg_di <= sx( 7 ) & sx( 7 downto 1 ) ; \n"
                               "\t\t\t\tnc <= sx( 0 ) ; \n"
-                              "\t\t\t\tnz <= reg_di = X\"00\" ; \n"
+                              "\t\t\t\tnz <= to_std_logic( reg_di = X\"00\" ) ; \n"
                               "\t\t\t\tnreg_we <= '1' ; \n"
                             ) ;
                     break ;
@@ -1428,12 +1491,12 @@ static bool writeVHD6 ( const char * strPSMfile ) {
             break ;
 
         case 0x22000 ... 0x22FFF :
-            fprintf ( outfile, "\t\t\t\t-- JUMP\t0x%03X      \t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- JUMP\t0x%03X    \t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tnpc <= new_addr ; \n" ) ;
             break ;
         case 0x32000 ... 0x32FFF :
-            fprintf ( outfile, "\t\t\t\t-- JUMP\tZ, 0x%03X\t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- JUMP\tZ, 0x%03X \t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tif z = '1' then \n"
                       "\t\t\t\t\tnpc <= new_addr ; \n"
@@ -1449,7 +1512,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                     ) ;
             break ;
         case 0x3A000 ... 0x3AFFF :
-            fprintf ( outfile, "\t\t\t\t-- JUMP\tC, 0x%03X\t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- JUMP\tC, 0x%03X \t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tif c = '1' then \n"
                       "\t\t\t\t\tnpc <= new_addr ; \n"
@@ -1465,14 +1528,15 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                     ) ;
             break ;
         case 0x26000 ... 0x26FFF :
-            fprintf ( outfile, "\t\t\t\t-- JUMP\ts%X, s%X  \t; %03X : %05X\n\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- JUMP\ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tnpc <= sx( 3 downto 0 ) & sy ; \n"
+                      "\t\t\t\tnpc( 11 downto 8 ) <= unsigned( sx( 3 downto 0 ) ) ; \n"
+                      "\t\t\t\tnpc( 7 downto 0 ) <= unsigned( sy ) ; \n"
                     ) ;
             break ;
 
         case 0x20000 ... 0x20FFF :
-            fprintf ( outfile, "\t\t\t\t-- CALL\t0x%03X      \t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- CALL\t0x%03X    \t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tnpc <= new_addr ; \n"
 
@@ -1482,9 +1546,9 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                     ) ;
             break ;
         case 0x30000 ... 0x30FFF :
-            fprintf ( outfile, "\t\t\t\t-- CALL\tZ, 0x%03X\t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- CALL\tZ, 0x%03X \t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tif z = '1' then\n"
+                      "\t\t\t\tif z = '1' then \n"
                       "\t\t\t\t\tnpc <= new_addr ; \n"
 
                       "\t\t\t\t\tnsp_wr <= sp_wr + 1 ; \n"
@@ -1496,7 +1560,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x34000 ... 0x34FFF :
             fprintf ( outfile, "\t\t\t\t-- CALL\tNZ, 0x%03X\t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tif z = '0' then\n"
+                      "\t\t\t\tif z = '0' then \n"
                       "\t\t\t\t\tnpc <= new_addr ; \n"
 
                       "\t\t\t\t\tnsp_wr <= sp_wr + 1 ; \n"
@@ -1506,9 +1570,9 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                     ) ;
             break ;
         case 0x38000 ... 0x38FFF :
-            fprintf ( outfile, "\t\t\t\t-- CALL\tC, 0x%03X\t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- CALL\tC, 0x%03X \t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tif c = '1' then\n"
+                      "\t\t\t\tif c = '1' then \n"
                       "\t\t\t\t\tnpc <= new_addr ; \n"
 
                       "\t\t\t\t\tnsp_wr <= sp_wr + 1 ; \n"
@@ -1520,7 +1584,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x3C000 ... 0x3CFFF :
             fprintf ( outfile, "\t\t\t\t-- CALL\tNC, 0x%03X\t; %03X : %05X\n", Address12 ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tif c = '0' then\n"
+                      "\t\t\t\tif c = '0' then \n"
                       "\t\t\t\t\tnpc <= new_addr ; \n"
 
                       "\t\t\t\t\tnsp_wr <= sp_wr + 1 ; \n"
@@ -1532,7 +1596,8 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x24000 ... 0x24FFF :
             fprintf ( outfile, "\t\t\t\t-- CALL\ts%X, s%X  \t; %03X : %05X  \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tnpc <= sx( 3 downto 0 ) & sy ; \n"
+                      "\t\t\t\tnpc( 11 downto 8 ) <= unsigned( sx( 3 downto 0 ) ) ; \n"
+                      "\t\t\t\tnpc( 7 downto 0 ) <= unsigned( sy ) ; \n"
 
                       "\t\t\t\tnsp_wr <= sp_wr + 1 ; \n"
                       "\t\t\t\tnsp_rd <= sp_wr ; \n"
@@ -1544,45 +1609,50 @@ static bool writeVHD6 ( const char * strPSMfile ) {
             fprintf ( outfile, "\t\t\t\t-- RET \t         \t; %03X : %05X\n", pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tnpc <= unsigned( ret_addr ) ; \n"
+
                       "\t\t\t\tnsp_wr <= sp_rd ; \n"
                       "\t\t\t\tnsp_rd <= sp_rd - 1 ; \n"
                     ) ;
             break ;
         case 0x31000 ... 0x31FFF :
-            fprintf ( outfile, "\t\t\t\t-- RET \t %s        \t; %03X : %05X\n", "Z", pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- RET \t Z        \t; %03X : %05X\n", pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tif z = '1' then\n"
+                      "\t\t\t\tif z = '1' then \n"
                       "\t\t\t\t\tnpc <= unsigned( ret_addr ) ; \n"
+
                       "\t\t\t\t\tnsp_wr <= sp_rd ; \n"
                       "\t\t\t\t\tnsp_rd <= sp_rd - 1 ; \n"
                       "\t\t\t\tend if ; \n"
                     ) ;
             break ;
         case 0x35000 ... 0x35FFF :
-            fprintf ( outfile, "\t\t\t\t-- RET \t %s       \t; %03X : %05X\n", "NZ", pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- RET \t NZ       \t; %03X : %05X\n", pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tif z = '0' then\n"
+                      "\t\t\t\tif z = '0' then \n"
                       "\t\t\t\t\tnpc <= unsigned( ret_addr ) ; \n"
+
                       "\t\t\t\t\tnsp_wr <= sp_rd ; \n"
                       "\t\t\t\t\tnsp_rd <= sp_rd - 1 ; \n"
                       "\t\t\t\tend if ; \n"
                     ) ;
             break ;
         case 0x39000 ... 0x39FFF :
-            fprintf ( outfile, "\t\t\t\t-- RET \t %s        \t; %03X : %05X\n", "C", pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- RET \t C        \t; %03X : %05X\n", pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tif c = '1' then\n"
+                      "\t\t\t\tif c = '1' then \n"
                       "\t\t\t\t\tnpc <= unsigned( ret_addr ) ; \n"
+
                       "\t\t\t\t\tnsp_wr <= sp_rd ; \n"
                       "\t\t\t\t\tnsp_rd <= sp_rd - 1 ; \n"
                       "\t\t\t\tend if ; \n"
                     ) ;
             break ;
         case 0x3D000 ... 0x3DFFF :
-            fprintf ( outfile, "\t\t\t\t-- RET \t %s       \t; %03X : %05X\n", "NC", pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- RET \t NC       \t; %03X : %05X\n", pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tif c = '0' then\n"
+                      "\t\t\t\tif c = '0' then \n"
                       "\t\t\t\t\tnpc <= unsigned( ret_addr ) ; \n"
+
                       "\t\t\t\t\tnsp_wr <= sp_rd ; \n"
                       "\t\t\t\t\tnsp_rd <= sp_rd - 1 ; \n"
                       "\t\t\t\tend if ; \n"
@@ -1592,6 +1662,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
             fprintf ( outfile, "\t\t\t\t-- RET \ts%X, 0x%02X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tnpc <= unsigned( ret_addr ) ; \n"
+
                       "\t\t\t\tnsp_wr <= sp_rd ; \n"
                       "\t\t\t\tnsp_rd <= sp_rd - 1 ; \n"
                       "\t\t\t\treg_di <= instruction( 7 downto 0 ) ; \n"
@@ -1630,13 +1701,13 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x2C000 ... 0x2CFFF :
             fprintf ( outfile, "\t\t\t\t-- OUT \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tnwr <= '1' ; \n"
+                      "\t\t\t\tnio_wr <= '1' ; \n"
                     ) ;
             break ;
         case 0x2D000 ... 0x2DFFF :
             fprintf ( outfile, "\t\t\t\t-- OUT \ts%X, 0x%.2X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tnwr <= '1' ; \n"
+                      "\t\t\t\tnio_wr <= '1' ; \n"
                     ) ;
             break ;
             /*
@@ -1650,7 +1721,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x08000 ... 0x08FFF :
             fprintf ( outfile, "\t\t\t\t-- IN  \ts%X, s%X  \t; %03X : %05X\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tnrd <= '1' ; \n"
+                      "\t\t\t\tnio_rd <= '1' ; \n"
                       "\t\t\t\treg_di <= PB2O.da ; \n"
                       "\t\t\t\tnreg_we <= '1' ; \n"
                     ) ;
@@ -1658,7 +1729,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x09000 ... 0x09FFF :
             fprintf ( outfile, "\t\t\t\t-- IN  \ts%X, 0x%02X\t; %03X : %05X\n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\tnrd <= '1' ; \n"
+                      "\t\t\t\tnio_rd <= '1' ; \n"
                       "\t\t\t\treg_di <= PB2O.da ; \n"
                       "\t\t\t\tnreg_we <= '1' ; \n"
                     ) ;
@@ -1681,8 +1752,10 @@ static bool writeVHD6 ( const char * strPSMfile ) {
             fprintf ( outfile,
                       "\t\t\t\tni <= instruction( 0 ) ; \n"
                       "\t\t\t\tnpc <= unsigned( ret_addr ) ; \n"
+
                       "\t\t\t\tnc <= tos( 12 ) ; \n"
-                      "\t\t\t\tnz <= tos( 13 ) = '1' ; \n"
+                      "\t\t\t\tnz <= tos( 13 ) ; \n"
+
                       "\t\t\t\tnsp_wr <= sp_rd ; \n"
                       "\t\t\t\tnsp_rd <= sp_rd - 1 ; \n"
                     ) ;
@@ -1692,8 +1765,10 @@ static bool writeVHD6 ( const char * strPSMfile ) {
             fprintf ( outfile,
                       "\t\t\t\tni <= instruction( 0 ) ; \n"
                       "\t\t\t\tnpc <= unsigned( ret_addr ) ; \n"
+
                       "\t\t\t\tnc <= tos( 12 ) ; \n"
                       "\t\t\t\tnz <= tos( 13 ) ; \n"
+
                       "\t\t\t\tnsp_wr <= sp_rd ; \n"
                       "\t\t\t\tnsp_rd <= sp_rd - 1 ; \n"
                     ) ;
