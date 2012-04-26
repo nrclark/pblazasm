@@ -565,6 +565,37 @@ bool merge_code ( uint16_t * code, int len, int nr ) {
     return false ;
 }
 
+bool get_code ( uint16_t * code, uint32_t * p, int len ) {
+    int i, j, s ;
+    uint16_t data ;
+    int state ;
+
+    // find bulk frame
+
+    for ( i = 0 ; i < bit_file.count ; i += 1 ) {
+        if ( bit_file.packets6[ i ].header == 0x5060 ) {
+            state = 0 ;
+            for ( j = 0 ; j < bit_file.packets6[ i ].count ; j += 1 ) {
+                if ( state == 0 )
+                    s = j ;
+                data = bit_file.packets6[ i ].data[ j ] ;
+                if ( data == p[ state ] )
+                    state += 1 ;
+                else if ( state > 0 )
+                    state = 0 ;
+                if ( state >= len )
+                    break ;
+            }
+            if ( state > 0 ) {
+                for ( j = 0 ; j < 1024 * 18 / 16 ; j += 1, s += 1 )
+                    code[ j ] = bit_file.packets6[ i ].data[ s ] ;
+                return true ;
+            }
+        }
+    }
+    return false ;
+}
+
 void build_header ( void ) {
     // build bitfile header
     int i ;
