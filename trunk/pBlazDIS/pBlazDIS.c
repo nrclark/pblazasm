@@ -644,13 +644,13 @@ static bool writePSM6 ( const char * strPSMfile ) {
                     fprintf ( outfile, "\tRET \t         \t; %03X : %05X \n\n", pc, c ) ;
                     break ;
                 case 0x31000 ... 0x31FFF :
-                    fprintf ( outfile, "\tRET \t %s        \t; %03X : %05X \n", "Z", pc, c ) ;
+                    fprintf ( outfile, "\tRET \t %s       \t; %03X : %05X \n", "Z", pc, c ) ;
                     break ;
                 case 0x35000 ... 0x35FFF :
                     fprintf ( outfile, "\tRET \t %s       \t; %03X : %05X \n", "NZ", pc, c ) ;
                     break ;
                 case 0x39000 ... 0x39FFF :
-                    fprintf ( outfile, "\tRET \t %s        \t; %03X : %05X \n", "C", pc, c ) ;
+                    fprintf ( outfile, "\tRET \t %s       \t; %03X : %05X \n", "C", pc, c ) ;
                     break ;
                 case 0x3D000 ... 0x3DFFF :
                     fprintf ( outfile, "\tRET \t %s       \t; %03X : %05X \n", "NC", pc, c ) ;
