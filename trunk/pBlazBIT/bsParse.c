@@ -33,14 +33,56 @@ typedef enum _BitStreamType {
     bstSpartan3, bstSpartan6
 } BitStreamType_e ;
 
-const char * sRegisterNames[] = {
+const char * sRegisterNames_S3[] = {
+    "CRC",   // R/W 00000
+    "FAR",   // R/W 00001
+    "FDRI",  //   W 00010
+    "FDRO",  // R   00011
+    "CMD",   // R/W 00100
+    "CTL",   // R/W 00101
+    "MASK",  // R/W 00110
+    "STAT",  // R   00111
+    "LOUT",  //   W 01000
+    "COR",   // R/W 01001
+    "MFWR",  //   W 01010
+    "FLR",   // R/W 01011
+    "–",     // –   01100
+    "–",     // –   01101
+    "IDCODE" // R/W 01110
+} ;
+
+const char * sRegisterNames_S6[] = {
     "CRC", "FARMAJ", "FARMIN", "FDRI", "FDRO",
     "CMD", "CTL", "MASK", "STAT", "LOUT", "COR1",
     "COR2", "PWRDN_REG", "FLR", "IDCODE", "CWDT", "HC_OPT_REG",
     "CSBO", "GENERAL1", "GENERAL2", "GENERAL3", "GENERAL4",
     "GENERAL5", "MODE_REG", "PU_GWE", "PU_GTS", "MFWR", "CCLK_FREQ",
     "SEU_OPT", "EXP_SIGN", "RDBK_SIGN", "BOOSTS", "EYE_MASK",
-    "CBC_REG", "Count"
+    "CBC_REG"
+} ;
+
+const char * sRegisterNames_V6[] = {
+    "CRC",    //00000
+    "FAR",    //00001
+    "FDRI",   //00010
+    "FDRO",   //00011
+    "CMD",    //00100
+    "CTL0",   //00101
+    "MASK",   //00110
+    "STAT",   //00111
+    "LOUT",   //01000
+    "COR0",   //01001
+    "MFWR",   //01010
+    "CBC",    //01011
+    "IDCODE", //01100
+    "AXSS",   //01101
+    "COR1",   //01110
+    "CSOB",   //01111
+    "WBSTAR", //10000
+    "TIMER",  //10001
+    "BOOTSTS",//10110
+    "CTL1",   //11000
+    "DWC"     //11010
 } ;
 
 const char * sOpcodeNames[] = {
@@ -281,7 +323,7 @@ void show_file ( void ) {
             printf ( "! %4d: 0x%04X", i, bit_file.packets6[ i ].header ) ;
             printf ( " %6s " , sOpcodeNames[ ( bit_file.packets6[ i ].header >> 11 ) & 0x0003 ] ) ;
             if ( ( ( bit_file.packets6[ i ].header >> 11 ) & 0x0003 ) != 0 ) {
-                printf ( " %10s" , sRegisterNames[ ( bit_file.packets6[ i ].header >> 5 ) & 0x003F ] ) ;
+                printf ( " %10s" , sRegisterNames_S6[ ( bit_file.packets6[ i ].header >> 5 ) & 0x003F ] ) ;
                 printf ( "  count:  %d", bit_file.packets6[ i ].count ) ;
                 for ( j = 0 ; j < 3 && j < bit_file.packets6[ i ].count ; j += 1 )
                     printf ( " : 0x%04X", bit_file.packets6[ i ].data[ j ] ) ;
@@ -292,6 +334,7 @@ void show_file ( void ) {
             break;
         case bstSpartan3:
             printf ( "! %4d: 0x%08X", i, bit_file.packets3[ i ].header ) ;
+            printf ( " %10s" , sRegisterNames_S3[ ( bit_file.packets3[ i ].header >> 5 ) & 0x003F ] ) ;
             printf ( " count:  %d", bit_file.packets3[ i ].count ) ;
             if ( bit_file.packets3[ i ].count > 0 )
                 printf ( " : 0x%08X\n", bit_file.packets3[ i ].data[ 0 ] ) ;
@@ -571,7 +614,6 @@ bool get_code ( uint16_t * code, uint32_t * p, int len ) {
     int state ;
 
     // find bulk frame
-
     for ( i = 0 ; i < bit_file.count ; i += 1 ) {
         if ( bit_file.packets6[ i ].header == 0x5060 ) {
             state = 0 ;
@@ -581,7 +623,7 @@ bool get_code ( uint16_t * code, uint32_t * p, int len ) {
                 data = bit_file.packets6[ i ].data[ j ] ;
                 if ( data == p[ state ] )
                     state += 1 ;
-                else if ( state > 0 )
+                else
                     state = 0 ;
                 if ( state >= len )
                     break ;
