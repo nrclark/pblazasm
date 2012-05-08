@@ -146,7 +146,7 @@ int main ( int argc, char * argv[] ) {
     int optch, nr = -1 ;
 
     opterr = -1 ;
-    while ( ( optch = getopt ( argc, argv, "b:c:e:ho:s:v36" ) ) != -1 ) {
+    while ( ( optch = getopt ( argc, argv, "b:c:ho:s:v36" ) ) != -1 ) {
         switch ( optch ) {
         case 'b' :
             if ( optarg != NULL )
