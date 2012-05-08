@@ -37,6 +37,8 @@
 typedef struct _instr {
     uint32_t addr ;
     uint32_t code ;
+    bool breadcrum ;
+    bool label ;
 } INST_t ;
 
 INST_t Code[ MAXMEM ] ;
@@ -152,7 +154,7 @@ bool loadNDF ( const char * strNDFfile ) {
                 return false ;
             } else
                 addr = ( page << 7 ) + 127 ;
-            p = strstr( p, "\"" ) ;
+            p = strstr ( p, "\"" ) ;
             p += 1 ;
 // (property INITP_07 (string "0000000000000000000000000000000000000000000000000000000000000000") (owner "Xilinx"))
             for ( i = 0 ; i < 64 ; i += 1 ) {
@@ -177,7 +179,7 @@ bool loadNDF ( const char * strNDFfile ) {
                 return false ;
             } else
                 addr = ( page << 4 ) + 15 ;
-            p = strstr( p, "\"" ) ;
+            p = strstr ( p, "\"" ) ;
             p += 1 ;
 // (property INIT_3F (string "0000000000000000000000000000000000000000000000000000000000000000") (owner "Xilinx"))
             for ( i = 0 ; i < 16 ; i += 1 ) {
@@ -324,70 +326,70 @@ static bool writePSM3 ( const char * strPSMfile ) {
             if ( c != 0 ) {
                 switch ( c ) {
                 case 0x00000 ... 0x00FFF :
-                    fprintf ( outfile, "\tMOVE\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\tMOVE\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x01000 ... 0x01FFF :
                     fprintf ( outfile, "\tMOVE\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x0A000 ... 0x0AFFF :
-                    fprintf ( outfile, "\tAND \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\tAND \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x0B000 ... 0x0BFFF :
                     fprintf ( outfile, "\tAND \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x0C000 ... 0x0CFFF :
-                    fprintf ( outfile, "\tOR  \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\tOR  \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x0D000 ... 0x0DFFF :
                     fprintf ( outfile, "\tOR  \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x0E000 ... 0x0EFFF :
-                    fprintf ( outfile, "\tXOR \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\tXOR \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x0F000 ... 0x0FFFF :
                     fprintf ( outfile, "\tXOR \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x12000 ... 0x12FFF :
-                    fprintf ( outfile, "\tTEST\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\tTEST\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x13000 ... 0x13FFF :
                     fprintf ( outfile, "\tTEST\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x18000 ... 0x18FFF :
-                    fprintf ( outfile, "\tADD \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\tADD \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x19000 ... 0x19FFF :
                     fprintf ( outfile, "\tADD \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x1A000 ... 0x1AFFF :
-                    fprintf ( outfile, "\tADDC\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\tADDC\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x1B000 ... 0x1BFFF :
                     fprintf ( outfile, "\tADDC\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x1C000 ... 0x1CFFF :
-                    fprintf ( outfile, "\tSUB \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\tSUB \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x1D000 ... 0x1DFFF :
                     fprintf ( outfile, "\tSUB \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x1E000 ... 0x1EFFF :
-                    fprintf ( outfile, "\tSUBC\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\tSUBC\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x1F000 ... 0x1FFFF :
                     fprintf ( outfile, "\tSUBC\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x14000 ... 0x14FFF :
-                    fprintf ( outfile, "\tCOMP\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\tCOMP\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x15000 ... 0x15FFF :
                     fprintf ( outfile, "\tCOMP\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
@@ -454,28 +456,28 @@ static bool writePSM3 ( const char * strPSMfile ) {
                     break ;
 
                 case 0x2E000 ... 0x2EFFF :
-                    fprintf ( outfile, "\tST  \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\tST  \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x2F000 ... 0x2FFFF :
                     fprintf ( outfile, "\tST  \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x06000 ... 0x06FFF :
-                    fprintf ( outfile, "\tLD  \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\tLD  \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x07000 ... 0x07FFF :
                     fprintf ( outfile, "\tLD  \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x2C000 ... 0x2CFFF :
-                    fprintf ( outfile, "\tOUT \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\tOUT \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x2D000 ... 0x2DFFF :
                     fprintf ( outfile, "\tOUT \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x04000 ... 0x04FFF :
-                    fprintf ( outfile, "\tIN  \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\tIN  \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x05000 ... 0x05FFF :
                     fprintf ( outfile, "\tIN  \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
@@ -503,7 +505,7 @@ static bool writePSM3 ( const char * strPSMfile ) {
             break ;
         case stDATA :
             if ( c != 0 ) {
-                fprintf ( outfile, "\t.BYT\t0x%.2X, 0x%.2X\t; %03X : %05X \n", c & 0xFF, ( c >> 8 ) & 0xFF, pc, c ) ;
+                fprintf ( outfile, "\t.BYT\t0x%02X, 0x%02X\t; %03X : %05X \n", c & 0xFF, ( c >> 8 ) & 0xFF, pc, c ) ;
                 pc += 1 ;
             } else
                 state = stIDLE ;
@@ -534,257 +536,266 @@ static bool writePSM6 ( const char * strPSMfile ) {
             if ( c != 0 ) {
                 switch ( pc ) {
                 case 0x380 :
-                    fprintf ( outfile, "\n\t.SCR\t0x%03X \n", pc ) ;
+                    fprintf ( outfile, "\n\t\t.SCR\t0x%03X \n", pc ) ;
                     state = stDATA ;
                     break ;
                 default :
-                    fprintf ( outfile, "\n\t.ORG\t0x%03X \n", pc ) ;
+                    fprintf ( outfile, "\n\t\t.ORG\t0x%03X \n", pc ) ;
                     state = stCODE ;
                 }
             } else
                 pc += 1 ;
             break ;
         case stCODE :
+            if ( Code[ pc ].label )
+                fprintf ( outfile, "\nL_%03X : \n", pc ) ;
+
             if ( c != 0 ) {
                 switch ( c ) {
                 case 0x00000 ... 0x00FFF :
-                    fprintf ( outfile, "\tMOVE\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tMOVE\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x01000 ... 0x01FFF :
-                    fprintf ( outfile, "\tMOVE\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    if ( Constant ( c ) < 10 )
+                        fprintf ( outfile, "\t\tMOVE\ts%X, %d   \t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    else
+                        fprintf ( outfile, "\t\tMOVE\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x16000 ... 0x16FFF :
-                    fprintf ( outfile, "\tSTAR\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tSTAR\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x02000 ... 0x02FFF :
-                    fprintf ( outfile, "\tAND \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tAND \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x03000 ... 0x03FFF :
-                    fprintf ( outfile, "\tAND \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tAND \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
 
                 case 0x04000 ... 0x04FFF :
-                    fprintf ( outfile, "\tOR  \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tOR  \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x05000 ... 0x05FFF :
-                    fprintf ( outfile, "\tOR  \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tOR  \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
 
                 case 0x06000 ... 0x06FFF :
-                    fprintf ( outfile, "\tXOR \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tXOR \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x07000 ... 0x07FFF :
-                    fprintf ( outfile, "\tXOR \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tXOR \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
 
                 case 0x0C000 ... 0x0CFFF :
-                    fprintf ( outfile, "\tTEST\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tTEST\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x0D000 ... 0x0DFFF :
-                    fprintf ( outfile, "\tTEST\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tTEST\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x0E000 ... 0x0EFFF :
-                    fprintf ( outfile, "\tTSTC\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tTSTC\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x0F000 ... 0x0FFFF :
-                    fprintf ( outfile, "\tTSTC\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tTSTC\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
 
                 case 0x10000 ... 0x10FFF :
-                    fprintf ( outfile, "\tADD \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tADD \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x11000 ... 0x11FFF :
-                    fprintf ( outfile, "\tADD \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tADD \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
 
                 case 0x12000 ... 0x12FFF :
-                    fprintf ( outfile, "\tADDC\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tADDC\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x13000 ... 0x13FFF :
-                    fprintf ( outfile, "\tADDC\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tADDC\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
 
                 case 0x18000 ... 0x18FFF :
-                    fprintf ( outfile, "\tSUB \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tSUB \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x19000 ... 0x19FFF :
-                    fprintf ( outfile, "\tSUB \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tSUB \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
 
                 case 0x1A000 ... 0x1AFFF :
-                    fprintf ( outfile, "\tSUBC\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tSUBC\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x1B000 ... 0x1BFFF :
-                    fprintf ( outfile, "\tSUBC\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tSUBC\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
 
                 case 0x1C000 ... 0x1CFFF :
-                    fprintf ( outfile, "\tCOMP\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tCOMP\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x1D000 ... 0x1DFFF :
-                    fprintf ( outfile, "\tCOMP\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tCOMP\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x1E000 ... 0x1EFFF :
-                    fprintf ( outfile, "\tCMPC\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tCMPC\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x1F000 ... 0x1FFFF :
-                    fprintf ( outfile, "\tCMPC\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tCMPC\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
 
                 case 0x14000 ... 0x14FFF :
                     if ( c & 0xF0 ) {
-                        fprintf ( outfile, "\tCORE\ts%X   \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
+                        fprintf ( outfile, "\t\tCORE\ts%X   \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
                     } else
                         switch ( c & 0xF ) {
                         case 0x2 :
-                            fprintf ( outfile, "\tRL  \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
+                            fprintf ( outfile, "\t\tRL  \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
                             break ;
                         case 0x6 :
-                            fprintf ( outfile, "\tSL0 \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
+                            fprintf ( outfile, "\t\tSL0 \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
                             break ;
                         case 0x7 :
-                            fprintf ( outfile, "\tSL1 \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
+                            fprintf ( outfile, "\t\tSL1 \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
                             break ;
                         case 0x0 :
-                            fprintf ( outfile, "\tSLA \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
+                            fprintf ( outfile, "\t\tSLA \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
                             break ;
                         case 0x4 :
-                            fprintf ( outfile, "\tSLX \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
+                            fprintf ( outfile, "\t\tSLX \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
                             break ;
 
                         case 0xC :
-                            fprintf ( outfile, "\tRR  \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
+                            fprintf ( outfile, "\t\tRR  \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
                             break ;
                         case 0xE :
-                            fprintf ( outfile, "\tSR0 \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
+                            fprintf ( outfile, "\t\tSR0 \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
                             break ;
                         case 0xF :
-                            fprintf ( outfile, "\tSR1 \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
+                            fprintf ( outfile, "\t\tSR1 \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
                             break ;
                         case 0x8 :
-                            fprintf ( outfile, "\tSRA \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
+                            fprintf ( outfile, "\t\tSRA \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
                             break ;
                         case 0xA :
-                            fprintf ( outfile, "\tSRX \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
+                            fprintf ( outfile, "\t\tSRX \ts%X      \t; %03X : %05X \n", DestReg ( c ), pc, c ) ;
                             break ;
 
                         default :
-                            fprintf ( outfile, "\tINST\t0x%05X\t; %03X : %05X \n", c, pc, c ) ;
+                            fprintf ( outfile, "\t\tINST\t0x%05X\t; %03X : %05X \n", c, pc, c ) ;
                         }
                     break ;
 
                 case 0x22000 ... 0x22FFF :
-                    fprintf ( outfile, "\tJUMP\t0x%03X      \t; %03X : %05X \n\n", Address12 ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tJUMP\tL_%03X      \t; %03X : %05X \n\n", Address12 ( c ), pc, c ) ;
                     break ;
                 case 0x32000 ... 0x32FFF :
-                    fprintf ( outfile, "\tJUMP\tZ, 0x%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tJUMP\tZ, L_%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
                     break ;
                 case 0x36000 ... 0x36FFF :
-                    fprintf ( outfile, "\tJUMP\tNZ, 0x%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tJUMP\tNZ, L_%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
                     break ;
                 case 0x3A000 ... 0x3AFFF :
-                    fprintf ( outfile, "\tJUMP\tC, 0x%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tJUMP\tC, 0x%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
                     break ;
                 case 0x3E000 ... 0x3EFFF :
-                    fprintf ( outfile, "\tJUMP\tNC, 0x%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tJUMP\tNC, L_%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
                     break ;
                 case 0x26000 ... 0x26FFF :
-                    fprintf ( outfile, "\tJUMP\ts%X, s%X  \t; %03X : %05X \n\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tJUMP\ts%X, s%X  \t; %03X : %05X \n\n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x20000 ... 0x20FFF :
-                    fprintf ( outfile, "\tCALL\t0x%03X      \t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tCALL\tL_%03X      \t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
                     break ;
                 case 0x30000 ... 0x30FFF :
-                    fprintf ( outfile, "\tCALL\tZ, 0x%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tCALL\tZ, L_%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
                     break ;
                 case 0x34000 ... 0x34FFF :
-                    fprintf ( outfile, "\tCALL\tNZ, 0x%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tCALL\tNZ, L_%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
                     break ;
                 case 0x38000 ... 0x38FFF :
-                    fprintf ( outfile, "\tCALL\tC, 0x%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tCALL\tC, L_%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
                     break ;
                 case 0x3C000 ... 0x3CFFF :
-                    fprintf ( outfile, "\tCALL\tNC, 0x%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tCALL\tNC, L_%03X\t; %03X : %05X \n", Address12 ( c ), pc, c ) ;
                     break ;
                 case 0x24000 ... 0x24FFF :
-                    fprintf ( outfile, "\tCALL\ts%X, s%X  \t; %03X : %05X  \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tCALL\ts%X, s%X  \t; %03X : %05X  \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
 
                 case 0x25000 ... 0x25FFF :
-                    fprintf ( outfile, "\tRET \t         \t; %03X : %05X \n\n", pc, c ) ;
+                    fprintf ( outfile, "\t\tRET \t         \t; %03X : %05X \n\n", pc, c ) ;
                     break ;
                 case 0x31000 ... 0x31FFF :
-                    fprintf ( outfile, "\tRET \t %s       \t; %03X : %05X \n", "Z", pc, c ) ;
+                    fprintf ( outfile, "\t\tRET \t %s       \t; %03X : %05X \n", "Z", pc, c ) ;
                     break ;
                 case 0x35000 ... 0x35FFF :
-                    fprintf ( outfile, "\tRET \t %s       \t; %03X : %05X \n", "NZ", pc, c ) ;
+                    fprintf ( outfile, "\t\tRET \t %s       \t; %03X : %05X \n", "NZ", pc, c ) ;
                     break ;
                 case 0x39000 ... 0x39FFF :
-                    fprintf ( outfile, "\tRET \t %s       \t; %03X : %05X \n", "C", pc, c ) ;
+                    fprintf ( outfile, "\t\tRET \t %s       \t; %03X : %05X \n", "C", pc, c ) ;
                     break ;
                 case 0x3D000 ... 0x3DFFF :
-                    fprintf ( outfile, "\tRET \t %s       \t; %03X : %05X \n", "NC", pc, c ) ;
+                    fprintf ( outfile, "\t\tRET \t %s       \t; %03X : %05X \n", "NC", pc, c ) ;
                     break ;
                 case 0x21000 ... 0x21FFF :
-                    fprintf ( outfile, "\tRET \ts%X, 0x%02X\t; %03X : %05X \n\n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    if ( Constant ( c ) < 10 )
+                        fprintf ( outfile, "\t\tRET \ts%X, %d   \t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    else
+                        fprintf ( outfile, "\t\tRET \ts%X, 0x%02X\t; %03X : %05X \n\n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
 
+
+                case 0x29000 :
+                    fprintf ( outfile, "\t\tRETI\tDISABLE\t; %03X : %05X \n", pc, c ) ;
+                    break ;
+                case 0x29001 :
+                    fprintf ( outfile, "\t\tRETI\tENABLE\t; %03X : %05X \n", pc, c ) ;
+                    break ;
 
                 case 0x2E000 ... 0x2EFFF :
-                    fprintf ( outfile, "\tST  \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tST  \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x2F000 ... 0x2FFFF :
-                    fprintf ( outfile, "\tST  \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tST  \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
 
                 case 0x0A000 ... 0x0AFFF :
-                    fprintf ( outfile, "\tLD  \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tLD  \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x0B000 ... 0x0BFFF :
-                    fprintf ( outfile, "\tLD  \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tLD  \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
 
                 case 0x2C000 ... 0x2CFFF :
-                    fprintf ( outfile, "\tOUT \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tOUT \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x2D000 ... 0x2DFFF :
-                    fprintf ( outfile, "\tOUT \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tOUT \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
                 case 0x2B000 ... 0x2BFFF :
-                    fprintf ( outfile, "\tOUTK\t0x%02X, 0x%X\t; %03X : %05X \n", ( c >> 4 ) & 0xFF, c & 0xF, pc, c ) ;
+                    fprintf ( outfile, "\t\tOUTK\t0x%02X, 0x%X\t; %03X : %05X \n", ( c >> 4 ) & 0xFF, c & 0xF, pc, c ) ;
                     break ;
 
                 case 0x08000 ... 0x08FFF :
-                    fprintf ( outfile, "\tIN  \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tIN  \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
                     break ;
                 case 0x09000 ... 0x09FFF :
-                    fprintf ( outfile, "\tIN  \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+                    fprintf ( outfile, "\t\tIN  \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
                     break ;
 
                 case 0x28000 :
-                    fprintf ( outfile, "\tDINT\t \t; %03X : %05X \n", pc, c ) ;
+                    fprintf ( outfile, "\t\tDINT\t \t; %03X : %05X \n", pc, c ) ;
                     break ;
                 case 0x28001 :
-                    fprintf ( outfile, "\tEINT\t \t; %03X : %05X \n", pc, c ) ;
+                    fprintf ( outfile, "\t\tEINT\t \t; %03X : %05X \n", pc, c ) ;
                     break ;
-                case 0x29000 :
-                    fprintf ( outfile, "\tRETI\tDISABLE\t; %03X : %05X \n", pc, c ) ;
-                    break ;
-                case 0x29001 :
-                    fprintf ( outfile, "\tRETI\tENABLE\t; %03X : %05X \n", pc, c ) ;
-                    break ;
-
                 case 0x37000 :
-                    fprintf ( outfile, "\tBANK\tA\t; %03X : %05X \n", pc, c ) ;
+                    fprintf ( outfile, "\t\tBANK\tA\t; %03X : %05X \n", pc, c ) ;
                     break ;
                 case 0x37001 :
-                    fprintf ( outfile, "\tBANK\tB\t; %03X : %05X \n", pc, c ) ;
+                    fprintf ( outfile, "\t\tBANK\tB\t; %03X : %05X \n", pc, c ) ;
                     break ;
 
                 default :
-                    fprintf ( outfile, "\tINST\t0x%05X\t; %03X : %05X \n", pc, c, c ) ;
+                    fprintf ( outfile, "\t\tINST\t0x%05X\t; %03X : %05X \n", pc, c, c ) ;
                 }
                 pc += 1 ;
             } else
@@ -792,7 +803,7 @@ static bool writePSM6 ( const char * strPSMfile ) {
             break ;
         case stDATA :
             if ( c != 0 ) {
-                fprintf ( outfile, "\t.BYT\t0x%02X, 0x%02X\t; %03X : %05X \n", c & 0xFF, ( c >> 8 ) & 0xFF, pc, c ) ;
+                fprintf ( outfile, "\t\t.BYT\t0x%02X, 0x%02X\t; %03X : %05X \n", c & 0xFF, ( c >> 8 ) & 0xFF, pc, c ) ;
                 pc += 1 ;
             } else
                 state = stIDLE ;
@@ -885,7 +896,8 @@ static bool writeVHD6 ( const char * strPSMfile ) {
               "\talias regB_addr : unsigned is inst( 7 downto 4 ) ; \n"
               "\talias dataK : unsigned is inst( 7 downto 0 ) ; \n"
 
-              "\tsignal dataA : std_logic_vector( 7 downto 0 ) ; \n"
+              "\tsignal regA : std_logic_vector( 7 downto 0 ) ; \n"
+              "\talias dataA : std_logic_vector is regA( 7 downto 0 ) ; \n"
               "\tsignal regB : std_logic_vector( 7 downto 0 ) ; \n"
               "\tsignal dataB : std_logic_vector( 7 downto 0 ) ; \n"
 
@@ -907,7 +919,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
 
               "\n"
               "\t-- alu \n"
-              "\tsignal op : std_logic_vector( 2 downto 0 ) ; \n"
+              "\tsignal aluOP : std_logic_vector( 2 downto 0 ) ; \n"
               "\tsignal alu : std_logic_vector( 7 downto 0 ) ; \n"
               "\tsignal ci, co : std_logic ; \n"
             ) ;
@@ -996,7 +1008,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
               "\t\tend process ; \n"
 
               "\n"
-              "\t\tdataA <= register_ram( to_integer( regA_addr ) ) ; \n"
+              "\t\tregA <= register_ram( to_integer( regA_addr ) ) ; \n"
               "\t\tregB <= register_ram( to_integer( regB_addr ) ) ; \n"
               "\tend block ; \n"
             ) ;
@@ -1053,17 +1065,17 @@ static bool writeVHD6 ( const char * strPSMfile ) {
               "\t\talu_g : for i in 0 to 7 generate\n"
               "\t\tbegin\n"
               "\t\t\tsum( i ) <=\n"
-              "\t\t\t\tdataA( i ) xor dataB( i )        when op = \"111\" else \n"
-              "\t\t\t\tnot( dataA( i ) xor dataB( i ) ) when op = \"110\" else \n"
-              "\t\t\t\tdataA( i ) xor dataB( i )        when op = \"101\" else \n"
-              "\t\t\t\tnot( dataA( i ) xor dataB( i ) ) when op = \"100\" else \n"
+              "\t\t\t\tdataA( i ) xor dataB( i )        when aluOP = \"111\" else -- ADD, ADDC \n"
+              "\t\t\t\tnot( dataA( i ) xor dataB( i ) ) when aluOP = \"110\" else -- SUB, SUBC, COMP, CMPC \n"
+              "\t\t\t\tdataA( i ) xor dataB( i )        when aluOP = \"101\" else -- ADD, ADDC \n"
+              "\t\t\t\tnot( dataA( i ) xor dataB( i ) ) when aluOP = \"100\" else -- SUB, SUBC, COMP, CMPC \n"
               "\n"
-              "\t\t\t\tdataA( i ) xor dataB( i )        when op = \"011\" else \n"
-              "\t\t\t\tdataA( i )  or dataB( i )        when op = \"010\" else \n"
-              "\t\t\t\tdataA( i ) and dataB( i )        when op = \"001\" else \n"
-              "\t\t\t\t            dataB( i )        when op = \"000\" ; \n"
+              "\t\t\t\tdataA( i ) xor dataB( i )        when aluOP = \"011\" else -- XOR \n"
+              "\t\t\t\tdataA( i )  or dataB( i )        when aluOP = \"010\" else -- OR \n"
+              "\t\t\t\tdataA( i ) and dataB( i )        when aluOP = \"001\" else -- AND \n"
+              "\t\t\t\t               dataB( i )        when aluOP = \"000\" ;    -- MOVE \n"
               "\n"
-              "\t\t\tmask( i ) <= dataA( i ) and op( 2 ) ; \n"
+              "\t\t\tmask( i ) <= dataA( i ) and aluOP( 2 ) ; \n"
               "\n"
               "\t\t\tchain( i + 1 ) <=\n"
               "\t\t\t\tchain( i ) when sum( i ) = '1' else\n"
@@ -1129,7 +1141,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
               "\t\t\tnspR <= spR ; \n"
 
               "\t\t\tregI <= dataB ; \n"
-              "\t\t\top <= ( others => '0' ) ; \n"
+              "\t\t\taluOP <= ( others => '0' ) ; \n"
               "\t\t\tci <= '0' ; \n"
 
               "\n"
@@ -1171,15 +1183,15 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x00001 ... 0x00FFF :
             fprintf ( outfile, "\t\t\t\t-- MOVE\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\top <= B\"000\" ; \n"
+                      "\t\t\t\taluOP <= B\"000\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tregW <= '1' ; \n"
                     ) ;
             break ;
         case 0x01000 ... 0x01FFF :
-            fprintf ( outfile, "\t\t\t\t-- MOVE\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- MOVE\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\top <= B\"000\" ; \n"
+                      "\t\t\t\taluOP <= B\"000\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tregW <= '1' ; \n"
                     ) ;
@@ -1193,7 +1205,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x02000 ... 0x02FFF :
             fprintf ( outfile, "\t\t\t\t-- AND \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\top <= B\"001\" ; \n"
+                      "\t\t\t\taluOP <= B\"001\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) ; \n"
                       "\t\t\t\tnc <= '0' ; \n"
@@ -1201,9 +1213,9 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                     ) ;
             break ;
         case 0x03000 ... 0x03FFF :
-            fprintf ( outfile, "\t\t\t\t-- AND \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- AND \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\top <= B\"001\" ; \n"
+                      "\t\t\t\taluOP <= B\"001\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) ; \n"
                       "\t\t\t\tnc <= '0' ; \n"
@@ -1214,7 +1226,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x04000 ... 0x04FFF :
             fprintf ( outfile, "\t\t\t\t-- OR  \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\top <= B\"010\" ; \n"
+                      "\t\t\t\taluOP <= B\"010\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) ; \n"
                       "\t\t\t\tnc <= '0' ; \n"
@@ -1222,9 +1234,9 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                     ) ;
             break ;
         case 0x05000 ... 0x05FFF :
-            fprintf ( outfile, "\t\t\t\t-- OR  \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- OR  \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\top <= B\"010\" ; \n"
+                      "\t\t\t\taluOP <= B\"010\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) ; \n"
                       "\t\t\t\tnc <= '0' ; \n"
@@ -1235,7 +1247,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x06000 ... 0x06FFF :
             fprintf ( outfile, "\t\t\t\t-- XOR \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\top <= B\"011\" ; \n"
+                      "\t\t\t\taluOP <= B\"011\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) ; \n"
                       "\t\t\t\tnc <= '0' ; \n"
@@ -1243,9 +1255,9 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                     ) ;
             break ;
         case 0x07000 ... 0x07FFF :
-            fprintf ( outfile, "\t\t\t\t-- XOR \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- XOR \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\top <= B\"011\" ; \n"
+                      "\t\t\t\taluOP <= B\"011\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) ; \n"
                       "\t\t\t\tnc <= '0' ; \n"
@@ -1256,16 +1268,16 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x0C000 ... 0x0CFFF :
             fprintf ( outfile, "\t\t\t\t-- TEST\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\top <= B\"001\" ; \n"
+                      "\t\t\t\taluOP <= B\"001\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) ; \n"
                       "\t\t\t\tnc <= xor_reduce( regI ) ; \n"
                     ) ;
             break ;
         case 0x0D000 ... 0x0DFFF :
-            fprintf ( outfile, "\t\t\t\t-- TEST\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- TEST\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\top <= B\"001\" ; \n"
+                      "\t\t\t\taluOP <= B\"001\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) ; \n"
                       "\t\t\t\tnc <= xor_reduce( regI ) ; \n"
@@ -1274,16 +1286,16 @@ static bool writeVHD6 ( const char * strPSMfile ) {
         case 0x0E000 ... 0x0EFFF :
             fprintf ( outfile, "\t\t\t\t-- TSTC\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\top <= B\"001\" ; \n"
+                      "\t\t\t\taluOP <= B\"001\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnz <= ( regI = X\"00\" ) and z ; \n"
                       "\t\t\t\tnc <= xor_reduce( regI ) xor c ; \n"
                     ) ;
             break ;
         case 0x0F000 ... 0x0FFFF :
-            fprintf ( outfile, "\t\t\t\t-- TSTC\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- TSTC\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
-                      "\t\t\t\top <= B\"001\" ; \n"
+                      "\t\t\t\taluOP <= B\"001\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnz <= ( regI = X\"00\" ) and z ; \n"
                       "\t\t\t\tnc <= xor_reduce( regI ) xor c ; \n"
@@ -1294,7 +1306,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
             fprintf ( outfile, "\t\t\t\t-- ADD \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tci <= '0' ; \n"
-                      "\t\t\t\top <= B\"101\" ; \n"
+                      "\t\t\t\taluOP <= B\"101\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnc <= co ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) ; \n"
@@ -1302,10 +1314,10 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                     ) ;
             break ;
         case 0x11000 ... 0x11FFF :
-            fprintf ( outfile, "\t\t\t\t-- ADD \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- ADD \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tci <= '0' ; \n"
-                      "\t\t\t\top <= B\"101\" ; \n"
+                      "\t\t\t\taluOP <= B\"101\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnc <= co ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) ; \n"
@@ -1317,7 +1329,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
             fprintf ( outfile, "\t\t\t\t-- ADDC\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tci <= c ; \n"
-                      "\t\t\t\top <= B\"101\" ; \n"
+                      "\t\t\t\taluOP <= B\"101\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnc <= co ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) and z ; \n"
@@ -1325,10 +1337,10 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                     ) ;
             break ;
         case 0x13000 ... 0x13FFF :
-            fprintf ( outfile, "\t\t\t\t-- ADDC\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- ADDC\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tci <= c ; \n"
-                      "\t\t\t\top <= B\"101\" ; \n"
+                      "\t\t\t\taluOP <= B\"101\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnc <= co ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) and z  ; \n"
@@ -1340,7 +1352,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
             fprintf ( outfile, "\t\t\t\t-- SUB \ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tci <= '1' ; \n"
-                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\taluOP <= B\"100\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnc <= not co ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) ; \n"
@@ -1348,10 +1360,10 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                     ) ;
             break ;
         case 0x19000 ... 0x19FFF :
-            fprintf ( outfile, "\t\t\t\t-- SUB \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- SUB \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tci <= '1' ; \n"
-                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\taluOP <= B\"100\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnc <= not co ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) ; \n"
@@ -1363,7 +1375,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
             fprintf ( outfile, "\t\t\t\t-- SUBC\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tci <= not c ; \n"
-                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\taluOP <= B\"100\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnc <= not co ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) and z ; \n"
@@ -1371,10 +1383,10 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                     ) ;
             break ;
         case 0x1B000 ... 0x1BFFF :
-            fprintf ( outfile, "\t\t\t\t-- SUBC\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- SUBC\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tci <= not c ; \n"
-                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\taluOP <= B\"100\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnc <= not co ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) and z ; \n"
@@ -1386,17 +1398,17 @@ static bool writeVHD6 ( const char * strPSMfile ) {
             fprintf ( outfile, "\t\t\t\t-- COMP\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tci <= '1' ; \n"
-                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\taluOP <= B\"100\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnc <= not co ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) ; \n"
                     ) ;
             break ;
         case 0x1D000 ... 0x1DFFF :
-            fprintf ( outfile, "\t\t\t\t-- COMP\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- COMP\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tci <= '1' ; \n"
-                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\taluOP <= B\"100\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnc <= not co ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) ; \n"
@@ -1406,17 +1418,17 @@ static bool writeVHD6 ( const char * strPSMfile ) {
             fprintf ( outfile, "\t\t\t\t-- CMPC\ts%X, s%X  \t; %03X : %05X \n", DestReg ( c ), SrcReg ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tci <= not c ; \n"
-                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\taluOP <= B\"100\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnc <= not co ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) and z ; \n"
                     ) ;
             break ;
         case 0x1F000 ... 0x1FFFF :
-            fprintf ( outfile, "\t\t\t\t-- CMPC\ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- CMPC\ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tci <= not c ; \n"
-                      "\t\t\t\top <= B\"100\" ; \n"
+                      "\t\t\t\taluOP <= B\"100\" ; \n"
                       "\t\t\t\tregI <= alu ; \n"
                       "\t\t\t\tnc <= not co ; \n"
                       "\t\t\t\tnz <= to_std_logic( regI = X\"00\" ) and z ; \n"
@@ -1718,7 +1730,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                     ) ;
             break ;
         case 0x2F000 ... 0x2FFFF :
-            fprintf ( outfile, "\t\t\t\t-- ST  \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- ST  \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tscrW <= '1' ; \n"
                     ) ;
@@ -1732,7 +1744,7 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                     ) ;
             break ;
         case 0x0B000 ... 0x0BFFF :
-            fprintf ( outfile, "\t\t\t\t-- LD  \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- LD  \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tregI <= scrO ; \n"
                       "\t\t\t\tregW <= '1' ; \n"
@@ -1746,14 +1758,14 @@ static bool writeVHD6 ( const char * strPSMfile ) {
                     ) ;
             break ;
         case 0x2D000 ... 0x2DFFF :
-            fprintf ( outfile, "\t\t\t\t-- OUT \ts%X, 0x%.2X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- OUT \ts%X, 0x%02X\t; %03X : %05X \n", DestReg ( c ), Constant ( c ), pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tnioW <= '1' ; \n"
                     ) ;
             break ;
             /*
                     case 0x2B000 ... 0x2BFFF :
-                        fprintf ( outfile, "\t\t\t\t-- OUTK\t0x%.2X, 0x%X\t; %03X : %05X \n", ( c >> 4 ) & 0xFF, c & 0xF, pc, c ) ;
+                        fprintf ( outfile, "\t\t\t\t-- OUTK\t0x%02X, 0x%X\t; %03X : %05X \n", ( c >> 4 ) & 0xFF, c & 0xF, pc, c ) ;
                         fprintf ( outfile,
                                   "\t\t\t\nwr <= '1' ; \n" ) ;
                         break ;
@@ -1846,6 +1858,236 @@ static bool writeVHD6 ( const char * strPSMfile ) {
 
     fclose ( outfile ) ;
     return true ;
+}
+
+void checkPB3 ( int pc ) {
+    uint32_t c ;
+
+    Code[ pc ].label = true ;
+
+    while ( pc < 1024 ) {
+    if ( Code[ pc ].breadcrum )
+        return ;
+
+        c = Code[ pc ].code & 0x3FFFF ;
+
+        switch ( c ) {
+// OPs
+        case 0x00000 ... 0x00FFF :
+        case 0x01000 ... 0x01FFF :
+        case 0x0A000 ... 0x0AFFF :
+        case 0x0B000 ... 0x0BFFF :
+        case 0x0C000 ... 0x0CFFF :
+        case 0x0D000 ... 0x0DFFF :
+        case 0x0E000 ... 0x0EFFF :
+        case 0x0F000 ... 0x0FFFF :
+        case 0x12000 ... 0x12FFF :
+        case 0x13000 ... 0x13FFF :
+        case 0x18000 ... 0x18FFF :
+        case 0x19000 ... 0x19FFF :
+        case 0x1A000 ... 0x1AFFF :
+        case 0x1B000 ... 0x1BFFF :
+        case 0x1C000 ... 0x1CFFF :
+        case 0x1D000 ... 0x1DFFF :
+        case 0x1E000 ... 0x1EFFF :
+        case 0x1F000 ... 0x1FFFF :
+        case 0x14000 ... 0x14FFF :
+        case 0x15000 ... 0x15FFF :
+        case 0x2E000 ... 0x2EFFF :
+        case 0x2F000 ... 0x2FFFF :
+        case 0x06000 ... 0x06FFF :
+        case 0x07000 ... 0x07FFF :
+        case 0x2C000 ... 0x2CFFF :
+        case 0x2D000 ... 0x2DFFF :
+        case 0x04000 ... 0x04FFF :
+        case 0x05000 ... 0x05FFF :
+
+        case 0x3C000 ... 0x3C001 :
+            Code[ pc ].breadcrum = true ;
+            pc = pc + 1 ;
+            break ;
+
+// SHIFT
+        case 0x20000 ... 0x20FFF :
+            switch ( c & 0xF ) {
+            case 0x2 :
+            case 0x6 :
+            case 0x7 :
+            case 0x0 :
+            case 0x4 :
+
+            case 0xC :
+            case 0xE :
+            case 0xF :
+            case 0x8 :
+            case 0xA :
+                Code[ pc ].breadcrum = true ;
+                pc = pc + 1 ;
+                break ;
+            }
+            break ;
+
+// JUMP
+        case 0x34000 ... 0x34FFF :
+            Code[ pc ].breadcrum = true ;
+            checkPB3 ( Address10 ( c ) ) ;
+            break ;
+
+// JUMP cond, CALL, CALL cond
+        case 0x35000 ... 0x35FFF :
+        case 0x30000 ... 0x30FFF :
+        case 0x31000 ... 0x31FFF :
+            checkPB3 ( Address10 ( c ) ) ;
+            Code[ pc ].breadcrum = true ;
+            pc = pc + 1 ;
+            break ;
+
+// RET
+        case 0x2A000 ... 0x2AFFF :
+            Code[ pc ].breadcrum = true ;
+            return ;
+
+// RET cond
+        case 0x2B000 ... 0x2BFFF :
+            Code[ pc ].breadcrum = true ;
+            pc = pc + 1 ;
+            break ;
+
+// RETI
+        case 0x38000 ... 0x38001 :
+            Code[ pc ].breadcrum = true ;
+            return ;
+        default :
+            return ;
+        }
+    }
+}
+
+void checkPB6 ( int pc ) {
+    uint32_t c ;
+
+    Code[ pc ].label = true ;
+    while ( pc < 1024 ) {
+        if ( Code[ pc ].breadcrum )
+            return ;
+
+        c = Code[ pc ].code & 0x3FFFF ;
+
+        switch ( c ) {
+// OPs
+        case 0x00000 ... 0x00FFF :
+        case 0x01000 ... 0x01FFF :
+        case 0x16000 ... 0x16FFF :
+        case 0x02000 ... 0x02FFF :
+        case 0x03000 ... 0x03FFF :
+        case 0x04000 ... 0x04FFF :
+        case 0x05000 ... 0x05FFF :
+        case 0x06000 ... 0x06FFF :
+        case 0x07000 ... 0x07FFF :
+        case 0x0C000 ... 0x0CFFF :
+        case 0x0D000 ... 0x0DFFF :
+        case 0x0E000 ... 0x0EFFF :
+        case 0x0F000 ... 0x0FFFF :
+        case 0x10000 ... 0x10FFF :
+        case 0x11000 ... 0x11FFF :
+        case 0x12000 ... 0x12FFF :
+        case 0x13000 ... 0x13FFF :
+        case 0x18000 ... 0x18FFF :
+        case 0x19000 ... 0x19FFF :
+        case 0x1A000 ... 0x1AFFF :
+        case 0x1B000 ... 0x1BFFF :
+        case 0x1C000 ... 0x1CFFF :
+        case 0x1D000 ... 0x1DFFF :
+        case 0x1E000 ... 0x1EFFF :
+        case 0x1F000 ... 0x1FFFF :
+
+        case 0x2E000 ... 0x2EFFF :
+        case 0x2F000 ... 0x2FFFF :
+        case 0x0A000 ... 0x0AFFF :
+        case 0x0B000 ... 0x0BFFF :
+        case 0x2C000 ... 0x2CFFF :
+        case 0x2D000 ... 0x2DFFF :
+        case 0x2B000 ... 0x2BFFF :
+        case 0x08000 ... 0x08FFF :
+        case 0x09000 ... 0x09FFF :
+
+        case 0x28000 ... 0x28001 :
+        case 0x37000 ... 0x37001 :
+            Code[ pc ].breadcrum = true ;
+            pc = pc + 1 ;
+            break ;
+
+// RR, SR, RL, SL
+        case 0x14000 ... 0x14FFF :
+            switch ( c & 0xF ) {
+            case 0x2 :
+            case 0x6 :
+            case 0x7 :
+            case 0x0 :
+            case 0x4 :
+
+            case 0xC :
+            case 0xE :
+            case 0xF :
+            case 0x8 :
+            case 0xA :
+                Code[ pc ].breadcrum = true ;
+                pc = pc + 1 ;
+                break ;
+            }
+            break ;
+
+// JUMP
+        case 0x22000 ... 0x22FFF :
+            Code[ pc ].breadcrum = true ;
+            checkPB6 ( Address12 ( c ) ) ;
+            break ;
+
+// JUMP cond , CALL, CALL cond
+        case 0x32000 ... 0x32FFF :
+        case 0x36000 ... 0x36FFF :
+        case 0x3A000 ... 0x3AFFF :
+        case 0x3E000 ... 0x3EFFF :
+        case 0x26000 ... 0x26FFF :
+
+        case 0x20000 ... 0x20FFF :
+        case 0x30000 ... 0x30FFF :
+        case 0x34000 ... 0x34FFF :
+        case 0x38000 ... 0x38FFF :
+        case 0x3C000 ... 0x3CFFF :
+        case 0x24000 ... 0x24FFF :
+            checkPB6 ( Address12 ( c ) ) ;
+            Code[ pc ].breadcrum = true ;
+            pc = pc + 1 ;
+            break ;
+
+// RET, RETI
+        case 0x25000 ... 0x25FFF :
+        case 0x29000 ... 0x29001 :
+            Code[ pc ].breadcrum = true ;
+            return ;
+
+// RET cond
+        case 0x31000 ... 0x31FFF :
+        case 0x35000 ... 0x35FFF :
+        case 0x39000 ... 0x39FFF :
+        case 0x3D000 ... 0x3DFFF :
+        case 0x21000 ... 0x21FFF :
+            Code[ pc ].breadcrum = true ;
+            pc = pc + 1 ;
+            break ;
+
+        default :
+            return ;
+        }
+    }
+}
+
+void checkCode ( bool bCore ) {
+    if ( bCore )
+        checkPB6 ( 0 ) ;
+    else
+        checkPB3 ( 0 ) ;
 }
 
 int main ( int argc, char * argv[] ) {
@@ -1973,6 +2215,7 @@ int main ( int argc, char * argv[] ) {
     for ( i = 0 ; i < MAXMEM ; i++ ) {
         Code[ i ].addr = i ;
         Code[ i ].code = 0 ;
+        Code[ i ].breadcrum = false ;
     }
 
     for ( i = 0 ; i < MAXSCR ; i++ )
@@ -1988,6 +2231,8 @@ int main ( int argc, char * argv[] ) {
         result &= loadSCR ( data_filename, 0 ) ;
     if ( ! result )
         exit ( -2 ) ;
+
+    checkCode ( bKCPSM6 ) ;
 
     if ( bKCPSM6 ) {
         if ( bPico )
