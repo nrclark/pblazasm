@@ -43,7 +43,7 @@ uint16_t Data[ MAXMEM * 18 / 16 ] ;
 static void usage ( char * text ) {
     printf ( "\n%s - %s\n", text, "Picoblaze Assembler bitstream update utility V0.2" ) ;
     printf ( "\nUSAGE:\n" ) ;
-    printf ( "   pBlazBIT [-3|-6] [-v] -b<nr_blockram> -c<MEM code inputfile> [-s<MEM data inputfile] -o<BIT outputfile> <BIT inputfile>\\n" ) ;
+    printf ( "   pBlazBIT -3|-6 [-v] -b<nr_blockram> -c<MEM code inputfile> [-s<MEM data inputfile] -o<BIT outputfile> <BIT inputfile>\\n" ) ;
 }
 
 bool loadMEM ( const char * strCodefile, const char * strDatafile ) {
@@ -195,7 +195,7 @@ int main ( int argc, char * argv[] ) {
         }
     }
 
-    if ( bOptErr ) {
+    if ( bOptErr || ( nr < 0 ) ) {
         usage ( basename ( argv[ 0 ] ) ) ;
         exit ( -1 ) ;
     }
@@ -242,7 +242,7 @@ int main ( int argc, char * argv[] ) {
 
     if ( !parse_file ( source_filename, bSpartan6, bVerbose ) )
         exit ( -3 ) ;
-    if ( ! merge_code ( Data, MAXMEM, nr ) )
+    if ( ! merge_code ( Data, MAXMEM, nr, bVerbose ) )
         exit ( -4 ) ;
     if ( !write_file ( dest_filename ) )
         exit ( -5 ) ;
