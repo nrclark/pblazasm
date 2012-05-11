@@ -22,7 +22,7 @@
 #define BSPARSE_H_INCLUDED
 
 bool parse_file ( const char * strBitfile, bool bSpartan6, bool bVerbose ) ;
-bool merge_code ( uint16_t * code, int len, int nr ) ;
+bool merge_code ( uint16_t * code, int len, int nr, bool bVerbose ) ;
 bool write_file ( const char * strBitfile ) ;
 bool get_code ( uint16_t * code, uint32_t * p, int len ) ;
 
