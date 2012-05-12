@@ -66,6 +66,13 @@ typedef enum _IDCODE {
     XC6SLX150T = 0x0403D093
 } IDCODE_e ;
 
+typedef enum _FL {
+    flXC3S100E = 49,
+    flXC3S500E = 97,
+    flXC3S1200E = 125,
+    flXC3S1600E = 157
+} FRLEN_e ;
+
 const char * sRegisterNames_S3[] = {
     "CRC",   // R/W 00000
     "FAR",   // R/W 00001
@@ -285,7 +292,7 @@ bool parse_packets3 ( void ) {
             for ( i = 0 ; i < count ; i += 1 )
                 data[ i ] = get_long() ;
         }
-        if ( type == 2 )
+        if ( ( ( header >> 13 ) & 0xF ) == 2 ) // FDRI
             autocrc = get_long() ;
 
         bit_file.packets3 = realloc ( bit_file.packets3, ( n + 1 ) * sizeof ( Spartan3Packet_t ) ) ;
@@ -366,7 +373,7 @@ void show_file ( void ) {
                 for ( j = 0 ; j < 3 && j < bit_file.packets6[ i ].count ; j += 1 )
                     printf ( " : 0x%04X", bit_file.packets6[ i ].data[ j ] ) ;
                 if ( bit_file.packets6[ i ].header >> 13 == 2 )
-                    printf ( " ... autocrc: 0x%08X", bit_file.packets6[ i ].autocrc ) ;
+                    printf ( " : autocrc: 0x%08X\n", bit_file.packets6[ i ].autocrc ) ;
             }
             printf ( "\n" ) ;
             break;
@@ -383,9 +390,12 @@ void show_file ( void ) {
             if ( bit_file.packets3[ i ].count > 0 )
                 for ( j = 0 ; j < 37 && j < bit_file.packets3[ i ].count ; j += 1 )
                     printf ( "%08X", bit_file.packets3[ i ].data[ j ] ) ;
-                if ( bit_file.packets3[ i ].header >> 29 == 2 )
-                    printf ( " ... autocrc: 0x%08X", bit_file.packets3[ i ].autocrc ) ;
-            else
+            if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 2 )
+                printf ( " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
+            else if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 8 ) {
+                int n = bit_file.packets3[ i ].data[ 0 ] ; // XAPP452.pdf, v1.1 : Figure 2
+                printf ( " : block %d major %d minor %d\n", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
+            } else
                 printf ( "\n" ) ;
             break;
         }
