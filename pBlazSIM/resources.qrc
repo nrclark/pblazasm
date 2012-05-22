@@ -1,0 +1,45 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>bug_red.ico</file>
+    </qresource>
+    <qresource prefix="/images">
+        <file>breakpoint.png</file>
+        <file>bullet_ball_blue.png</file>
+        <file>bullet_ball_glass_blue.png</file>
+        <file>bullet_ball_glass_green.png</file>
+        <file>bullet_ball_glass_red.png</file>
+        <file>bullet_ball_glass_yellow.png</file>
+        <file>bullet_ball_green.png</file>
+        <file>bullet_ball_red.png</file>
+        <file>bullet_ball_yellow.png</file>
+        <file>bullet_square_blue.png</file>
+        <file>bullet_square_green.png</file>
+        <file>bullet_square_red.png</file>
+        <file>bullet_square_yellow.png</file>
+        <file>exit.png</file>
+        <file>folder_document.png</file>
+        <file>breakpoint_add.png</file>
+        <file>breakpoint_delete.png</file>
+        <file>breakpoint_down.png</file>
+        <file>breakpoint_find.png</file>
+        <file>breakpoint_into.png</file>
+        <file>breakpoint_new.png</file>
+        <file>breakpoint_run.png</file>
+        <file>breakpoint_selection.png</file>
+        <file>breakpoint_selection_delete.png</file>
+        <file>breakpoint_up.png</file>
+        <file>breakpoints.png</file>
+        <file>breakpoints_delete.png</file>
+        <file>media_beginning.png</file>
+        <file>media_end.png</file>
+        <file>media_fast_forward.png</file>
+        <file>media_pause.png</file>
+        <file>media_play.png</file>
+        <file>media_play_green.png</file>
+        <file>media_rewind.png</file>
+        <file>media_step_back.png</file>
+        <file>media_step_forward.png</file>
+        <file>media_stop.png</file>
+        <file>media_stop_red.png</file>
+    </qresource>
+</RCC>
