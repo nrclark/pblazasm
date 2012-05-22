@@ -41,5 +41,6 @@
         <file>media_step_forward.png</file>
         <file>media_stop.png</file>
         <file>media_stop_red.png</file>
+        <file>bullet_ball_glass.png</file>
     </qresource>
 </RCC>

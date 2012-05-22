@@ -30,7 +30,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     pBlaze = new Picoblaze();
 
-    greenIcon = new QIcon(":/images/bullet_ball_glass_green.png");
     blueIcon = new QIcon(":/images/bullet_ball_glass_blue.png");
     redIcon = new QIcon(":/images/bullet_ball_glass_red.png");
 
@@ -81,6 +80,7 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->tvState->setColumnWidth(col, 50);
     ui->tvState->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
+
     registerModel = new QStandardItemModel ;
     registerModel->insertColumns(0,2);
     registerModel->setHorizontalHeaderLabels((QStringList() << "registers" << "value"));
@@ -122,16 +122,17 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->tvStack->setColumnWidth(col, 50);
     ui->tvStack->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-    scratchPadModel = new QStandardItemModel ;
-    scratchPadModel->insertColumns(0,16);
-    scratchPadModel->insertRows(0,16);
-    scratchPadModel->setHorizontalHeaderLabels( (QStringList()
+
+    scratchpadModel = new QStandardItemModel ;
+    scratchpadModel->insertColumns(0,16);
+    scratchpadModel->insertRows(0,16);
+    scratchpadModel->setHorizontalHeaderLabels( (QStringList()
         << "X0" << "X1" << "X2" << "X3"
         << "X4" << "X5" << "X6" << "X7"
         << "X8" << "X9" << "XA" << "XB"
         << "XC" << "XD" << "XE" << "XF"
     ));
-    scratchPadModel->setVerticalHeaderLabels( (QStringList()
+    scratchpadModel->setVerticalHeaderLabels( (QStringList()
         << "0X" << "1X" << "2X" << "3X"
         << "4X" << "5X" << "6X" << "7X"
         << "8X" << "9X" << "AX" << "BX"
@@ -142,9 +143,9 @@ MainWindow::MainWindow(QWidget *parent) :
         QStandardItem * item = new QStandardItem(QString("%1").arg(0,2,16).toUpper());
         item->setData( QVariant( row*16+col ), Qt::UserRole+1 ) ;
         pBlaze->setScratchpadItem( row*16+col, item ) ;
-        scratchPadModel->setItem( row, col, item );
+        scratchpadModel->setItem( row, col, item );
      }
-    ui->tvScratchpad->setModel( scratchPadModel ) ;
+    ui->tvScratchpad->setModel( scratchpadModel ) ;
     ui->tvScratchpad->setFont(fixedFont);
     for ( int row = 0 ; row < 16 ; row += 1 )
         ui->tvScratchpad->setRowHeight(row, 16 );
@@ -152,23 +153,23 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->tvScratchpad->setColumnWidth(col, 28);
     ui->tvScratchpad->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-    LEDsModel = new QStandardItemModel ;
-    LEDsModel->insertColumns(0,4);
-    LEDsModel->insertRows(0,8);
-    LEDsModel->setHorizontalHeaderLabels( (QStringList()
+
+    ledsModel = new QStandardItemModel ;
+    ledsModel->insertColumns(0,4);
+    ledsModel->insertRows(0,8);
+    ledsModel->setHorizontalHeaderLabels( (QStringList()
         << "0" << "1" << "2" << "3"
     ));
-    LEDsModel->setVerticalHeaderLabels( (QStringList()
+    ledsModel->setVerticalHeaderLabels( (QStringList()
         << "0" << "1" << "2" << "3"
         << "4" << "5" << "6" << "7"
     ));
     for ( int row = 0 ; row < 8 ; row += 1 )
      for ( int col = 0 ; col < 4 ; col += 1 ) {
-        QStandardItem * item = new QStandardItem(*greenIcon, "");
-//        pBlaze->setScratchpadItem( row*16+col, item ) ;
-        LEDsModel->setItem( row, col, item );
+        QStandardItem * item = new QStandardItem();
+        ledsModel->setItem( row, col, item );
      }
-    ui->tvIO->setModel( LEDsModel ) ;
+    ui->tvIO->setModel( ledsModel ) ;
     ui->tvScratchpad->setFont(fixedFont);
     for ( int row = 0 ; row < 8 ; row += 1 )
         ui->tvIO->setRowHeight(row, 16 );
@@ -177,21 +178,35 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tvIO->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
 
+    // LEDs
+    for ( int io = 0x00 ; io < 0x04 ; io += 1 ) {
+        LEDs * leds = new LEDs() ;
+        for ( int bits = 0 ; bits < 8 ; bits += 1 ) {
+            leds->setItem( bits, ledsModel->item( bits, io ) ) ;
+            ledsModel->item( bits )->setData( QVariant( bits + ( io << 8 ) ), Qt::UserRole+1 ) ;
+        }
+        leds->update();
+        pBlaze->setIOdevice( this, io, io, leds ) ;
+    }
+
+
     // UART, lives in 2 places
     UART_IN = new QQueue<uint32_t>() ;
     pBlaze->setIOdevice( this, 0xEC, 0xED, new UART() ) ;
+
 
     // CC, lives in 16 places
     CC * cc = new CC() ;
     cc->pBlaze = pBlaze ;
     pBlaze->setIOdevice( this, 0xC0, 0xCF, cc ) ;
 
+
     // SBOX
     pBlaze->setIOdevice( this, 0xF0, 0xF0, new SBOX() ) ;
 
+
     timer = new QTimer( this ) ;
-    timer->
-    connect( timer, SIGNAL(timeout()), this, SLOT(OneStep()));
+    timer->connect( timer, SIGNAL(timeout()), this, SLOT(OneStep()));
 }
 
 MainWindow::~MainWindow()
@@ -320,6 +335,7 @@ void MainWindow::OneStep() {
     if ( span < 0 ) {
         pBlaze->updateData() ;
         pBlaze->updateState() ;
+        pBlaze->updateIO() ;
         span += 256 ;
     }
     span -= 1 ;
@@ -332,6 +348,7 @@ void MainWindow::OneStep() {
             timer->stop();
             pBlaze->updateData() ;
             pBlaze->updateState() ;
+            pBlaze->updateIO() ;
 
             SelectLine( QItemSelectionModel::Select ) ;
 
@@ -354,6 +371,7 @@ void MainWindow::on_actionStep_triggered()
     pBlaze->stepPB6() ;
     pBlaze->updateData();
     pBlaze->updateState() ;
+    pBlaze->updateIO() ;
 
     SelectLine( QItemSelectionModel::Select ) ;
     statusBar()->showMessage(tr("Stepped"));
@@ -395,6 +413,7 @@ void MainWindow::on_actionReset_triggered()
     pBlaze->resetPB6() ;
     pBlaze->updateData() ;
     pBlaze->updateState() ;
+    pBlaze->updateIO() ;
 
     SelectLine( QItemSelectionModel::Select ) ;
 
@@ -410,6 +429,7 @@ void MainWindow::on_actionStop_triggered()
     timer->stop() ;
     pBlaze->updateData() ;
     pBlaze->updateState() ;
+    pBlaze->updateIO() ;
 
     SelectLine( QItemSelectionModel::Select ) ;
 
@@ -448,7 +468,7 @@ void MainWindow::on_tvRegisters_doubleClicked(const QModelIndex &index)
 void MainWindow::on_tvScratchpad_doubleClicked(const QModelIndex &index)
 {
     bool ok1, ok2 ;
-    QStandardItem * item = scratchPadModel->itemFromIndex( index ) ;
+    QStandardItem * item = scratchpadModel->itemFromIndex( index ) ;
 
     QVariant data = item->data( Qt::UserRole+1 ) ;
     if ( ! data.isValid() )
@@ -462,6 +482,19 @@ void MainWindow::on_tvScratchpad_doubleClicked(const QModelIndex &index)
     ) ;
     if ( ok1 && ok2 )
         pBlaze->setScratchpadValue( cell, value.toInt( &ok1, 16 ) ) ;
+}
+
+void MainWindow::on_tvIO_doubleClicked(const QModelIndex &index)
+{
+    QStandardItem * item = ledsModel->itemFromIndex( index ) ;
+
+    int col = item->column() ;
+    int row = item->row() ;
+
+    IODevice * dev = pBlaze->getIODevice( col ) ;
+    int io = dev->getValue( col ) ;
+    dev->setValue( col, io ^ ( 1 << row ) ) ;
+    dev->update() ;
 }
 
 // toggle breakoint
@@ -525,4 +558,5 @@ void MainWindow::setUARTdata( uint32_t c ) {
         ui->teTerminal->ensureCursorVisible();
     }
 }
+
 

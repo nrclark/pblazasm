@@ -65,6 +65,13 @@ void Picoblaze::updateState( void ) {
     stateItems[ 4 ]->setData( s, Qt::DisplayRole ) ;
 }
 
+void Picoblaze::updateIO( void )
+{
+    for ( int io = 0 ; io < 256 ; io += 1 )
+        if ( IO[ io ].device != NULL )
+            IO[ io ].device->update();
+}
+
 void Picoblaze::updateData( void ) {
     updateScratchPad() ;
     updateStack() ;
@@ -564,5 +571,40 @@ void SBOX::setValue( uint32_t address, uint32_t value )
 {
     index = value ;
 }
+
+// LEDs
+uint32_t LEDs::getValue(uint32_t address)
+{
+    return rack ;
+}
+
+void LEDs::setValue(uint32_t address, uint32_t value )
+{
+    rack = value ;
+}
+
+void LEDs::update( void )
+{
+    for ( int bits = 0 ; bits < 8 ; bits += 1 ) {
+        if ( leds[ bits ] != NULL ) {
+            // set or reset the breakpoint at that address
+            if ( ( ( rack >> bits ) & 1 ) != 0 ) {
+                leds[ bits ]->setData( *greenIcon, Qt::DecorationRole ) ;
+            } else {
+                leds[ bits ]->setData( *blackIcon, Qt::DecorationRole ) ;
+            }
+        }
+    }
+}
+
+LEDs::LEDs()
+{
+    greenIcon = new QIcon(":/images/bullet_ball_glass_red.png");
+    blackIcon = new QIcon(":/images/bullet_ball_glass.png");
+
+    rack = 0 ;
+}
+
+
 
 
