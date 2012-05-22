@@ -2,7 +2,6 @@
 #define PBLAZE_H
 
 #include <QStandardItem>
-#include <QtGui/QLineEdit>
 
 class Picoblaze ;
 
@@ -18,6 +17,7 @@ public:
 
     virtual uint32_t getValue ( uint32_t address ) { return 0 ; }
     virtual void setValue ( uint32_t address, uint32_t value ) {}
+    virtual void update( void ) {}
 
     QObject * w ;
 
@@ -63,6 +63,29 @@ private:
     uint32_t index ;
 } ;
 
+class LEDs : public IODevice
+{
+     Q_OBJECT
+
+ public:
+    LEDs( void ) ;
+    void setItem ( uint32_t reg, QStandardItem * item ) {
+        leds[ reg ] = item ;
+    }
+
+    uint32_t getValue ( uint32_t address ) ;
+    void setValue ( uint32_t address, uint32_t value ) ;
+    void update( void ) ;
+
+private:
+    QStandardItem * leds[ 8 ] ;
+
+    uint32_t rack ;
+
+    QIcon * greenIcon ;
+    QIcon * blackIcon ;
+} ;
+
 
 // Picoblaze
 class Picoblaze : public QObject
@@ -80,6 +103,7 @@ public:
 
     void updateData( void ) ;
     void updateState( void ) ;
+    void updateIO( void ) ;
 
     QStandardItem * getCurrentCodeItem( void ) {
         return Code[ pc ].item ;
@@ -177,6 +201,10 @@ public:
         device->w = w ;
         for ( int addr = addr_l ; addr <= addr_h ; addr +=1 )
             IO[ addr ].device = device ;
+    }
+
+    IODevice * getIODevice( int addr ) {
+        return IO[ addr ].device ;
     }
 
     void resetPB6 ( void ) ;

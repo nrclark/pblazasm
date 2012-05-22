@@ -49,16 +49,15 @@ private slots:
     void on_actionRun_triggered();
     void on_actionStop_triggered();
     void on_actionJump_triggered();
+    void on_actionRemove_triggered();
 
     void on_tvScratchpad_doubleClicked(const QModelIndex &index);
+    void on_tvRegisters_doubleClicked(const QModelIndex &index);
     void on_tvCode_doubleClicked(const QModelIndex &index);
 
     void OneStep();
 
-    void on_tvRegisters_doubleClicked(const QModelIndex &index);
-
-
-    void on_actionRemove_triggered();
+    void on_tvIO_doubleClicked(const QModelIndex &index);
 
 private:
     void SelectLine(QItemSelectionModel::SelectionFlags option);
@@ -75,8 +74,8 @@ private:
     QStandardItemModel * stateModel ;
     QStandardItemModel * stackModel ;
     QStandardItemModel * registerModel ;
-    QStandardItemModel * scratchPadModel ;
-    QStandardItemModel * LEDsModel ;
+    QStandardItemModel * scratchpadModel ;
+    QStandardItemModel * ledsModel ;
 
     QIcon * greenIcon ;
     QIcon * blueIcon ;
