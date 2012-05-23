@@ -28,13 +28,17 @@ Picoblaze::~Picoblaze( void ) {
             IO[ io ].device->IODevice::~IODevice() ;
 }
 
-Picoblaze::Picoblaze( void ) {
+void Picoblaze::clearCode() {
     for ( int address = 0 ; address < MAXMEM ; address += 1 ) {
         Code[ address ].code = 0 ;
         Code[ address ].line = 0 ;
-        Code[ address ].breakpoint = false ;
+        Code[ address ].breakpoint = true ;
         Code[ address ].item = NULL ;
     }
+}
+
+Picoblaze::Picoblaze( void ) {
+    clearCode() ;
 
     for ( int io = 0 ; io < 256 ; io += 1 ) {
         IO[ io ].device = NULL ;

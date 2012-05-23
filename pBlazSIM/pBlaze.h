@@ -120,6 +120,7 @@ public:
     Picoblaze( void );
     ~Picoblaze();
 
+    void clearCode( void ) ;
     void updateData( void ) ;
     void updateState( void ) ;
     void updateIO( void ) ;
