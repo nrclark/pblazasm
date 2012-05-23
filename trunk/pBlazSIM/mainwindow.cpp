@@ -36,21 +36,26 @@ bool KeyPressEater::eventFilter(QObject *obj, QEvent *event)
      }
 }
 
+// constructor, build all supporting cores, models, devices
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    QFont fixedFont("Consolas", 10) ;
+
+    QFont fixedFont( "Consolas", 9 ) ;
 
     eater = new KeyPressEater();
     eater->w = this ;
     ui->teTerminal->installEventFilter( eater ) ;
+    ui->teTerminal->setFont(fixedFont);
 
     pBlaze = new Picoblaze();
 
     blueIcon = new QIcon(":/images/bullet_ball_glass_blue.png");
     redIcon = new QIcon(":/images/bullet_ball_glass_red.png");
+
+    fileWatch = new QFileSystemWatcher( this ) ;
 
     codeModel = new QStandardItemModel ;
     codeModel->insertColumns(0,4);
@@ -108,8 +113,6 @@ MainWindow::MainWindow(QWidget *parent) :
         registerModel->setItem( reg, 0, item);
 
         item = new QStandardItem(QString("%1").arg(0,4,16).toUpper()) ;
-        item->setData( QVariant( reg ), Qt::UserRole+1 ) ;
-
         pBlaze->setRegisterItem( reg, item ) ;
         registerModel->setItem( reg, 1, item );
     }
@@ -160,7 +163,6 @@ MainWindow::MainWindow(QWidget *parent) :
     for ( int row = 0 ; row < 16 ; row += 1 )
      for ( int col = 0 ; col < 16 ; col += 1 ) {
         QStandardItem * item = new QStandardItem(QString("%1").arg(0,2,16).toUpper());
-        item->setData( QVariant( row*16+col ), Qt::UserRole+1 ) ;
         pBlaze->setScratchpadItem( row*16+col, item ) ;
         scratchpadModel->setItem( row, col, item );
      }
@@ -200,10 +202,8 @@ MainWindow::MainWindow(QWidget *parent) :
     // LEDs
     for ( int io = 0x00 ; io < 0x04 ; io += 1 ) {
         LEDs * leds = new LEDs() ;
-        for ( int bits = 0 ; bits < 8 ; bits += 1 ) {
+        for ( int bits = 0 ; bits < 8 ; bits += 1 )
             leds->setItem( bits, ledsModel->item( bits, io ) ) ;
-            ledsModel->item( bits )->setData( QVariant( bits + ( io << 8 ) ), Qt::UserRole+1 ) ;
-        }
         leds->update();
         pBlaze->setIOdevice( this, io, io, leds ) ;
     }
@@ -225,19 +225,29 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     timer = new QTimer( this ) ;
-    timer->connect( timer, SIGNAL(timeout()), this, SLOT(OneStep()));
+    connect( timer, SIGNAL(timeout()), this, SLOT(OneStep()));
+
+    connect( fileWatch, SIGNAL(fileChanged(const QString&)), this, SLOT(fileWatch_fileChanged(const QString)) ) ;
 }
 
+// destructor
 MainWindow::~MainWindow()
 {
     pBlaze->resetPB6();
     delete ui;
 }
 
+// reload LST+SCR files
+void MainWindow::on_actionRefresh_triggered()
+{
+    if ( fileNames.count() > 0 )
+        loadLSTfile( fileNames[ 0 ] ) ;
+}
+
+// select LST file
 void MainWindow::on_action_Open_triggered()
 {
     QFileDialog dialog( this ) ;
-    QStringList fileNames ;
     dialog.setDirectory("C:\\Users\\henk\\Documents\\Projects\\PicoChaze6");
 
     QStringList filters;
@@ -245,18 +255,45 @@ void MainWindow::on_action_Open_triggered()
             << "Any files (*.*)";
     dialog.setNameFilters(filters);
 
-    if ( dialog.exec() )
+    if ( dialog.exec() ) {
         fileNames = dialog.selectedFiles();
+        loadLSTfile( fileNames[ 0 ] ) ;
+    }
+}
 
-    QFile file( fileNames[ 0 ] ) ;
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-         return;
+void MainWindow::fileWatch_fileChanged( const QString &path )
+{
+    QMessageBox mb ;
+    mb.setStandardButtons( QMessageBox::Yes | QMessageBox::No ) ;
+    mb.setText( ".LST file: " + path + " changed; reload?" );
+    if ( mb.exec() )
+        loadLSTfile( path ) ;
+}
+
+// load LST+SCR files, build code model/view
+void MainWindow::loadLSTfile( QString filename )
+{
+    QFile file( filename ) ;
+
+    if ( fileWatch->files().count() > 0 )
+        fileWatch->removePaths(fileWatch->files());
 
     // reset core
-    on_actionReset_triggered();
+    on_actionReset_triggered() ;
+
+    ui->actionStep->setEnabled( false ) ;
+    ui->actionRun->setEnabled( false ) ;
+    ui->actionReset->setEnabled( false ) ;
 
     // remove code
-    codeModel->removeRows(0,-1);
+    codeModel->setRowCount( 0 );
+//    ui->tvCode->update() ;
+    pBlaze->clearCode();
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return;
+
+    fileWatch->addPath( filename ) ;
 
     // read .lst file and find code lines
     int row = 0 ;
@@ -271,7 +308,7 @@ void MainWindow::on_action_Open_triggered()
 
          item = new QStandardItem(QString("%1").arg(row+1));
          item->setSelectable( true ) ;
-         codeModel->setItem( row, 0, item);
+         codeModel->setItem( row, 0, item ) ;
 
          if ( str.contains( QRegExp( "^[0-9A-F]{3,3} [0-9A-F]{5,5}" ) ) ) {
              item = new QStandardItem(*blueIcon, "");
@@ -325,13 +362,16 @@ void MainWindow::on_action_Open_triggered()
     }
     file.close();
 
-    on_actionReset_triggered();
     ui->actionStep->setEnabled( true ) ;
+    ui->actionJump->setEnabled( true ) ;
     ui->actionRun->setEnabled( true ) ;
     ui->actionReset->setEnabled( true ) ;
+    on_actionReset_triggered();
+
     statusBar()->showMessage(tr("Ready"));
 }
 
+// exit application
 void MainWindow::on_actionExit_triggered()
 {
     timer->stop();
@@ -339,8 +379,8 @@ void MainWindow::on_actionExit_triggered()
     qApp->exit();
 }
 
+// select/deselect helper
 void MainWindow::SelectLine( QItemSelectionModel::SelectionFlags option ) {
-    // select/deselect helper
     QStandardItem * item = pBlaze->getCurrentCodeItem() ;
     if ( item != NULL ) {
         QItemSelectionModel * selection = ui->tvCode->selectionModel() ;
@@ -349,7 +389,8 @@ void MainWindow::SelectLine( QItemSelectionModel::SelectionFlags option ) {
     }
 }
 
-void MainWindow::OneStep() {
+// simulation loop
+void MainWindow::OneStep( void ) {
     // no need to report progress everytime
     if ( span < 0 ) {
         pBlaze->updateData() ;
@@ -359,7 +400,7 @@ void MainWindow::OneStep() {
     }
     span -= 1 ;
 
-    // run for a short time until broken
+    // run for a short time or until broken
     for ( int i = 0 ; i < 256 ; i += 1 ) {
         if ( ! pBlaze->stepPB6() || pBlaze->onBreakpoint() || pBlaze->onBarrier() ) {
             if ( pBlaze->onBarrier() )
@@ -383,6 +424,7 @@ void MainWindow::OneStep() {
     }
 }
 
+// step into
 void MainWindow::on_actionStep_triggered()
 {
     SelectLine( QItemSelectionModel::Clear ) ;
@@ -396,6 +438,7 @@ void MainWindow::on_actionStep_triggered()
     statusBar()->showMessage(tr("Stepped"));
 }
 
+// step over
 void MainWindow::on_actionJump_triggered()
 {
     SelectLine( QItemSelectionModel::Clear ) ;
@@ -411,6 +454,7 @@ void MainWindow::on_actionJump_triggered()
     statusBar()->showMessage(tr("Running"));
 }
 
+// start simulation
 void MainWindow::on_actionRun_triggered()
 {
     SelectLine( QItemSelectionModel::Clear ) ;
@@ -425,6 +469,7 @@ void MainWindow::on_actionRun_triggered()
     statusBar()->showMessage(tr("Running"));
 }
 
+// reset simulation
 void MainWindow::on_actionReset_triggered()
 {
     SelectLine( QItemSelectionModel::Clear ) ;
@@ -443,8 +488,8 @@ void MainWindow::on_actionReset_triggered()
     statusBar()->showMessage(tr("Reset"));
 }
 
-void MainWindow::on_actionStop_triggered()
-{
+// stop simulation
+void MainWindow::on_actionStop_triggered() {
     timer->stop() ;
     pBlaze->updateData() ;
     pBlaze->updateState() ;
@@ -460,55 +505,46 @@ void MainWindow::on_actionStop_triggered()
 }
 
 // modify register
-void MainWindow::on_tvRegisters_doubleClicked(const QModelIndex &index)
-{
-    bool ok1, ok2 ;
+void MainWindow::on_tvRegisters_doubleClicked(const QModelIndex &index) {
+    bool ok ;
     // item we clicked on
     QStandardItem * item = registerModel->itemFromIndex( index ) ;
-
-    // get index of register
-    QVariant data = item->data( Qt::UserRole+1 ) ;
-    if ( ! data.isValid() )
-       return ;
-    int cell = data.toInt(&ok2) ;
+    int row = item->row();
 
     // get user input
     QString value = QInputDialog::getText(
-        this, "Register", "New value of s" + QString("%1").arg(cell,2,16).toUpper(),
+        this, "Register", "New value of s" + QString("%1").arg(row,2,16).toUpper(),
         QLineEdit::Normal,
-        QString("%1").arg( pBlaze->getRegisterValue( cell ), 2, 16 ), &ok1
+        QString("%1").arg( pBlaze->getRegisterValue( row ), 2, 16 ).toUpper(), &ok
     ) ;
     // if valid, put in the register
-    if ( ok1 && ok2 )
-        pBlaze->setRegisterValue( cell, value.toInt( &ok1, 16 ) ) ;
+    if ( ok )
+        pBlaze->setRegisterValue( row, value.toInt( &ok, 16 ) ) ;
 }
 
 // modify scratchpad cell
-void MainWindow::on_tvScratchpad_doubleClicked(const QModelIndex &index)
-{
-    bool ok1, ok2 ;
+void MainWindow::on_tvScratchpad_doubleClicked(const QModelIndex &index) {
+    bool ok ;
     QStandardItem * item = scratchpadModel->itemFromIndex( index ) ;
+    int row = item->row();
+    int col = item->column();
 
-    QVariant data = item->data( Qt::UserRole+1 ) ;
-    if ( ! data.isValid() )
-       return ;
-    int cell = data.toInt(&ok2) ;
+    int cell = row*16+col ;
 
     QString value = QInputDialog::getText(
         this, "Scratchpad", "New value at 0x" + QString("%1").arg(cell,2,16).toUpper(),
         QLineEdit::Normal,
-        QString("%1").arg( pBlaze->getScratchpadValue( cell ), 2, 16 ), &ok1
+        QString("%1").arg( pBlaze->getScratchpadValue( cell ), 2, 16 ).toUpper(), &ok
     ) ;
-    if ( ok1 && ok2 )
-        pBlaze->setScratchpadValue( cell, value.toInt( &ok1, 16 ) ) ;
+    if ( ok )
+        pBlaze->setScratchpadValue( cell, value.toInt( &ok, 16 ) ) ;
 }
 
-void MainWindow::on_tvIO_doubleClicked(const QModelIndex &index)
-{
+// toggle LEDs
+void MainWindow::on_tvIO_doubleClicked(const QModelIndex &index) {
     QStandardItem * item = ledsModel->itemFromIndex( index ) ;
-
-    int col = item->column() ;
     int row = item->row() ;
+    int col = item->column() ;
 
     IODevice * dev = pBlaze->getIODevice( col ) ;
     int io = dev->getValue( col ) ;
@@ -517,8 +553,7 @@ void MainWindow::on_tvIO_doubleClicked(const QModelIndex &index)
 }
 
 // toggle breakoint
-void MainWindow::on_tvCode_doubleClicked(const QModelIndex &index)
-{
+void MainWindow::on_tvCode_doubleClicked(const QModelIndex &index) {
     // clicked somewhere in the row
     int row = codeModel->itemFromIndex(index)->row() ;
     // get the bullit cell
@@ -544,8 +579,8 @@ void MainWindow::on_tvCode_doubleClicked(const QModelIndex &index)
     }
 }
 
-void MainWindow::on_actionRemove_triggered()
-{
+// remove all breakpoints
+void MainWindow::on_actionRemove_triggered() {
     for ( int addr = 0 ; addr < MAXMEM ; addr += 1 ) {
         if ( pBlaze->getBreakpoint( addr ) ) {
             QStandardItem * item = pBlaze->getCodeItem( addr ) ;
@@ -578,4 +613,10 @@ void MainWindow::setUARTdata( uint32_t c ) {
     }
 }
 
-
+void MainWindow::on_actionAbout_triggered() {
+    QMessageBox mb ;
+    mb.setStandardButtons( QMessageBox::Ok ) ;
+    mb.setText("http://www.mediatronix.com");
+    mb.setInformativeText("mailto::info@mediatronix.com");
+    mb.exec();
+}

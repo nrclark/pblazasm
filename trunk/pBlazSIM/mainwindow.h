@@ -34,6 +34,8 @@
 #include <QQueue>
 #include <QTimer>
 #include <QInputDialog>
+#include <QMessageBox>
+#include <QFileSystemWatcher>
 
 #include "pBlaze.h"
 
@@ -69,23 +71,27 @@ private slots:
     void on_actionStop_triggered();
     void on_actionJump_triggered();
     void on_actionRemove_triggered();
+    void on_actionRefresh_triggered();
+    void on_actionAbout_triggered();
 
     void on_tvScratchpad_doubleClicked(const QModelIndex &index);
     void on_tvRegisters_doubleClicked(const QModelIndex &index);
     void on_tvCode_doubleClicked(const QModelIndex &index);
-
-    void OneStep();
-
     void on_tvIO_doubleClicked(const QModelIndex &index);
 
+    void fileWatch_fileChanged(const QString &path);
+    void OneStep( void );
+
+
 private:
-    void SelectLine(QItemSelectionModel::SelectionFlags option);
     Ui::MainWindow *ui;
 
+    QStringList fileNames ;
     QTimer * timer ;
     int span ;
 
     KeyPressEater * eater ;
+    QFileSystemWatcher * fileWatch ;
 
     QFileSystemModel * filesys_model ;
 
@@ -99,6 +105,9 @@ private:
     QIcon * greenIcon ;
     QIcon * blueIcon ;
     QIcon * redIcon ;
+
+    void loadLSTfile( QString filename ) ;
+    void SelectLine(QItemSelectionModel::SelectionFlags option);
 
 public:
     uint32_t getUARTdata( void ) ;
