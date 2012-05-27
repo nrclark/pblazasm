@@ -12,11 +12,24 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    pBlaze.cpp
+    pBlaze.cpp \
+    hexspinbox.cpp \
+    ../qhexedit2/src/qhexedit.cpp \
+    ../qhexedit2/src/qhexedit_p.cpp \
+    ../qhexedit2/src/xbytearray.cpp \
+    ../qhexedit2/src/commands.cpp \
+    ioform.cpp
 
 HEADERS  += mainwindow.h \
-    pBlaze.h
+    pBlaze.h \
+    hexspinbox.h \
+    ../qhexedit2/src/xbytearray.h \
+    ../qhexedit2/src/qhexedit_p.h \
+    ../qhexedit2/src/qhexedit.h \
+    ../qhexedit2/src/commands.h \
+    ioform.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    ioform.ui
 
 RESOURCES += resources.qrc

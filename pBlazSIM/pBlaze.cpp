@@ -31,6 +31,7 @@ Picoblaze::~Picoblaze( void ) {
 void Picoblaze::clearCode() {
     for ( int address = 0 ; address < MAXMEM ; address += 1 ) {
         Code[ address ].code = 0 ;
+        Code[ address ].count = 0ll ;
         Code[ address ].line = 0 ;
         Code[ address ].breakpoint = true ;
         Code[ address ].item = NULL ;
@@ -46,7 +47,7 @@ Picoblaze::Picoblaze( void ) {
     }
 
     for ( int scr = 0 ; scr < MAXSCR ; scr += 1 ) {
-        scratchpad[ scr ].value = 0;
+        scratchpad[ scr ].value = 0 ;
         scratchpad[ scr ].item = NULL ;
     }
 }
@@ -60,7 +61,7 @@ void Picoblaze::updateScratchPad( void ) {
 }
 
 void Picoblaze::updateStack( void ) {
-    for ( int sp = 0 ; sp < 32 ; sp += 1 ) {
+    for ( int sp = 0 ; sp < MAXSTK ; sp += 1 ) {
         int n = stack[ sp ].pc ;
         QString s = QString("%1").arg( n, 5, 16 ).toUpper() ;
         stack[ sp ].item->setData( s, Qt::DisplayRole ) ;
@@ -68,7 +69,7 @@ void Picoblaze::updateStack( void ) {
 }
 
 void Picoblaze::updateRegisters( void ) {
-    for ( int reg = 0 ; reg < 16 ; reg += 1 ) {
+    for ( int reg = 0 ; reg < MAXREG ; reg += 1 ) {
         int n = registers[ reg ].value ;
         QString s = QString("%1").arg( n, 4, 16 ).toUpper() ;
         registers[ reg ].item->setData( s, Qt::DisplayRole ) ;
@@ -101,12 +102,38 @@ void Picoblaze::updateData( void ) {
     updateRegisters() ;
 }
 
+void Picoblaze::initPB6 ( void ) {
+    pc = 0 ;
+    sp = 0 ;
+    zero = false ;
+    carry = false ;
+    enable = false ;
+
+    for ( int reg = 0 ; reg < MAXREG ; reg += 1 ) {
+        registers[ reg ].value = 0 ;
+    }
+
+    for ( int sp = 0 ; sp < MAXSTK ; sp += 1 ) {
+        stack[ sp ].pc = 0 ;
+        stack[ sp ].carry = false ;
+        stack[ sp ].zero = false ;
+    }
+
+    for ( int address = 0 ; address < MAXMEM ; address += 1 )
+        Code[ address ].count = 0ll ;
+
+    CycleCounter = 0ll ;
+}
+
 void Picoblaze::resetPB6 ( void ) {
     pc = 0 ;
     sp = 0 ;
     zero = false ;
     carry = false ;
     enable = false ;
+
+    for ( int address = 0 ; address < MAXMEM ; address += 1 )
+        Code[ address ].count = 0ll ;
 
     CycleCounter = 0ll ;
 }
@@ -339,57 +366,73 @@ bool Picoblaze::stepPB6 ( void ) {
             }
         break ;
 
-    case 0x22000 ... 0x22FFF :
+    case 0x22000 ... 0x22FFF : // JUMP
         npc = Address12 ( c ) ;
         break ;
-    case 0x32000 ... 0x32FFF :
+    case 0x32000 ... 0x32FFF : // JUMP Z
         if ( zero )
             npc = Address12 ( c ) ;
         break ;
-    case 0x36000 ... 0x36FFF :
+    case 0x36000 ... 0x36FFF : // JUMP NZ
         if ( !zero )
             npc = Address12 ( c ) ;
         break ;
-    case 0x3A000 ... 0x3AFFF :
+    case 0x3A000 ... 0x3AFFF : // JUMP C
         if ( carry )
             npc = Address12 ( c ) ;
         break ;
-    case 0x3E000 ... 0x3EFFF :
+    case 0x3E000 ... 0x3EFFF : // JUMP NC
         if ( !carry )
             npc = Address12 ( c ) ;
         break ;
-    case 0x26000 ... 0x26FFF :
+    case 0x26000 ... 0x26FFF : // JUMP sX, sY
+
+        return false ;
         break ;
 
-    case 0x20000 ... 0x20FFF :
+    case 0x20000 ... 0x20FFF : // CALL
+        if ( sp > 30 )
+            return false ;
         stack[ sp++ ].pc = npc ;
         npc = Address12 ( c ) ;
         break ;
-    case 0x30000 ... 0x30FFF :
+    case 0x30000 ... 0x30FFF : // CALL Z
+        if ( sp > 30 )
+            return false ;
         if ( zero ) {
             stack[ sp++ ].pc = npc ;
             npc = Address12 ( c ) ;
         }
         break ;
-    case 0x34000 ... 0x34FFF :
+    case 0x34000 ... 0x34FFF : // CALL NZ
+        if ( sp > 30 )
+            return false ;
         if ( ! zero ) {
             stack[ sp++ ].pc = npc ;
             npc = Address12 ( c ) ;
         }
         break ;
-    case 0x38000 ... 0x38FFF :
+    case 0x38000 ... 0x38FFF : // CALL C
+        if ( sp > 30 )
+            return false ;
         if ( carry ) {
             stack[ sp++ ].pc = npc ;
             npc = Address12 ( c ) ;
         }
         break ;
-    case 0x3C000 ... 0x3CFFF :
+    case 0x3C000 ... 0x3CFFF : // CALL NC
+        if ( sp > 30 )
+            return false ;
         if ( ! carry ) {
             stack[ sp++ ].pc = npc ;
             npc = Address12 ( c ) ;
         }
         break ;
-    case 0x24000 ... 0x24FFF :
+    case 0x24000 ... 0x24FFF : // CALL sX, sY
+        if ( sp > 30 )
+            return false ;
+
+        return false ;
         break ;
 
     case 0x25000 ... 0x25FFF :
@@ -499,14 +542,19 @@ bool Picoblaze::stepPB6 ( void ) {
         break ;
 
     case 0x37000 :
+
+        return false ;
         break ;
     case 0x37001 :
+
+        return false ;
         break ;
 
     default :
       return false ;
     }
 
+    Code[ pc ].count++ ;
     pc = npc ;          // only update when no error
     CycleCounter += 2 ; // 2 clock cycles per instruction
     return true ;
@@ -612,9 +660,9 @@ void LEDs::update( void )
         if ( leds[ bits ] != NULL ) {
             // set or reset the breakpoint at that address
             if ( ( ( rack >> bits ) & 1 ) != 0 ) {
-                leds[ bits ]->setData( *greenIcon, Qt::DecorationRole ) ;
+                leds[ bits ]->setIcon( *greenIcon ) ;
             } else {
-                leds[ bits ]->setData( *blackIcon, Qt::DecorationRole ) ;
+                leds[ bits ]->setIcon( *blackIcon ) ;
             }
         }
     }
