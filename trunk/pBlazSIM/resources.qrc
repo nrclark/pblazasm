@@ -43,5 +43,6 @@
         <file>media_stop_red.png</file>
         <file>bullet_ball_glass.png</file>
         <file>refresh.png</file>
+        <file>folder_new.png</file>
     </qresource>
 </RCC>

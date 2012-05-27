@@ -26,6 +26,8 @@ class Picoblaze ;
 
 #define MAXMEM 4096
 #define MAXSCR 256
+#define MAXSTK 32
+#define MAXREG 16
 
 class IODevice : public QObject
  {
@@ -125,10 +127,6 @@ public:
     void updateState( void ) ;
     void updateIO( void ) ;
 
-    QStandardItem * getCurrentCodeItem( void ) {
-        return Code[ pc ].item ;
-    }
-
     bool onBarrier( void ) {
         return pc == barrier ;
     }
@@ -165,16 +163,33 @@ public:
         return Code[ address ].item ;
     }
 
+    QStandardItem * getCurrentCodeItem( void ) {
+        return Code[ pc ].item ;
+    }
+
+    uint64_t getCodeCount( uint32_t address ) {
+        return Code[ address ].count ;
+    }
+
     void setCodeItem( uint32_t address, uint32_t code, uint32_t line, QStandardItem * item ){
         Code[ address ].code = code ;
         Code[ address ].line = line ;
         Code[ address ].breakpoint = false ;
+        Code[ address ].count = 0ll ;
         Code[ address ].item = item ;
     }
 
     void setRegisterItem ( uint32_t reg, QStandardItem * item ) {
         registers[ reg ].value = 0 ;
         registers[ reg ].item = item ;
+    }
+
+    uint32_t getPcValue( void ) {
+        return pc ;
+    }
+
+    uint32_t getStackPcValue( uint32_t address ) {
+        return stack[ address ].pc ;
     }
 
     void setStackItem ( uint32_t sp, QStandardItem * item ) {
@@ -227,6 +242,7 @@ public:
         return IO[ addr ].device ;
     }
 
+    void initPB6( void ) ;
     void resetPB6 ( void ) ;
     bool stepPB6 ( void ) ;
 
@@ -239,6 +255,7 @@ private:
         uint32_t code ;
         uint line ;
         bool breakpoint ;
+        uint64_t count ;
         QStandardItem * item ;
     } INST_t ;
 

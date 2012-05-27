@@ -36,8 +36,20 @@
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QFileSystemWatcher>
+#include <QSettings>
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QTreeWidgetItem>
+#include <QComboBox>
+#include <QCheckBox>
+
 
 #include "pBlaze.h"
+#include "ioform.h"
+
+#include "hexspinbox.h"
+//#include "../qhexedit2/src/qhexedit.h"
 
 
 namespace Ui {
@@ -51,6 +63,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
     friend class IODevice ;
+    friend class KeyPressEater ;
 
 public:
     explicit MainWindow(QWidget *parent = 0);
@@ -79,16 +92,27 @@ private slots:
     void on_tvCode_doubleClicked(const QModelIndex &index);
     void on_tvIO_doubleClicked(const QModelIndex &index);
 
-    void fileWatch_fileChanged(const QString &path);
-    void OneStep( void );
+    void on_tvCode_clicked(const QModelIndex &index);
+    void on_tvStack_doubleClicked(const QModelIndex &index);
+    void on_tvState_doubleClicked(const QModelIndex &index);
+    void on_actionNew_triggered();
+    void on_actionAbout_Qt_triggered();
 
+    void fileWatch_fileChanged(const QString &path);
+    void oneStep( void );
+
+protected:
+    void closeEvent(QCloseEvent *event);
 
 private:
     Ui::MainWindow *ui;
 
-    QStringList fileNames ;
     QTimer * timer ;
     int span ;
+
+//    QHexEdit * hexEdit ;
+
+    IOForm * formIO ;
 
     KeyPressEater * eater ;
     QFileSystemWatcher * fileWatch ;
@@ -107,7 +131,8 @@ private:
     QIcon * redIcon ;
 
     void loadLSTfile( QString filename ) ;
-    void SelectLine(QItemSelectionModel::SelectionFlags option);
+    void selectLine(QItemSelectionModel::SelectionFlags option);
+    void removeCode( void ) ;
 
 public:
     uint32_t getUARTdata( void ) ;
