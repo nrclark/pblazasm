@@ -4,32 +4,24 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui script scripttools
 
 TARGET = pBlazSIM
 TEMPLATE = app
 
 
-SOURCES += main.cpp\
+SOURCES  += main.cpp\
         mainwindow.cpp \
     pBlaze.cpp \
-    hexspinbox.cpp \
-    ../qhexedit2/src/qhexedit.cpp \
-    ../qhexedit2/src/qhexedit_p.cpp \
-    ../qhexedit2/src/xbytearray.cpp \
-    ../qhexedit2/src/commands.cpp \
-    ioform.cpp
+    hexspinbox.cpp
 
 HEADERS  += mainwindow.h \
     pBlaze.h \
-    hexspinbox.h \
-    ../qhexedit2/src/xbytearray.h \
-    ../qhexedit2/src/qhexedit_p.h \
-    ../qhexedit2/src/qhexedit.h \
-    ../qhexedit2/src/commands.h \
-    ioform.h
+    hexspinbox.h
 
-FORMS    += mainwindow.ui \
-    ioform.ui
+FORMS    += mainwindow.ui
 
 RESOURCES += resources.qrc
+
+OTHER_FILES += \
+    ../pBlazSIM-build-desktop-Qt_4_8_1_for_Desktop_-_MinGW__Qt_SDK/debug/IO.js

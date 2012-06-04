@@ -22,8 +22,22 @@
 #include "mainwindow.h"
 
 
+Picoblaze::Picoblaze( void ) {
+    clearCode() ;
+
+    for ( int io = 0 ; io < MAXIO ; io += 1 ) {
+        IO[ io ].device = NULL ;
+        IO[ io ].item = NULL ;
+    }
+
+    for ( int scr = 0 ; scr < MAXSCR ; scr += 1 ) {
+        scratchpad[ scr ].value = 0 ;
+        scratchpad[ scr ].item = NULL ;
+    }
+}
+
 Picoblaze::~Picoblaze( void ) {
-    for ( int io = 0 ; io < 256 ; io += 1 )
+    for ( int io = 0 ; io < MAXIO ; io += 1 )
         if ( IO[ io ].device != NULL )
             IO[ io ].device->IODevice::~IODevice() ;
 }
@@ -35,20 +49,6 @@ void Picoblaze::clearCode() {
         Code[ address ].line = 0 ;
         Code[ address ].breakpoint = true ;
         Code[ address ].item = NULL ;
-    }
-}
-
-Picoblaze::Picoblaze( void ) {
-    clearCode() ;
-
-    for ( int io = 0 ; io < 256 ; io += 1 ) {
-        IO[ io ].device = NULL ;
-        IO[ io ].item = NULL ;
-    }
-
-    for ( int scr = 0 ; scr < MAXSCR ; scr += 1 ) {
-        scratchpad[ scr ].value = 0 ;
-        scratchpad[ scr ].item = NULL ;
     }
 }
 
@@ -91,7 +91,7 @@ void Picoblaze::updateState( void ) {
 
 void Picoblaze::updateIO( void )
 {
-    for ( int io = 0 ; io < 256 ; io += 1 )
+    for ( int io = 0 ; io < MAXIO ; io += 1 )
         if ( IO[ io ].device != NULL )
             IO[ io ].device->update();
 }
@@ -674,6 +674,15 @@ LEDs::LEDs()
     blackIcon = new QIcon(":/images/bullet_ball_glass.png");
 
     rack = 0 ;
+}
+
+// SCRIPT
+uint32_t SCRIPT::getValue(uint32_t address) {
+    return ( (MainWindow *)w )->getScriptValue( address ) ;
+}
+
+void SCRIPT::setValue(uint32_t address, uint32_t value) {
+    ( (MainWindow *)w )->setScriptValue( address, value ) ;
 }
 
 
