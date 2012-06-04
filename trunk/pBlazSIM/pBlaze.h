@@ -26,6 +26,7 @@ class Picoblaze ;
 
 #define MAXMEM 4096
 #define MAXSCR 256
+#define MAXIO 256
 #define MAXSTK 32
 #define MAXREG 16
 
@@ -44,6 +45,16 @@ public:
 
 protected :
    int addr ;
+} ;
+
+class SCRIPT : public IODevice {
+    Q_OBJECT
+
+public:
+   uint32_t getValue ( uint32_t address ) ;
+   void setValue ( uint32_t address, uint32_t value ) ;
+
+protected :
 } ;
 
 class UART : public IODevice
@@ -291,28 +302,27 @@ private:
     DATA_t scratchpad[ MAXSCR ] ;
     STACK_t stack[ 32 ] ;
     REG_t registers[ 16 ] ;
+    IO_t IO[ MAXSCR ] ;
     QStandardItem * stateItems[ 5 ] ;
 
     bool carry, zero, enable ;
 
 
-    uint32_t DestReg ( const int code ) {
+    inline uint32_t DestReg ( const int code ) {
         return ( code >> 8 ) & 0xF ;
     }
 
-    uint32_t SrcReg ( const int code ) {
+    inline uint32_t SrcReg ( const int code ) {
         return ( code >> 4 ) & 0xF ;
     }
 
-    uint32_t Constant ( const int code ) {
+    inline uint32_t Constant ( const int code ) {
         return code & 0xFF ;
     }
 
-    uint32_t Address12 ( const int code ) {
+    inline uint32_t Address12 ( const int code ) {
         return code & 0xFFF ;
     }
-
-    IO_t IO[ MAXSCR ] ;
 } ;
 
 

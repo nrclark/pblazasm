@@ -43,13 +43,13 @@
 #include <QTreeWidgetItem>
 #include <QComboBox>
 #include <QCheckBox>
+#include <QtScript>
+#include <QScriptValue>
+#include <QScriptEngineDebugger>
 
 
 #include "pBlaze.h"
-#include "ioform.h"
-
 #include "hexspinbox.h"
-//#include "../qhexedit2/src/qhexedit.h"
 
 
 namespace Ui {
@@ -101,22 +101,27 @@ private slots:
     void fileWatch_fileChanged(const QString &path);
     void oneStep( void );
 
+    void on_pushButton_clicked();
+
+    void on_treeWidgetIO_doubleClicked(const QModelIndex &index);
+
 protected:
     void closeEvent(QCloseEvent *event);
 
 private:
-    Ui::MainWindow *ui;
+    Ui::MainWindow * ui ;
+
+    QScriptEngine * engine ;
+    QScriptEngineDebugger * debugger ;
 
     QTimer * timer ;
     int span ;
 
-//    QHexEdit * hexEdit ;
-
-    IOForm * formIO ;
+    HexSpinBox * lhsb ;
+    HexSpinBox * fhsb ;
 
     KeyPressEater * eater ;
     QFileSystemWatcher * fileWatch ;
-
     QFileSystemModel * filesys_model ;
 
     QStandardItemModel * codeModel ;
@@ -126,9 +131,11 @@ private:
     QStandardItemModel * scratchpadModel ;
     QStandardItemModel * ledsModel ;
 
-    QIcon * greenIcon ;
     QIcon * blueIcon ;
     QIcon * redIcon ;
+    QIcon * greenIcon ;
+    QIcon * blackIcon ;
+
 
     void loadLSTfile( QString filename ) ;
     void selectLine(QItemSelectionModel::SelectionFlags option);
@@ -138,6 +145,9 @@ public:
     uint32_t getUARTdata( void ) ;
     uint32_t getUARTstatus( void ) ;
     void setUARTdata( uint32_t c ) ;
+
+    uint32_t getScriptValue( uint32_t address ) ;
+    void setScriptValue( uint32_t address, uint32_t value ) ;
 } ;
 
 class KeyPressEater : public QObject

@@ -46,47 +46,38 @@ MainWindow::MainWindow(QWidget *parent) :
     QFont fixedFont( "Consolas", 9 ) ;
 
 
+    // script engine
+    engine = new QScriptEngine() ;
+    debugger = new QScriptEngineDebugger() ;
+    debugger->attachTo( engine ) ;
+    QFile scriptFile( qApp->applicationDirPath() + "/" + "IO.js" ) ;
+    if ( ! scriptFile.open( QIODevice::ReadOnly ) )
+        qDebug() << "no IO config script file: " << scriptFile.fileName() ;
+    QTextStream stream( &scriptFile ) ;
+    QString program = stream.readAll() ;
+    scriptFile.close() ;
+    engine->evaluate( program ) ;
+
     // terminal support
     eater = new KeyPressEater();
     eater->w = this ;
     ui->teTerminal->installEventFilter( eater ) ;
     ui->teTerminal->setFont(fixedFont);
 
-//    hexEdit = new QHexEdit ;
-//    ui->tabWidget->addTab( hexEdit, "ScratchPad" ) ;
-//    connect(hexEdit, SIGNAL(overwriteModeChanged(bool)), this, SLOT(setOverwriteMode(bool)));
+    lhsb = new HexSpinBox() ;
+    lhsb->setPrefix("0x") ;
+    lhsb->setMinimum(0x00) ;
+    lhsb->setMaximum(0xFF ) ;
+    ui->verticalLayoutIO->insertWidget(1, lhsb) ;
 
-    formIO = new IOForm() ;
-
-
-    QList<QTreeWidgetItem *> items;
-     for (int i = 0; i < 4; ++i)
-         items.append(new QTreeWidgetItem((QTreeWidget*)0, QStringList(QString("item: %1").arg(i))));
-     ui->treeWidget->insertTopLevelItems(0, items);
-
-    QTreeWidgetItem * twitem = ui->treeWidget->itemAt(0,0) ;
-
-    QComboBox * cb = new QComboBox() ;
-    cb->addItem( "UART" ) ;
-    cb->addItem( "SBOX" ) ;
-    cb->addItem( "LEDS" ) ;
-    cb->addItem( "CC" ) ;
-    ui->treeWidget->setItemWidget( twitem, 0, cb ) ;
-    HexSpinBox * hsb = new HexSpinBox() ;
-    hsb->setPrefix("0x");
-    hsb->setMinimum(0x00);
-    hsb->setMaximum(0xFF);
-    ui->treeWidget->setItemWidget( twitem, 1, hsb ) ;
-    hsb = new HexSpinBox() ;
-    hsb->setPrefix("0x");
-    hsb->setMinimum(0x00);
-    hsb->setMaximum(0xFF);
-    ui->treeWidget->setItemWidget( twitem, 2, hsb ) ;
-    QCheckBox * chb = new QCheckBox() ;
-    chb->setChecked( true ) ;
-    ui->treeWidget->setItemWidget( twitem, 3, chb ) ;
+    fhsb = new HexSpinBox() ;
+    fhsb->setPrefix("0x") ;
+    fhsb->setMinimum(0x00) ;
+    fhsb->setMaximum(0xFF) ;
+    ui->verticalLayoutIO->insertWidget(1, fhsb) ;
 
 
+    // tabWidget to show scratchpad
     ui->tabWidget->setCurrentIndex( 0 ) ;
 
     // our simulated core
@@ -95,6 +86,9 @@ MainWindow::MainWindow(QWidget *parent) :
     // icons used for Code view
     blueIcon = new QIcon(":/images/bullet_ball_glass_blue.png");
     redIcon = new QIcon(":/images/bullet_ball_glass_red.png");
+    greenIcon = new QIcon(":/images/bullet_ball_glass_red.png");
+    blackIcon = new QIcon(":/images/bullet_ball_glass.png");
+
 
     // setop codemodel for codeview
     codeModel = new QStandardItemModel ;
@@ -145,6 +139,7 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->tvState->setColumnWidth(col, 50);
     ui->tvState->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
+
     // setup registermodel for registerview
     registerModel = new QStandardItemModel ;
     registerModel->insertColumns(0,2);
@@ -165,6 +160,7 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->tvRegisters->setColumnWidth(col, 50);
     ui->tvRegisters->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
+
     // setup stackmodel for stackview
     stackModel = new QStandardItemModel ;
     stackModel->insertColumns(0,4);
@@ -184,6 +180,7 @@ MainWindow::MainWindow(QWidget *parent) :
     for ( int col = 0 ; col < 4 ; col += 1 )
         ui->tvStack->setColumnWidth(col, 50);
     ui->tvStack->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
 
     // setup scratchpadmodel for scratchpadview
     scratchpadModel = new QStandardItemModel ;
@@ -214,6 +211,12 @@ MainWindow::MainWindow(QWidget *parent) :
     for ( int col = 0 ; col < 16 ; col += 1 )
         ui->tvScratchpad->setColumnWidth(col, 28);
     ui->tvScratchpad->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+
+    // emulated IO devices
+
+    // Scripted IO
+    pBlaze->setIOdevice( this, 0x00, 0xFF, new SCRIPT() ) ;
 
     // setup ledsmodel for ledsview
     ledsModel = new QStandardItemModel ;
@@ -247,21 +250,18 @@ MainWindow::MainWindow(QWidget *parent) :
         pBlaze->setIOdevice( this, io, io, leds ) ;
     }
 
-    // emulated IO devices
-
     // UART, lives in 2 places
     UART_IN = new QQueue<uint32_t>() ;
     pBlaze->setIOdevice( this, 0xEC, 0xED, new UART() ) ;
-
 
     // CC, lives in 16 places
     CC * cc = new CC() ;
     cc->pBlaze = pBlaze ;
     pBlaze->setIOdevice( this, 0xC0, 0xCF, cc ) ;
 
-
     // SBOX
     pBlaze->setIOdevice( this, 0xF0, 0xF0, new SBOX() ) ;
+
 
     // timer for running code
     timer = new QTimer( this ) ;
@@ -271,6 +271,7 @@ MainWindow::MainWindow(QWidget *parent) :
     fileWatch = new QFileSystemWatcher( this ) ;
     connect( fileWatch, SIGNAL(fileChanged(const QString&)), this, SLOT(fileWatch_fileChanged(const QString)) ) ;
 
+    // settings in Registry
     QSettings settings( QSettings::NativeFormat, QSettings::UserScope, "Mediatronix", "pBlazSIM" ) ;
     if ( settings.contains( "files/LST" ) ) {
         QString s = settings.value("files/LST").toString() ;
@@ -299,6 +300,7 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow() {
     pBlaze->initPB6();
 
+    // settings in Registry
     QSettings settings( QSettings::NativeFormat, QSettings::UserScope, "Mediatronix", "pBlazSIM" ) ;
     if ( fileWatch->files().size() > 0 )
         settings.setValue("files/LST",  fileWatch->files()[ 0 ] ) ;
@@ -768,7 +770,6 @@ void MainWindow::on_actionRemove_triggered() {
     for ( int addr = 0 ; addr < MAXMEM ; addr += 1 ) {
         if ( pBlaze->getBreakpoint( addr ) ) {
             pBlaze->resetBreakpoint( addr ) ;
-
             QStandardItem * item = pBlaze->getCodeItem( addr ) ;
             if ( item != NULL )
                 item->setIcon( *blueIcon ) ;
@@ -777,7 +778,6 @@ void MainWindow::on_actionRemove_triggered() {
 }
 
 // UART to terminal (QPlainTextView in crippled mode) support
-
 uint32_t MainWindow::getUARTstatus( void ) {
     // only the data available bit
     if ( UART_IN->isEmpty() )
@@ -799,6 +799,26 @@ void MainWindow::setUARTdata( uint32_t c ) {
     }
 }
 
+uint32_t MainWindow::getScriptValue(uint32_t address) {
+    QScriptValue global = engine->globalObject() ;
+
+    QScriptValue getData = global.property( "getData" ) ;
+    QScriptValueList args ;
+    args << address ;
+    QScriptValue result = getData.call( QScriptValue(), args ) ;
+    qDebug() << result.toNumber();
+    return result.toNumber() ;
+}
+
+void MainWindow::setScriptValue(uint32_t address, uint32_t value) {
+    QScriptValue global = engine->globalObject() ;
+
+    QScriptValue setData = global.property( "setData" ) ;
+    QScriptValueList args ;
+    args << address << value ;
+    setData.call( QScriptValue(), args ) ;
+}
+
 void MainWindow::on_actionAbout_triggered() {
     QMessageBox::about( this, "pBlazSIM", "http://www.mediatronix.com" ) ;
 }
@@ -806,3 +826,25 @@ void MainWindow::on_actionAbout_triggered() {
 void MainWindow::on_actionAbout_Qt_triggered() {
     QMessageBox::aboutQt( this, "pBlazSIM" ) ;
 }
+
+void MainWindow::on_pushButton_clicked() {
+    QStringList data ;
+    data.append( ui->cbIOType->currentText() ) ;
+    data.append( "0x" + QString("%L1").arg(fhsb->value(), 2, 16, QChar('0') ).toUpper() ) ;
+    data.append( "0x" + QString("%L1").arg(lhsb->value(), 2, 16, QChar('0') ).toUpper() ) ;
+    QTreeWidgetItem * item = new QTreeWidgetItem((QTreeWidget*)0, data ) ;
+    if ( ui->cbIOEnable->checkState() )
+        item->setIcon( 3, *greenIcon );
+    else
+        item->setIcon( 3, *blackIcon );
+
+    ui->treeWidgetIO->addTopLevelItem(item);
+}
+
+void MainWindow::on_treeWidgetIO_doubleClicked(const QModelIndex &index) {
+//    ui->cbIOType->setCurrentIndex( 1 ) ;
+//    fhsb->setText( QString( "0xC0" ) ) ;
+//    lhsb->setText( QString( "0xCF" ) ) ;
+//    ui->cbIOEnable->setChecked( true ) ;
+}
+
