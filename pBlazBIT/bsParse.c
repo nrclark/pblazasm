@@ -458,11 +458,11 @@ void show_file ( void ) {
             if ( bit_file.packets3[ i ].count > 0 )
                 for ( j = 0 ; j < 37 && j < bit_file.packets3[ i ].count ; j += 1 )
                     printf ( "%08X", bit_file.packets3[ i ].data[ j ] ) ;
-            if ( ( bit_file.packets3[ i ].header >> 29 ) == 1 )
-                printf ( " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
-            else if ( ( bit_file.packets3[ i ].header >> 29 ) == 2 ) {
+            if ( ( bit_file.packets3[ i ].header >> 29 ) == 1 ) {
+            } else if ( ( bit_file.packets3[ i ].header >> 29 ) == 2 ) {
                 int n = bit_file.packets3[ i ].data[ 0 ] ; // XAPP452.pdf, v1.1 : Figure 2
                 printf ( " : block %d major %d minor %d\n", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
+                printf ( " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
             } else
                 printf ( "\n" ) ;
             break;
