@@ -43,7 +43,7 @@ uint16_t Data[ MAXMEM * 18 / 16 ] ;
 static void usage ( char * text ) {
     printf ( "\n%s - %s\n", text, "Picoblaze Assembler bitstream update utility V0.2" ) ;
     printf ( "\nUSAGE:\n" ) ;
-    printf ( "   pBlazBIT -3|-6 [-v] -b<nr_blockram> -c<MEM code inputfile> [-s<MEM data inputfile] -o<BIT outputfile> <BIT inputfile>\\n" ) ;
+    printf ( "   pBlazBIT -3|-3a|-3e|-6 [-v] -b<nr_blockram> -c<MEM code inputfile> [-s<MEM data inputfile] -o<BIT outputfile> <BIT inputfile>\\n" ) ;
 }
 
 bool loadMEM ( const char * strCodefile, const char * strDatafile ) {
@@ -139,18 +139,18 @@ int main ( int argc, char * argv[] ) {
 
     bool bOptErr = false ;
     bool bVerbose = false ;
-    bool bSpartan6 = true ;
+    BitStreamType_e bsType = bstSpartan6 ;
 
     extern char * optarg ;
     extern int optind, optopt ;
     int optch, nr = -1 ;
 
     opterr = -1 ;
-    while ( ( optch = getopt ( argc, argv, "b:c:ho:s:v36" ) ) != -1 ) {
+    while ( ( optch = getopt ( argc, argv, "b:c:ho:s:v3:6" ) ) != -1 ) {
         switch ( optch ) {
         case 'b' :
             if ( optarg != NULL )
-                nr = atoi( optarg ) ;
+                nr = atoi ( optarg ) ;
             else
                 bOptErr = true ;
             break ;
@@ -179,10 +179,31 @@ int main ( int argc, char * argv[] ) {
             bVerbose = true ;
             break ;
         case '3' :
-            bSpartan6 = false ;
+            bsType = bstSpartan3 ;
+            if ( optarg != NULL )
+                switch ( optarg[ 0 ] ) {
+                case 'a' :
+                    bsType = bstSpartan3a ;
+                    if ( bVerbose )
+                        printf ( "! Spartan-3a selected\n" ) ;
+                    break ;
+                case 'e' :
+                    bsType = bstSpartan3e ;
+                    if ( bVerbose )
+                        printf ( "! Spartan-3e selected\n" ) ;
+                    break ;
+                default :
+                    fprintf ( stderr, "? unknown FPGA family chosen\n" ) ;
+                    usage ( basename ( argv[ 0 ] ) ) ;
+                    exit ( -1 ) ;
+                }
+            else if ( bVerbose )
+                printf ( "! Spartan-3 selected\n" ) ;
             break ;
         case '6' :
-            bSpartan6 = true ;
+            bsType = bstSpartan6 ;
+            if ( bVerbose )
+                printf ( "! Spartan-6 selected\n" ) ;
             break ;
         case ':' :
             fprintf ( stderr, "? missing option: -%c\n", optopt ) ;
@@ -200,7 +221,7 @@ int main ( int argc, char * argv[] ) {
         exit ( -1 ) ;
     }
 
-    // bitstream filename
+// bitstream filename
     if ( argv[ optind ] == NULL ) {
         fprintf ( stderr, "? bitstream file missing\n" ) ;
         usage ( basename ( argv[ 0 ] ) ) ;
@@ -240,7 +261,7 @@ int main ( int argc, char * argv[] ) {
     if ( !loadMEM ( code_filename, data_filename ) )
         exit ( -2 ) ;
 
-    if ( !parse_file ( source_filename, bSpartan6, bVerbose ) )
+    if ( !parse_file ( source_filename, bsType, bVerbose ) )
         exit ( -3 ) ;
     if ( ! merge_code ( Data, MAXMEM, nr, bVerbose ) )
         exit ( -4 ) ;
