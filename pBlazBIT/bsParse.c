@@ -29,50 +29,6 @@
 
 #include "bsParse.h"
 
-typedef enum _BitStreamType {
-    bstSpartan3, bstSpartan6
-} BitStreamType_e ;
-
-typedef enum _IDCODE {
-    // Spartan-3
-    XC3S50 = 0x0140D093,
-    XC3S200 = 0x01414093,
-    XC3S400 = 0x0141C093,
-    XC3S1000 = 0x11428093,
-    XC3S1500 = 0x01434093,
-    XC3S2000 = 0x01440093,
-    XC3S4000 = 0x01448093,
-    XC3S5000 = 0x01450093,
-
-    // Spartan-3E
-
-    // Spartan-3A
-
-    // Spartan-3AN
-
-    // Spartan-6
-    XC6SLX4 = 0x04000093,
-    XC6SLX9 = 0x04001093,
-    XC6SLX16 = 0x04002093,
-    XC6SLX25 = 0x04004093,
-    XC6SLX25T = 0x04024093,
-    XC6SLX45 = 0x04008093,
-    XC6SLX45T = 0x04028093,
-    XC6SLX75 = 0x0400E093,
-    XC6SLX75T = 0x0402E093,
-    XC6SLX100 = 0x04011093,
-    XC6SLX100T = 0x04031093,
-    XC6SLX150 = 0x0401D093,
-    XC6SLX150T = 0x0403D093
-} IDCODE_e ;
-
-typedef enum _FL {
-    flXC3S100E = 49,
-    flXC3S500E = 97,
-    flXC3S1200E = 125,
-    flXC3S1600E = 157
-} FRLEN_e ;
-
 const char * sRegisterNames_S3[] = {
     "CRC",   // R/W 00000
     "FAR",   // R/W 00001
@@ -92,12 +48,39 @@ const char * sRegisterNames_S3[] = {
 } ;
 
 const char * sRegisterNames_S6[] = {
-    "CRC", "FARMAJ", "FARMIN", "FDRI", "FDRO",
-    "CMD", "CTL", "MASK", "STAT", "LOUT", "COR1",
-    "COR2", "PWRDN_REG", "FLR", "IDCODE", "CWDT", "HC_OPT_REG",
-    "CSBO", "GENERAL1", "GENERAL2", "GENERAL3", "GENERAL4",
-    "GENERAL5", "MODE_REG", "PU_GWE", "PU_GTS", "MFWR", "CCLK_FREQ",
-    "SEU_OPT", "EXP_SIGN", "RDBK_SIGN", "BOOSTS", "EYE_MASK",
+    "CRC",              //00000
+    "FARMAJ",           //00001
+    "FARMIN",           //00010
+    "FDRI",             //00011
+    "FDRO",             //00100
+    "CMD",              //00101
+    "CTL",              //00110
+    "MASK",             //00111
+    "STAT",             //01000
+    "LOUT",             //01001
+    "COR1",             //01010
+    "COR2",             //01011
+    "PWRDN_REG",        //01100
+    "FLR",              //01101
+    "IDCODE",           //01110
+    "CWDT",             //01111
+    "HC_OPT_REG",       //10000
+    "CSBO",             //10001
+    "GENERAL1",         //10110
+    "GENERAL2",         //11000
+    "GENERAL3",         //11010
+    "GENERAL4",
+    "GENERAL5",
+    "MODE_REG",
+    "PU_GWE",
+    "PU_GTS",
+    "MFWR",
+    "CCLK_FREQ",
+    "SEU_OPT",
+    "EXP_SIGN",
+    "RDBK_SIGN",
+    "BOOSTS",
+    "EYE_MASK",
     "CBC_REG"
 } ;
 
@@ -129,46 +112,12 @@ const char * sOpcodeNames[] = {
     "NOP", "READ", "WRITE"
 } ;
 
-static size_t nLength ;
-static void * pRaw, * current ;
-
 static uint8_t InitialHeader[ 9 ] = { 0x0F, 0xF0, 0x0F, 0xF0, 0x0F, 0xF0, 0x0F, 0xF0, 0x00 } ;
 
-typedef struct _SpartanBitfileHeader {
-    char * info ;
-    char * part ;
-    char * date ;
-    char * time ;
-    bool bBit ;
-} SpartanBitfileHeader_t ;
-
-typedef struct _Spartan3Packet {
-    uint32_t header ;
-    uint32_t count ;
-    uint32_t * data ;
-    uint32_t autocrc ;
-} Spartan3Packet_t ;
-
-typedef struct _Spartan6Packet {
-    uint32_t header ;
-    uint32_t count ;
-    uint16_t * data ;
-    uint32_t autocrc ;
-} Spartan6Packet_t ;
-
-typedef struct _SpartanBitfile {
-    BitStreamType_e type ;
-    SpartanBitfileHeader_t header ;
-    uint32_t header_length ;
-    uint32_t length ;
-    uint32_t count ;
-    union {
-        Spartan3Packet_t * packets3 ;
-        Spartan6Packet_t * packets6 ;
-    } ;
-} SpartanBitfile_t ;
-
+// bitfile
 SpartanBitfile_t bit_file ;
+static size_t nLength ;
+static void * pRaw, * current ;
 
 
 static uint16_t swap16 ( uint16_t a ) {
@@ -306,6 +255,94 @@ bool parse_packets3 ( void ) {
     return result ;
 }
 
+bool parse_packets3a ( void ) {
+    bool result = true ;
+    int i, n ;
+    uint32_t header, type ;
+    uint32_t count, autocrc ;
+    uint32_t * data ;
+
+    n = 0 ;
+    while ( current < pRaw + bit_file.length + bit_file.header_length ) {
+        // get packet header
+        header = get_long() ;
+        type = header >> 29 ;
+
+        // get packet length
+        switch ( type ) {
+        case 1:
+            count = header & 0x000007ff ;
+            break ;
+        case 2:
+            count = header & 0x07ffffff ;
+            break ;
+        default:
+            count = 0 ;
+        }
+        data = NULL ;
+        if ( count > 0 ) {
+            data = malloc ( count * sizeof ( uint32_t ) ) ;
+            for ( i = 0 ; i < count ; i += 1 )
+                data[ i ] = get_long() ;
+        }
+        if ( ( ( header >> 13 ) & 0xF ) == 2 ) // FDRI
+            autocrc = get_long() ;
+
+        bit_file.packets3 = realloc ( bit_file.packets3, ( n + 1 ) * sizeof ( Spartan3Packet_t ) ) ;
+        bit_file.packets3[ n ].header = header ;
+        bit_file.packets3[ n ].data = data ;
+        bit_file.packets3[ n ].count = count ;
+        bit_file.packets6[ n ].autocrc = autocrc ;
+        n += 1 ;
+    }
+    bit_file.count = n ;
+    return result ;
+}
+
+bool parse_packets3e ( void ) {
+    bool result = true ;
+    int i, n ;
+    uint32_t header, type ;
+    uint32_t count, autocrc ;
+    uint32_t * data ;
+
+    n = 0 ;
+    while ( current < pRaw + bit_file.length + bit_file.header_length ) {
+        // get packet header
+        header = get_long() ;
+        type = header >> 29 ;
+
+        // get packet length
+        switch ( type ) {
+        case 1:
+            count = header & 0x000007ff ;
+            break ;
+        case 2:
+            count = header & 0x07ffffff ;
+            break ;
+        default:
+            count = 0 ;
+        }
+        data = NULL ;
+        if ( count > 0 ) {
+            data = malloc ( count * sizeof ( uint32_t ) ) ;
+            for ( i = 0 ; i < count ; i += 1 )
+                data[ i ] = get_long() ;
+        }
+        if ( type == 2 ) // FDRI
+            autocrc = get_long() ;
+
+        bit_file.packets3 = realloc ( bit_file.packets3, ( n + 1 ) * sizeof ( Spartan3Packet_t ) ) ;
+        bit_file.packets3[ n ].header = header ;
+        bit_file.packets3[ n ].data = data ;
+        bit_file.packets3[ n ].count = count ;
+        bit_file.packets6[ n ].autocrc = autocrc ;
+        n += 1 ;
+    }
+    bit_file.count = n ;
+    return result ;
+}
+
 bool parse_packets6 ( void ) {
     bool result = true ;
     int i, n ;
@@ -322,7 +359,7 @@ bool parse_packets6 ( void ) {
         // get packet length
         switch ( type ) {
         case 1:
-            count = header & 0x0000001f ;
+            count = header & 0x001f ;
             break ;
         case 2:
             count = get_long() & 0x0fffffff ;
@@ -364,19 +401,6 @@ void show_file ( void ) {
     printf ( "! number of packets: %d\n", bit_file.count ) ;
     for ( i = 0 ; i < bit_file.count ; i += 1 ) {
         switch ( bit_file.type ) {
-        case bstSpartan6:
-            printf ( "! %4d: 0x%04X", i, bit_file.packets6[ i ].header ) ;
-            printf ( " %6s " , sOpcodeNames[ ( bit_file.packets6[ i ].header >> 11 ) & 0x0003 ] ) ;
-            if ( ( ( bit_file.packets6[ i ].header >> 11 ) & 0x0003 ) != 0 ) {
-                printf ( " %8s," , sRegisterNames_S6[ ( bit_file.packets6[ i ].header >> 5 ) & 0x003F ] ) ;
-                printf ( "  count:  %d", bit_file.packets6[ i ].count ) ;
-                for ( j = 0 ; j < 3 && j < bit_file.packets6[ i ].count ; j += 1 )
-                    printf ( " : 0x%04X", bit_file.packets6[ i ].data[ j ] ) ;
-                if ( bit_file.packets6[ i ].header >> 13 == 2 )
-                    printf ( " : autocrc: 0x%08X\n", bit_file.packets6[ i ].autocrc ) ;
-            }
-            printf ( "\n" ) ;
-            break;
         case bstSpartan3:
             printf ( "! %4d: 0x%08X", i, bit_file.packets3[ i ].header ) ;
             printf ( " %5s", sOpcodeNames[ ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ] ) ;
@@ -397,6 +421,64 @@ void show_file ( void ) {
                 printf ( " : block %d major %d minor %d\n", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
             } else
                 printf ( "\n" ) ;
+            break;
+
+        case bstSpartan3a:
+            printf ( "! %4d: 0x%08X", i, bit_file.packets3[ i ].header ) ;
+            printf ( " %5s", sOpcodeNames[ ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ] ) ;
+            if ( ( ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ) != 0 ) {
+                if ( ( ( bit_file.packets3[ i ].header >> 29 ) & 0x0003 ) == 1 )
+                    printf ( " %6s," , sRegisterNames_S3[ ( bit_file.packets3[ i ].header >> 13 ) & 0x003FFF ] ) ;
+                else
+                    printf ( "            " ) ;
+                printf ( " count: %6d : ", bit_file.packets3[ i ].count ) ;
+            }
+            if ( bit_file.packets3[ i ].count > 0 )
+                for ( j = 0 ; j < 37 && j < bit_file.packets3[ i ].count ; j += 1 )
+                    printf ( "%08X", bit_file.packets3[ i ].data[ j ] ) ;
+            if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 2 )
+                printf ( " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
+            else if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 8 ) {
+                int n = bit_file.packets3[ i ].data[ 0 ] ; // XAPP452.pdf, v1.1 : Figure 2
+                printf ( " : block %d major %d minor %d\n", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
+            } else
+                printf ( "\n" ) ;
+            break;
+
+        case bstSpartan3e:
+            printf ( "! %4d: 0x%08X", i, bit_file.packets3[ i ].header ) ;
+            printf ( " %5s", sOpcodeNames[ ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ] ) ;
+            if ( ( ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ) != 0 ) {
+                if ( ( ( bit_file.packets3[ i ].header >> 29 ) & 0x0003 ) == 1 )
+                    printf ( " %6s," , sRegisterNames_S3[ ( bit_file.packets3[ i ].header >> 13 ) & 0x003FFF ] ) ;
+                else
+                    printf ( "            " ) ;
+                printf ( " count: %6d : ", bit_file.packets3[ i ].count ) ;
+            }
+            if ( bit_file.packets3[ i ].count > 0 )
+                for ( j = 0 ; j < 37 && j < bit_file.packets3[ i ].count ; j += 1 )
+                    printf ( "%08X", bit_file.packets3[ i ].data[ j ] ) ;
+            if ( ( bit_file.packets3[ i ].header >> 29 ) == 1 )
+                printf ( " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
+            else if ( ( bit_file.packets3[ i ].header >> 29 ) == 2 ) {
+                int n = bit_file.packets3[ i ].data[ 0 ] ; // XAPP452.pdf, v1.1 : Figure 2
+                printf ( " : block %d major %d minor %d\n", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
+            } else
+                printf ( "\n" ) ;
+            break;
+
+        case bstSpartan6:
+            printf ( "! %4d: 0x%04X", i, bit_file.packets6[ i ].header ) ;
+            printf ( " %6s " , sOpcodeNames[ ( bit_file.packets6[ i ].header >> 11 ) & 0x0003 ] ) ;
+            if ( ( ( bit_file.packets6[ i ].header >> 11 ) & 0x0003 ) != 0 ) {
+                printf ( " %8s," , sRegisterNames_S6[ ( bit_file.packets6[ i ].header >> 5 ) & 0x003F ] ) ;
+                printf ( "  count:  %d", bit_file.packets6[ i ].count ) ;
+                for ( j = 0 ; j < 3 && j < bit_file.packets6[ i ].count ; j += 1 )
+                    printf ( " : 0x%04X", bit_file.packets6[ i ].data[ j ] ) ;
+                if ( bit_file.packets6[ i ].header >> 13 == 2 )
+                    printf ( " : autocrc: 0x%08X\n", bit_file.packets6[ i ].autocrc ) ;
+            }
+            printf ( "\n" ) ;
             break;
         }
     }
@@ -746,7 +828,7 @@ void build_packets ( void ) {
     }
 }
 
-bool parse_file ( const char * strBitfile, bool bSpartan6, bool bVerbose ) {
+bool parse_file ( const char * strBitfile, BitStreamType_e bsType, bool bVerbose ) {
     bool result = true ;
     size_t nSize ;
     uint32_t sync ;
@@ -785,34 +867,60 @@ bool parse_file ( const char * strBitfile, bool bSpartan6, bool bVerbose ) {
 
     // rest of file
     bit_file.header_length = current - pRaw ;
-    if ( bSpartan6 ) {
-        bit_file.packets6 = NULL ;
-        bit_file.type = bstSpartan6 ;
-    } else {
-        bit_file.packets3 = NULL ;
-        bit_file.type = bstSpartan3 ;
-    }
+
+    bit_file.type = bsType ;
+    bit_file.packets3 = NULL ;
+    bit_file.packets6 = NULL ;
 
     // sync words should follow
-    while ( result ) {
-        sync = get_long() ;
-        if ( sync == 0xFFFFFFFF )
-            ;
-        else if ( sync == 0xAA995566 )
-            break ;
-        else {
-            fprintf ( stderr, "? sync word not found\n" ) ;
-            goto _free ;
+    switch ( bsType ) {
+    case bstSpartan6:
+    case bstSpartan3 :
+    case bstSpartan3e :
+        while ( result ) {
+            sync = get_long() ;
+            if ( sync == 0xFFFFFFFF )
+                ;
+            else if ( sync == 0xAA995566 )
+                break ;
+            else {
+                fprintf ( stderr, "? sync word not found\n" ) ;
+                goto _free ;
+            }
         }
+        break ;
+    case bstSpartan3a :
+        while ( result ) {
+            sync = get_word() ;
+            if ( sync == 0xFFFF )
+                ;
+            else if ( sync == 0xAA99 )
+                break ;
+            else {
+                fprintf ( stderr, "? sync word not found\n" ) ;
+                goto _free ;
+            }
+        }
+        break ;
     }
 
     // the actual work
-    if ( bSpartan6 )
-        result = result && parse_packets6() ;
-    else
+    switch ( bsType ) {
+    case bstSpartan3:
         result = result && parse_packets3() ;
+        break;
+    case bstSpartan3a:
+        result = result && parse_packets3a() ;
+        break;
+    case bstSpartan3e:
+        result = result && parse_packets3e() ;
+        break;
+    case bstSpartan6:
+        result = result && parse_packets6() ;
+        break;
+    }
 
-    // report
+// report
     if ( result && bVerbose )
         show_file() ;
 

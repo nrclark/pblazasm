@@ -22,7 +22,7 @@
 --
 -- ROM is preinitialized by a 128 bit digest, depending on the ROM_NBR (range 0 to 15).
 -- pBlazBIT finds the digest and places the contents of a MEM file there directly in the bit file.
--- HVK 120320
+--
 
 library ieee ;
 use ieee.std_logic_1164.all ;
