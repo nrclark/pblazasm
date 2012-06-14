@@ -25,6 +25,133 @@ typedef enum _BitStreamType {
     bstSpartan3, bstSpartan3a, bstSpartan3e, bstSpartan6
 } BitStreamType_e ;
 
+typedef enum _FPGAType {
+    tyXC3S50 = 0,
+    tyXC3S200,
+    tyXC3S400,
+    tyXC3S1000,
+    tyXC3S1500,
+    tyXC3S2000,
+    tyXC3S4000,
+    tyXC3S5000,
+
+    tyXC3S100E,
+    tyXC3S250E,
+    tyXC3S500E,
+    tyXC3S1200E,
+    tyXC3S1600E,
+
+    tyXC3S50A,
+    tyXC3S200A,
+    tyXC3S400A,
+    tyXC3S700A,
+    tyXC3S1400A,
+
+    tyXC3S50AN,
+    tyXC3S200AN,
+    tyXC3S400AN,
+    tyXC3S700AN,
+    tyXC3S1400AN,
+    tyXC3SD1800A,
+    tyXC3SD3400A,
+
+    // Spartan-6
+    tyXC6SLX4,
+    tyXC6SLX9,
+    tyXC6SLX16,
+    tyXC6SLX25,
+    tyXC6SLX25T,
+    tyXC6SLX45,
+    tyXC6SLX45T,
+    tyXC6SLX75,
+    tyXC6SLX75T,
+    tyXC6SLX100,
+    tyXC6SLX100T,
+    tyXC6SLX150,
+    tyXC6SLX150T,
+
+    // Virtex-4L
+    tyXC4VLX15,
+    tyXC4VLX25,
+    tyXC4VLX40,
+    tyXC4VLX60,
+    tyXC4VLX80,
+    tyXC4VLX100,
+    tyXC4VLX160,
+
+    // Virtex-4S
+    tyXC4VSX25,
+    tyXC4VSX35,
+    tyXC4VSX55,
+
+    // Virtex-4F
+    tyXC4VFX12,
+    tyXC4VFX20,
+    tyXC4VFX40,
+    tyXC4VFX60,
+    tyXC4VFX100,
+    tyXC4VFX140,
+    tyXC4VLX200,
+
+    // Virtex-5L
+    tyXC5VLX30,
+    tyXC5VLX50,
+    tyXC5VLX85,
+    tyXC5VLX110,
+    tyXC5VLX155,
+    tyXC5VLX220,
+    tyXC5VLX330,
+    tyXC5VLX20T,
+    tyXC5VLX30T,
+    tyXC5VLX50T,
+    tyXC5VLX85T,
+    tyXC5VLX110T,
+    tyXC5VLX155T,
+    tyXC5VLX220T,
+    tyXC5VLX330T,
+
+    // Virtex-5S
+    tyXC5VSX35T,
+    tyXC5VSX50T,
+    tyXC5VSX95T,
+    tyXC5VSX240T,
+
+    // Virtex-5F
+    tyXC5VFX30T,
+    tyXC5VFX70T,
+    tyXC5VFX100T,
+    tyXC5VFX130T,
+    tyXC5VFX200T,
+    tyXC5VTX150T,
+    tyXC5VTX240T,
+
+    // Virtex-6
+    tyXC6VHX250T,
+    tyXC6VHX255T,
+    tyXC6VHX380T,
+    tyXC6VHX565T,
+
+    // Virtex-6
+    tyXC6VLX75T,
+    tyXC6VLX130T,
+    tyXC6VLX195T,
+    tyXC6VLX240T,
+    tyXC6VLX365T,
+    tyXC6VLX550T,
+    tyXC6VLX760,
+
+    // Virtex-6
+    tyXC6VSX315T,
+    tyXC6VSX475T,
+    tyXQ6VLX130T,
+    tyXQ6VLX240T,
+    tyXQ6VLX550T,
+    tyXQ6VSX315T,
+    tyXQ6VSX475T,
+
+    tyLast
+} FPGAType_e ;
+
 typedef enum _IDCODE {
     idXC3S50      = 0x0140C093,
     idXC3S200     = 0x01414093,
@@ -164,6 +291,7 @@ typedef enum _FRLEN {
 
     // Spartan-3E
     flXC3S100E = 49,
+    flXC3S250E = 73,
     flXC3S500E = 97,
     flXC3S1200E = 125,
     flXC3S1600E = 157,
@@ -174,8 +302,15 @@ typedef enum _FRLEN {
     flXC3S400A  = 170,
     flXC3S700A  = 202,
     flXC3S1400A = 298,
+
     flXC3SD1800A = 362,
     flXC3SD3400A = 426,
+
+    flXC3S50AN =  74, // all 16bit!
+    flXC3S200AN  = 138,
+    flXC3S400AN  = 170,
+    flXC3S700AN  = 202,
+    flXC3S1400AN = 298,
 
     flXC4VLX15 = 41,
     flXC4VLX25 = 41,
@@ -255,6 +390,20 @@ typedef enum _FRLEN {
     flXQ6VSX315T = 81,
     flXQ6VSX475T = 81
 } FRLEN_e ;
+
+typedef struct _INFO {
+    int id ; // IDCode
+    int fl ; // framelength
+    int bs, be ; // blockram start, blockram end
+} INFO_t ;
+
+
+// Table 13: Frame Address Scheme
+// Column GCLK_L GCLK_R CENTER TERM_L IOI_L CLB  CLB  CLB  CLB  CLB  CLB  IOI_R TERM_R  BRAM BRAM  BRAM_INIT BRAM_INIT
+
+// Block  0      0      0      0      0     0    0    0    0    0    0    0     0       1    1     2         2
+// Major  0      0      0      1      2     3    4    5    6    7    8    9     10      0    1     0         1
+// Minor  0      1      2      0~1    0~18  0~18 0~18 0~18 0~18 0~18 0~18 0~18  0~1     0~75 0~75  0~18      0~18
 
 typedef struct _SpartanBitfileHeader {
     char * info ;

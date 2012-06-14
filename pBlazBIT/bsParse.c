@@ -28,6 +28,7 @@
 #include "pbTypes.h"
 
 #include "bsParse.h"
+#include "pbS3E.h"
 
 const char * sRegisterNames_S3[] = {
     "CRC",   // R/W 00000
@@ -112,12 +113,143 @@ const char * sOpcodeNames[] = {
     "NOP", "READ", "WRITE"
 } ;
 
-static uint8_t InitialHeader[ 9 ] = { 0x0F, 0xF0, 0x0F, 0xF0, 0x0F, 0xF0, 0x0F, 0xF0, 0x00 } ;
+static const INFO_t FPGAInfo[ tyLast ] = {
+// Spartan-3
+    idXC3S50    , flXC3S50    , 0, 0,
+    idXC3S200   , flXC3S200   , 0, 0,
+    idXC3S400   , flXC3S400   , 0, 0,
+    idXC3S1000  , flXC3S1000  , 0, 0,
+    idXC3S1500  , flXC3S1500  , 0, 0,
+    idXC3S2000  , flXC3S2000  , 0, 0,
+    idXC3S4000  , flXC3S4000  , 0, 0,
+    idXC3S5000  , flXC3S5000  , 0, 0,
+
+// S
+    idXC3S100E  , flXC3S100E  ,  8, 40,
+    idXC3S250E  , flXC3S250E  , 20, 52,
+    idXC3S500E  , flXC3S500E  , 24, 88,
+    idXC3S1200E , flXC3S1200E , 0, flXC3S1200E,
+    idXC3S1600E , flXC3S1600E , 0, flXC3S1600E,
+
+//
+    idXC3S50A   , flXC3S50A   , 0, 0,
+    idXC3S200A  , flXC3S200A  , 0, 0,
+    idXC3S400A  , flXC3S400A  , 0, 0,
+    idXC3S700A  , flXC3S700A  , 0, 0,
+    idXC3S1400A , flXC3S1400A , 0, 0,
+    idXC3SD1800A, flXC3SD1800A, 0, 0,
+    idXC3SD3400A, flXC3SD3400A, 0, 0,
+
+// S
+    idXC3S50AN  , flXC3S50AN  , 0, 0,
+    idXC3S200AN , flXC3S200AN , 0, 0,
+    idXC3S400AN , flXC3S400AN , 0, 0,
+    idXC3S700AN , flXC3S700AN , 0, 0,
+    idXC3S1400AN, flXC3S1400AN, 0, 0,
+
+//
+    idXC6SLX4   , idXC6SLX4   , 0, 0,
+    idXC6SLX9   , idXC6SLX9   , 0, 0,
+    idXC6SLX16  , idXC6SLX16  , 0, 0,
+    idXC6SLX25  , idXC6SLX25  , 0, 0,
+    idXC6SLX25T , idXC6SLX25T , 0, 0,
+    idXC6SLX45  , idXC6SLX45  , 0, 0,
+    idXC6SLX45T , idXC6SLX45T , 0, 0,
+    idXC6SLX75  , idXC6SLX75  , 0, 0,
+    idXC6SLX75T , idXC6SLX75T , 0, 0,
+    idXC6SLX100 , idXC6SLX100 , 0, 0,
+    idXC6SLX100T, idXC6SLX100T, 0, 0,
+    idXC6SLX150 , idXC6SLX150 , 0, 0,
+    idXC6SLX150T, idXC6SLX150T,
+
+//
+    idXC4VLX15  , flXC4VLX15  , 0, 0,
+    idXC4VLX25  , flXC4VLX25  , 0, 0,
+    idXC4VLX40  , flXC4VLX40  , 0, 0,
+    idXC4VLX60  , flXC4VLX60  , 0, 0,
+    idXC4VLX80  , flXC4VLX80  , 0, 0,
+    idXC4VLX100 , flXC4VLX100 , 0, 0,
+    idXC4VLX160 , flXC4VLX160 , 0, 0,
+
+//
+    idXC4VSX25  , flXC4VSX25  , 0, 0,
+    idXC4VSX35  , flXC4VSX35  , 0, 0,
+    idXC4VSX55  , flXC4VSX55  , 0, 0,
+
+//
+    idXC4VFX12  , flXC4VFX12  , 0, 0,
+    idXC4VFX20  , flXC4VFX20  , 0, 0,
+    idXC4VFX40  , flXC4VFX40  , 0, 0,
+    idXC4VFX60  , flXC4VFX60  , 0, 0,
+    idXC4VFX100 , flXC4VFX100 , 0, 0,
+    idXC4VFX140 , flXC4VFX140 , 0, 0,
+    idXC4VLX200 , flXC4VLX200 , 0, 0,
+
+//
+    idXC5VLX30  , flXC5VLX30  , 0, 0,
+    idXC5VLX50  , flXC5VLX50  , 0, 0,
+    idXC5VLX85  , flXC5VLX85  , 0, 0,
+    idXC5VLX110 , flXC5VLX110 , 0, 0,
+    idXC5VLX155 , flXC5VLX155 , 0, 0,
+    idXC5VLX220 , flXC5VLX220 , 0, 0,
+    idXC5VLX330 , flXC5VLX330 , 0, 0,
+    idXC5VLX20T , flXC5VLX20T , 0, 0,
+    idXC5VLX30T , flXC5VLX30T , 0, 0,
+    idXC5VLX50T , flXC5VLX50T , 0, 0,
+    idXC5VLX85T , flXC5VLX85T , 0, 0,
+    idXC5VLX110T, flXC5VLX110T, 0, 0,
+    idXC5VLX155T, flXC5VLX155T, 0, 0,
+    idXC5VLX220T, flXC5VLX220T, 0, 0,
+    idXC5VLX330T, flXC5VLX330T, 0, 0,
+
+//
+    idXC5VSX35T , flXC5VSX35T , 0, 0,
+    idXC5VSX50T , flXC5VSX50T , 0, 0,
+    idXC5VSX95T , flXC5VSX95T , 0, 0,
+    idXC5VSX240T, flXC5VSX240T, 0, 0,
+
+//
+    idXC5VFX30T , flXC5VFX30T , 0, 0,
+    idXC5VFX70T , flXC5VFX70T , 0, 0,
+    idXC5VFX100T, flXC5VFX100T, 0, 0,
+    idXC5VFX130T, flXC5VFX130T, 0, 0,
+    idXC5VFX200T, flXC5VFX200T, 0, 0,
+    idXC5VTX150T, flXC5VTX150T, 0, 0,
+    idXC5VTX240T, flXC5VTX240T, 0, 0,
+
+//
+    idXC6VHX250T, flXC6VHX250T, 0, 0,
+    idXC6VHX255T, flXC6VHX255T, 0, 0,
+    idXC6VHX380T, flXC6VHX380T, 0, 0,
+    idXC6VHX565T, flXC6VHX565T, 0, 0,
+
+//
+    idXC6VLX75T , flXC6VLX75T , 0, 0,
+    idXC6VLX130T, flXC6VLX130T, 0, 0,
+    idXC6VLX195T, flXC6VLX195T, 0, 0,
+    idXC6VLX240T, flXC6VLX240T, 0, 0,
+    idXC6VLX365T, flXC6VLX365T, 0, 0,
+    idXC6VLX550T, flXC6VLX550T, 0, 0,
+    idXC6VLX760 , flXC6VLX760 , 0, 0,
+
+//
+    idXC6VSX315T, flXC6VSX315T, 0, 0,
+    idXC6VSX475T, flXC6VSX475T, 0, 0,
+    idXQ6VLX130T, flXQ6VLX130T, 0, 0,
+    idXQ6VLX240T, flXQ6VLX240T, 0, 0,
+    idXQ6VLX550T, flXQ6VLX550T, 0, 0,
+    idXQ6VSX315T, flXQ6VSX315T, 0, 0,
+    idXQ6VSX475T, flXQ6VSX475T, 0, 0
+} ;
+
+
+static const uint8_t InitialHeader[ 9 ] = { 0x0F, 0xF0, 0x0F, 0xF0, 0x0F, 0xF0, 0x0F, 0xF0, 0x00 } ;
 
 // bitfile
 SpartanBitfile_t bit_file ;
 static size_t nLength ;
-static void * pRaw, * current ;
+static uint8_t * pRaw ;
+static uint8_t * current ;
 
 
 static uint16_t swap16 ( uint16_t a ) {
@@ -149,7 +281,7 @@ uint32_t get_long ( void ) {
 char * get_string ( void ) {
     char * result;
     uint16_t len = get_word() ;
-    result = strdup ( current ) ;
+    result = strdup ( ( char * ) current ) ;
     current += len ;
     return result ;
 }
@@ -171,8 +303,9 @@ void put_long ( uint32_t b ) {
 
 void put_string ( char * b ) {
     put_word ( strlen ( b ) + 1 ) ;
-    while ( *b != 0 )
+    while ( *b != 0 ) {
         put_byte ( *b++ ) ;
+    }
     put_byte ( 0 ) ;
 }
 
@@ -182,10 +315,12 @@ bool parse_header ( int len ) {
 
     if ( ( * ( uint32_t * ) current ) != 0xFFFFFFFF ) {
         result &= get_word() == sizeof ( InitialHeader ) ;
-        for ( i = 0 ; result && i < sizeof ( InitialHeader ) ; i += 1 )
+        for ( i = 0 ; result && i < sizeof ( InitialHeader ) ; i += 1 ) {
             result &= InitialHeader[ i ] == get_byte() ;
-        if ( ! result )
+        }
+        if ( ! result ) {
             return result ;
+        }
 
         result = result && get_word() == 1 ;
         result = result && get_byte() == 'a' ;
@@ -237,14 +372,16 @@ bool parse_packets3 ( void ) {
         }
         data = NULL ;
         if ( count > 0 ) {
-            data = malloc ( count * sizeof ( uint32_t ) ) ;
-            for ( i = 0 ; i < count ; i += 1 )
+            data = ( uint32_t * ) malloc ( count * sizeof ( uint32_t ) ) ;
+            for ( i = 0 ; i < count ; i += 1 ) {
                 data[ i ] = get_long() ;
+            }
         }
-        if ( ( ( header >> 13 ) & 0xF ) == 2 ) // FDRI
+        if ( ( ( header >> 13 ) & 0xF ) == 2 ) { // FDRI
             autocrc = get_long() ;
+        }
 
-        bit_file.packets3 = realloc ( bit_file.packets3, ( n + 1 ) * sizeof ( Spartan3Packet_t ) ) ;
+        bit_file.packets3 = ( Spartan3Packet_t * ) realloc ( bit_file.packets3, ( n + 1 ) * sizeof ( Spartan3Packet_t ) ) ;
         bit_file.packets3[ n ].header = header ;
         bit_file.packets3[ n ].data = data ;
         bit_file.packets3[ n ].count = count ;
@@ -281,14 +418,16 @@ bool parse_packets3a ( void ) {
         }
         data = NULL ;
         if ( count > 0 ) {
-            data = malloc ( count * sizeof ( uint32_t ) ) ;
-            for ( i = 0 ; i < count ; i += 1 )
+            data = ( uint32_t * ) malloc ( count * sizeof ( uint32_t ) ) ;
+            for ( i = 0 ; i < count ; i += 1 ) {
                 data[ i ] = get_long() ;
+            }
         }
-        if ( ( ( header >> 13 ) & 0xF ) == 2 ) // FDRI
+        if ( ( ( header >> 13 ) & 0xF ) == 2 ) { // FDRI
             autocrc = get_long() ;
+        }
 
-        bit_file.packets3 = realloc ( bit_file.packets3, ( n + 1 ) * sizeof ( Spartan3Packet_t ) ) ;
+        bit_file.packets3 = ( Spartan3Packet_t * ) realloc ( bit_file.packets3, ( n + 1 ) * sizeof ( Spartan3Packet_t ) ) ;
         bit_file.packets3[ n ].header = header ;
         bit_file.packets3[ n ].data = data ;
         bit_file.packets3[ n ].count = count ;
@@ -302,7 +441,7 @@ bool parse_packets3a ( void ) {
 bool parse_packets3e ( void ) {
     bool result = true ;
     int i, n ;
-    uint32_t header, type ;
+    uint32_t header, type, regnr ;
     uint32_t count, autocrc ;
     uint32_t * data ;
 
@@ -316,23 +455,28 @@ bool parse_packets3e ( void ) {
         switch ( type ) {
         case 1:
             count = header & 0x000007ff ;
+            regnr = ( header >> 13 ) & 0x3FFF ;
             break ;
         case 2:
             count = header & 0x07ffffff ;
+            regnr = 2 ;
             break ;
         default:
             count = 0 ;
+            regnr = 0 ;
         }
         data = NULL ;
         if ( count > 0 ) {
-            data = malloc ( count * sizeof ( uint32_t ) ) ;
-            for ( i = 0 ; i < count ; i += 1 )
+            data = ( uint32_t * ) malloc ( count * sizeof ( uint32_t ) ) ;
+            for ( i = 0 ; i < count ; i += 1 ) {
                 data[ i ] = get_long() ;
+            }
+            if ( regnr == 2 ) { // FDRI
+                autocrc = get_long() ;
+            }
         }
-        if ( type == 2 ) // FDRI
-            autocrc = get_long() ;
 
-        bit_file.packets3 = realloc ( bit_file.packets3, ( n + 1 ) * sizeof ( Spartan3Packet_t ) ) ;
+        bit_file.packets3 = ( Spartan3Packet_t * ) realloc ( bit_file.packets3, ( n + 1 ) * sizeof ( Spartan3Packet_t ) ) ;
         bit_file.packets3[ n ].header = header ;
         bit_file.packets3[ n ].data = data ;
         bit_file.packets3[ n ].count = count ;
@@ -369,14 +513,16 @@ bool parse_packets6 ( void ) {
         }
         data = NULL ;
         if ( count > 0 ) {
-            data = malloc ( count * sizeof ( uint16_t ) ) ;
-            for ( i = 0 ; i < count ; i += 1 )
+            data = ( uint16_t * ) malloc ( count * sizeof ( uint16_t ) ) ;
+            for ( i = 0 ; i < count ; i += 1 ) {
                 data[ i ] = get_word() ;
+            }
         }
-        if ( type == 2 )
+        if ( type == 2 ) {
             autocrc = get_long() ;
+        }
 
-        bit_file.packets6 = realloc ( bit_file.packets6, ( n + 1 ) * sizeof ( Spartan6Packet_t ) ) ;
+        bit_file.packets6 = ( Spartan6Packet_t * ) realloc ( bit_file.packets6, ( n + 1 ) * sizeof ( Spartan6Packet_t ) ) ;
         bit_file.packets6[ n ].header = header ;
         bit_file.packets6[ n ].data = data ;
         bit_file.packets6[ n ].count = count ;
@@ -388,7 +534,14 @@ bool parse_packets6 ( void ) {
 }
 
 void show_file ( void ) {
-    int i, j ;
+    int i, j, k ;
+    FILE * outfile ;
+
+    outfile = fopen ( "dump.bin", "wb" ) ;
+    if ( outfile == NULL ) {
+        fprintf ( stderr, "? Unable to open or create output dump file '%s'\n", "dump.bin" ) ;
+        return ;
+    }
 
     if ( bit_file.header.bBit ) {
         printf ( "! header:\n" ) ;
@@ -405,67 +558,118 @@ void show_file ( void ) {
             printf ( "! %4d: 0x%08X", i, bit_file.packets3[ i ].header ) ;
             printf ( " %5s", sOpcodeNames[ ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ] ) ;
             if ( ( ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ) != 0 ) {
-                if ( ( ( bit_file.packets3[ i ].header >> 29 ) & 0x0003 ) == 1 )
+                if ( ( ( bit_file.packets3[ i ].header >> 29 ) & 0x0003 ) == 1 ) {
                     printf ( " %6s," , sRegisterNames_S3[ ( bit_file.packets3[ i ].header >> 13 ) & 0x003FFF ] ) ;
-                else
+                } else {
                     printf ( "            " ) ;
+                }
                 printf ( " count: %6d : ", bit_file.packets3[ i ].count ) ;
             }
             if ( bit_file.packets3[ i ].count > 0 )
-                for ( j = 0 ; j < 37 && j < bit_file.packets3[ i ].count ; j += 1 )
+                for ( j = 0 ; j < 37 && j < bit_file.packets3[ i ].count ; j += 1 ) {
                     printf ( "%08X", bit_file.packets3[ i ].data[ j ] ) ;
-            if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 2 )
+                }
+            if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 2 ) {
                 printf ( " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
-            else if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 8 ) {
+            } else if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 8 ) {
                 int n = bit_file.packets3[ i ].data[ 0 ] ; // XAPP452.pdf, v1.1 : Figure 2
                 printf ( " : block %d major %d minor %d\n", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
-            } else
+            } else {
                 printf ( "\n" ) ;
+            }
             break;
 
         case bstSpartan3a:
             printf ( "! %4d: 0x%08X", i, bit_file.packets3[ i ].header ) ;
             printf ( " %5s", sOpcodeNames[ ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ] ) ;
             if ( ( ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ) != 0 ) {
-                if ( ( ( bit_file.packets3[ i ].header >> 29 ) & 0x0003 ) == 1 )
+                if ( ( ( bit_file.packets3[ i ].header >> 29 ) & 0x0003 ) == 1 ) {
                     printf ( " %6s," , sRegisterNames_S3[ ( bit_file.packets3[ i ].header >> 13 ) & 0x003FFF ] ) ;
-                else
+                } else {
                     printf ( "            " ) ;
+                }
                 printf ( " count: %6d : ", bit_file.packets3[ i ].count ) ;
             }
             if ( bit_file.packets3[ i ].count > 0 )
-                for ( j = 0 ; j < 37 && j < bit_file.packets3[ i ].count ; j += 1 )
+                for ( j = 0 ; j < 37 && j < bit_file.packets3[ i ].count ; j += 1 ) {
                     printf ( "%08X", bit_file.packets3[ i ].data[ j ] ) ;
-            if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 2 )
+                }
+            if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 2 ) {
                 printf ( " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
-            else if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 8 ) {
+            } else if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 8 ) {
                 int n = bit_file.packets3[ i ].data[ 0 ] ; // XAPP452.pdf, v1.1 : Figure 2
                 printf ( " : block %d major %d minor %d\n", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
-            } else
+            } else {
                 printf ( "\n" ) ;
+            }
             break;
 
-        case bstSpartan3e:
+        case bstSpartan3e: {
+            FPGAType_e FPGAType = tyXC3S500E ;
+
             printf ( "! %4d: 0x%08X", i, bit_file.packets3[ i ].header ) ;
             printf ( " %5s", sOpcodeNames[ ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ] ) ;
             if ( ( ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ) != 0 ) {
-                if ( ( ( bit_file.packets3[ i ].header >> 29 ) & 0x0003 ) == 1 )
+                if ( ( ( bit_file.packets3[ i ].header >> 29 ) & 0x0003 ) == 1 ) {
                     printf ( " %6s," , sRegisterNames_S3[ ( bit_file.packets3[ i ].header >> 13 ) & 0x003FFF ] ) ;
-                else
+                } else {
                     printf ( "            " ) ;
+                }
                 printf ( " count: %6d : ", bit_file.packets3[ i ].count ) ;
             }
-            if ( bit_file.packets3[ i ].count > 0 )
-                for ( j = 0 ; j < 37 && j < bit_file.packets3[ i ].count ; j += 1 )
-                    printf ( "%08X", bit_file.packets3[ i ].data[ j ] ) ;
+            if ( bit_file.packets3[ i ].count > 0 ) {
+                int col = 0, coldef = 0, blk = 0, maj = 0, min = 0 ;
+                coldef = abs ( ColumnDefs[FPGAType][ col ] ) ;
+
+                for ( k = 0 ; k < bit_file.packets3[ i ].count ; ) {
+                    if ( ( ( bit_file.packets3[ i ].header >> 29 ) & 0x0003 ) == 2 ) { // FDRI type 2
+                        printf ( "\nblk %2d, maj %2d, min %2d : ", blk, maj, min ) ;
+                    } else if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0x3fff ) == 2 ) { // FDRI type 1
+                        printf ( "blk %2d, maj %2d, min %2d : ", blk, maj, min ) ;
+                    } else if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0x3fff ) == 8 ) { // LOUT debugging
+                        int n = bit_file.packets3[ i ].data[ k ] ; // XAPP452.pdf, v1.1 : Figure 2
+                        printf ( " - blk %2d, maj %2d, min %2d : ", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
+                    }
+                    // 12:00008102 13:04081020 14:40810204 15:08102040 16:81002040 17:81020408 18:10204081 19:02040810 20:20400000
+                    // 80:00008102 81:04081020 82:40810204 83:08102040 84:81002040 85:81020408 86:10204081 87:02040810 88:20400000
+
+                    //  8:00008102  9:04081020 10:40810204 11:08102040 12:81002040 13:81020408 14:10204081 15:02040810 16:20408102
+                    // 17:04081020 18:40810204 19:08102040 20:81002040 21:81020408 22:10204081 23:02040810 24:20408102 25:04081020
+                    // 26:40810204 27:08102040 28:81002040 29:81020408 30:10204081 31:02040810 32:20408102 33:04081020 34:40810204
+                    // 35:08102040 36:81002040 37:81020408 38:10204081 39:02040810 40:20400000
+
+                    for ( j = 0 ; j < FPGAInfo[ FPGAType ].fl && k < bit_file.packets3[ i ].count ; j += 1, k += 1 ) {
+//                       if ( 0 <= j && j <= FPGAInfo[ FPGAType ].fl )
+                        if ( FPGAInfo[ FPGAType ].bs <= j && j <= FPGAInfo[ FPGAType ].be ) {
+                            printf ( "%2d:%08X ", j, bit_file.packets3[ i ].data[ k ] ) ;
+                            if ( maj == 1 )
+                                fwrite ( &bit_file.packets3[ i ].data[ k ], sizeof ( uint32_t ), 1, outfile ) ;
+                        }
+                    }
+                    min += 1 ;
+                    if ( min >= coldef ) {
+                        printf ( "\n" ) ;
+                        min = 0 ;
+                        col += 1 ;
+                        coldef = abs ( ColumnDefs[ FPGAType ][ col ] ) ;
+                        if ( ColumnDefs[ FPGAType ][ col ] < 0 ) {
+                            maj = 0 ;
+                            blk += 1 ;
+                        } else {
+                            maj += 1 ;
+                        }
+                    }
+                }
+            }
             if ( ( bit_file.packets3[ i ].header >> 29 ) == 1 ) {
-            } else if ( ( bit_file.packets3[ i ].header >> 29 ) == 2 ) {
-                int n = bit_file.packets3[ i ].data[ 0 ] ; // XAPP452.pdf, v1.1 : Figure 2
-                printf ( " : block %d major %d minor %d\n", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
-                printf ( " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
-            } else
                 printf ( "\n" ) ;
-            break;
+            } else if ( ( bit_file.packets3[ i ].header >> 29 ) == 2 ) {
+                printf ( " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
+            } else {
+                printf ( "\n" ) ;
+            }
+        }
+        break;
 
         case bstSpartan6:
             printf ( "! %4d: 0x%04X", i, bit_file.packets6[ i ].header ) ;
@@ -473,15 +677,18 @@ void show_file ( void ) {
             if ( ( ( bit_file.packets6[ i ].header >> 11 ) & 0x0003 ) != 0 ) {
                 printf ( " %8s," , sRegisterNames_S6[ ( bit_file.packets6[ i ].header >> 5 ) & 0x003F ] ) ;
                 printf ( "  count:  %d", bit_file.packets6[ i ].count ) ;
-                for ( j = 0 ; j < 3 && j < bit_file.packets6[ i ].count ; j += 1 )
+                for ( j = 0 ; j < 3 && j < bit_file.packets6[ i ].count ; j += 1 ) {
                     printf ( " : 0x%04X", bit_file.packets6[ i ].data[ j ] ) ;
-                if ( bit_file.packets6[ i ].header >> 13 == 2 )
+                }
+                if ( bit_file.packets6[ i ].header >> 13 == 2 ) {
                     printf ( " : autocrc: 0x%08X\n", bit_file.packets6[ i ].autocrc ) ;
+                }
             }
             printf ( "\n" ) ;
             break;
         }
     }
+    fclose ( outfile ) ;
 }
 
 bool merge_code ( uint16_t * code, int len, int nr, bool bVerbose ) {
@@ -494,78 +701,96 @@ bool merge_code ( uint16_t * code, int len, int nr, bool bVerbose ) {
     n = 0 ;
     for ( i = 0 ; i < bit_file.count ; i += 1 ) {
         if ( bit_file.packets6[ i ].header == 0x5060 ) {
-            if ( bVerbose )
+            if ( bVerbose ) {
                 printf ( "! using bulk packet# %d\n", i ) ;
+            }
             state = -1 ;
             for ( j = 0 ; j < bit_file.packets6[ i ].count ; j += 1 ) {
                 data = bit_file.packets6[ i ].data[ j ] ;
-                if ( state == -1 )
+                if ( state == -1 ) {
                     s = j ;
+                }
                 switch ( data ) {
                     /* 0 */
                 case 0xf01c :
-                    if ( nr == 0 )
+                    if ( nr == 0 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xcaf4 :
-                    if ( nr == 1 )
+                    if ( nr == 1 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xc90b :
-                    if ( nr == 2 )
+                    if ( nr == 2 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xc4b3 :
-                    if ( nr == 3 )
+                    if ( nr == 3 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xe030 :
-                    if ( nr == 4 )
+                    if ( nr == 4 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xe78d :
-                    if ( nr == 5 )
+                    if ( nr == 5 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xf199 :
-                    if ( nr == 6 )
+                    if ( nr == 6 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xe481 :
-                    if ( nr == 7 )
+                    if ( nr == 7 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xcac2 :
-                    if ( nr == 8 )
+                    if ( nr == 8 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xc991 :
-                    if ( nr == 9 )
+                    if ( nr == 9 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xe1eb :
-                    if ( nr == 10 )
+                    if ( nr == 10 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xd3ec :
-                    if ( nr == 11 )
+                    if ( nr == 11 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xefa9 :
-                    if ( nr == 12 )
+                    if ( nr == 12 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xe83b :
-                    if ( nr == 13 )
+                    if ( nr == 13 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xe5dc :
-                    if ( nr == 14 )
+                    if ( nr == 14 ) {
                         state = 0 ;
+                    }
                     break ;
                 case 0xd366 :
-                    if ( nr == 15 )
+                    if ( nr == 15 ) {
                         state = 0 ;
+                    }
                     break ;
                     /* 1 */
                 case 0xffa7 :
@@ -584,8 +809,9 @@ bool merge_code ( uint16_t * code, int len, int nr, bool bVerbose ) {
                 case 0x78df :
                 case 0xf0ab :
                 case 0xbfda :
-                    if ( state == 0 )
+                    if ( state == 0 ) {
                         state = 1 ;
+                    }
                     break ;
                     /* 2 */
                 case 0x2c05 :
@@ -604,8 +830,9 @@ bool merge_code ( uint16_t * code, int len, int nr, bool bVerbose ) {
                 case 0xbce8 :
                 case 0x1cb4 :
                 case 0xafc9 :
-                    if ( state == 1 )
+                    if ( state == 1 ) {
                         state = 2 ;
+                    }
                     break ;
                     /* 3 */
                 case 0xaf1f :
@@ -624,8 +851,9 @@ bool merge_code ( uint16_t * code, int len, int nr, bool bVerbose ) {
                 case 0x9f3f :
                 case 0xd767 :
                 case 0x3f25 :
-                    if ( state == 2 )
+                    if ( state == 2 ) {
                         state = 3 ;
+                    }
                     break ;
                     /* 4 */
                 case 0x1aca :
@@ -644,8 +872,9 @@ bool merge_code ( uint16_t * code, int len, int nr, bool bVerbose ) {
                 case 0xd2e8 :
                 case 0xeafc :
                 case 0x13e4 :
-                    if ( state == 3 )
+                    if ( state == 3 ) {
                         state = 4 ;
+                    }
                     break ;
                     /* 5 */
                 case 0x1cf5 :
@@ -664,8 +893,9 @@ bool merge_code ( uint16_t * code, int len, int nr, bool bVerbose ) {
                 case 0x4bfb :
                 case 0xe7ba :
                 case 0x04b8 :
-                    if ( state == 4 )
+                    if ( state == 4 ) {
                         state = 5 ;
+                    }
                     break ;
                     /* 6 */
                 case 0x228d :
@@ -684,8 +914,9 @@ bool merge_code ( uint16_t * code, int len, int nr, bool bVerbose ) {
                 case 0x546c :
                 case 0x8dec :
                 case 0xeb9d :
-                    if ( state == 5 )
+                    if ( state == 5 ) {
                         state = 6 ;
+                    }
                     break ;
                     /* 7 */
                 case 0x1ef3 :
@@ -704,8 +935,9 @@ bool merge_code ( uint16_t * code, int len, int nr, bool bVerbose ) {
                 case 0x9b43 :
                 case 0x32e7 :
                 case 0x472b :
-                    if ( state == 6 )
+                    if ( state == 6 ) {
                         state = 7 ;
+                    }
                     break ;
                     /* 8 */
                 case 0xb4b1 :
@@ -727,15 +959,17 @@ bool merge_code ( uint16_t * code, int len, int nr, bool bVerbose ) {
                     if ( state == 7 ) {
                         packet = &bit_file.packets6[ i ].data[ s ] ;
                         // check whether the rest of the block is zero
-                        for ( i = 0, data = 0, p = packet + 9 ; i < len * 18 / 16 - 9 ; i += 1 )
+                        for ( i = 0, data = 0, p = packet + 9 ; i < len * 18 / 16 - 9 ; i += 1 ) {
                             data |= *p++ ;
+                        }
                         if ( data != 0 ) {
                             fprintf ( stderr, "? Could not find correctly pre-initialized blockram nr: '%d' in bitfile\n", nr ) ;
                             return false ;
                         }
 
-                        if ( bVerbose )
+                        if ( bVerbose ) {
                             printf ( "! found pre-initialized blockram nr: '%d' at offset: %d\n", nr, s ) ;
+                        }
                         memcpy ( packet, code, sizeof ( uint16_t ) * len * 18 / 16 ) ;
                         state = -1 ;
                         return true ;
@@ -761,19 +995,23 @@ bool get_code ( uint16_t * code, uint32_t * p, int len ) {
         if ( bit_file.packets6[ i ].header == 0x5060 ) {
             state = 0 ;
             for ( j = 0 ; j < bit_file.packets6[ i ].count ; j += 1 ) {
-                if ( state == 0 )
+                if ( state == 0 ) {
                     s = j ;
+                }
                 data = bit_file.packets6[ i ].data[ j ] ;
-                if ( data == p[ state ] )
+                if ( data == p[ state ] ) {
                     state += 1 ;
-                else
+                } else {
                     state = 0 ;
-                if ( state >= len )
+                }
+                if ( state >= len ) {
                     break ;
+                }
             }
             if ( state > 0 ) {
-                for ( j = 0 ; j < 1024 * 18 / 16 ; j += 1, s += 1 )
+                for ( j = 0 ; j < 1024 * 18 / 16 ; j += 1, s += 1 ) {
                     code[ j ] = bit_file.packets6[ i ].data[ s ] ;
+                }
                 return true ;
             }
         }
@@ -788,8 +1026,9 @@ void build_header ( void ) {
     // not for BIN files
     if ( bit_file.header.bBit ) {
         put_word ( sizeof ( InitialHeader ) ) ;
-        for ( i = 0 ; i < sizeof ( InitialHeader ) ; i += 1 )
+        for ( i = 0 ; i < sizeof ( InitialHeader ) ; i += 1 ) {
             put_byte ( InitialHeader[ i ] ) ;
+        }
         put_word ( 1 ) ;
         put_byte ( 'a' ) ;
         put_string ( bit_file.header.info ) ;
@@ -819,12 +1058,15 @@ void build_packets ( void ) {
     // dump all headers with their data
     for ( i = 0 ; i < bit_file.count ; i += 1 ) {
         put_word ( bit_file.packets6[ i ].header ) ;
-        if ( bit_file.packets6[ i ].header >> 13 == 2 )
+        if ( bit_file.packets6[ i ].header >> 13 == 2 ) {
             put_long ( bit_file.packets6[ i ].count ) ;
-        for ( j = 0 ; j < bit_file.packets6[ i ].count ; j += 1 )
+        }
+        for ( j = 0 ; j < bit_file.packets6[ i ].count ; j += 1 ) {
             put_word ( bit_file.packets6[ i ].data[ j ] ) ;
-        if ( bit_file.packets6[ i ].header >> 13 == 2 )
+        }
+        if ( bit_file.packets6[ i ].header >> 13 == 2 ) {
             put_long ( bit_file.packets6[ i ].autocrc ) ;
+        }
     }
 }
 
@@ -846,7 +1088,7 @@ bool parse_file ( const char * strBitfile, BitStreamType_e bsType, bool bVerbose
     rewind ( infile ) ;
 
     // allocate memory to contain the whole file:
-    pRaw = malloc ( sizeof ( char ) * nSize ) ;
+    pRaw = ( uint8_t * ) malloc ( sizeof ( char ) * nSize ) ;
     if ( pRaw == NULL ) {
         fprintf ( stderr, "? Unable to allocate buffer space\n" ) ;
         goto _close;
@@ -881,9 +1123,9 @@ bool parse_file ( const char * strBitfile, BitStreamType_e bsType, bool bVerbose
             sync = get_long() ;
             if ( sync == 0xFFFFFFFF )
                 ;
-            else if ( sync == 0xAA995566 )
+            else if ( sync == 0xAA995566 ) {
                 break ;
-            else {
+            } else {
                 fprintf ( stderr, "? sync word not found\n" ) ;
                 goto _free ;
             }
@@ -894,9 +1136,9 @@ bool parse_file ( const char * strBitfile, BitStreamType_e bsType, bool bVerbose
             sync = get_word() ;
             if ( sync == 0xFFFF )
                 ;
-            else if ( sync == 0xAA99 )
+            else if ( sync == 0xAA99 ) {
                 break ;
-            else {
+            } else {
                 fprintf ( stderr, "? sync word not found\n" ) ;
                 goto _free ;
             }
@@ -921,8 +1163,9 @@ bool parse_file ( const char * strBitfile, BitStreamType_e bsType, bool bVerbose
     }
 
 // report
-    if ( result && bVerbose )
+    if ( result && bVerbose ) {
         show_file() ;
+    }
 
     free ( pRaw ) ;
     fclose ( infile ) ;
@@ -946,7 +1189,7 @@ bool write_file ( const char * strBitfile ) {
         fprintf ( stderr, "? Unable to open or create output bitstream file '%s'\n", strBitfile ) ;
         return false ;
     }
-    pRaw = calloc ( bit_file.length + bit_file.header_length, sizeof ( char ) ) ;
+    pRaw = ( uint8_t * ) calloc ( bit_file.length + bit_file.header_length, sizeof ( char ) ) ;
 
     // initialize parser
     current = pRaw ;
