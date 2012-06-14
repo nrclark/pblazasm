@@ -438,7 +438,11 @@ void MainWindow::loadLSTfile( QString filename ) {
          item->setTextAlignment(Qt::AlignRight);
          codeModel->setItem( row, 0, item ) ;
 
-         if ( str.contains( QRegExp( "^[0-9A-F]{3,3} [0-9A-F]{5,5}" ) ) ) {
+         if ( str.contains( QRegExp( "^PB3$" ) ) ) {
+             pBlaze->setCore( true ) ;
+         } else if ( str.contains( QRegExp( "^PB6$" ) ) ) {
+             pBlaze->setCore( false ) ;
+         } else if ( str.contains( QRegExp( "^[0-9A-F]{3,3} [0-9A-F]{5,5}" ) ) ) {
              item = new QStandardItem(*blueIcon, "");
              item->setSelectable( true ) ;
 
@@ -806,7 +810,6 @@ uint32_t MainWindow::getScriptValue(uint32_t address) {
     QScriptValueList args ;
     args << address ;
     QScriptValue result = getData.call( QScriptValue(), args ) ;
-    qDebug() << result.toNumber();
     return result.toNumber() ;
 }
 

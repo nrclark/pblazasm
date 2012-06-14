@@ -138,6 +138,10 @@ public:
     void updateState( void ) ;
     void updateIO( void ) ;
 
+    void setCore( bool bCore ) {
+        bPB3 = bCore ;
+    }
+
     bool onBarrier( void ) {
         return pc == barrier ;
     }
@@ -296,6 +300,7 @@ private:
 
     INST_t Code[ MAXMEM ] ;
 
+    bool bPB3 ;
     uint32_t pc, npc, barrier ;
     uint32_t sp, nsp ;
 
@@ -321,8 +326,12 @@ private:
     }
 
     inline uint32_t Address12 ( const int code ) {
-        return code & 0xFFF ;
+        if ( bPB3 )
+            return code & 0x3FF ;
+        else
+            return code & 0xFFF ;
     }
+
 } ;
 
 

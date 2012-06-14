@@ -370,6 +370,11 @@
                  <string>CC</string>
                 </property>
                </item>
+               <item>
+                <property name="text">
+                 <string>SCRIPT</string>
+                </property>
+               </item>
               </widget>
              </item>
              <item>
