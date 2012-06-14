@@ -9,9 +9,7 @@ class QRegExpValidator;
 class HexSpinBox : public QSpinBox {
     Q_OBJECT
 public:
-    HexSpinBox( QWidget *parent = 0 ) ;
-
-    void setText( const QString &text ) ;
+    HexSpinBox(QWidget *parent = 0) ;
 
 protected:
     QValidator::State validate(QString &text, int &pos) const ;
