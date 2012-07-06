@@ -1,0 +1,257 @@
+# SP601 Rev C debug ucf
+
+NET "CPU_RESET"                     LOC = "N4"; ## 2 on SW9 pushbutton
+###
+#NET "DDR2_A0"                       LOC = "J7"; | IOSTANDARD = SSTL18_II ; ## M8 on U2
+#NET "DDR2_A1"                       LOC = "J6"; | IOSTANDARD = SSTL18_II ; ## M3 on U2
+#NET "DDR2_A2"                       LOC = "H5"; | IOSTANDARD = SSTL18_II ; ## M7 on U2
+#NET "DDR2_A3"                       LOC = "L7"; | IOSTANDARD = SSTL18_II ; ## N2 on U2
+#NET "DDR2_A4"                       LOC = "F3"; | IOSTANDARD = SSTL18_II ; ## N8 on U2
+#NET "DDR2_A5"                       LOC = "H4"; | IOSTANDARD = SSTL18_II ; ## N3 on U2
+#NET "DDR2_A6"                       LOC = "H3"; | IOSTANDARD = SSTL18_II ; ## N7 on U2
+#NET "DDR2_A7"                       LOC = "H6"; | IOSTANDARD = SSTL18_II ; ## P2 on U2
+#NET "DDR2_A8"                       LOC = "D2"; | IOSTANDARD = SSTL18_II ; ## P8 on U2
+#NET "DDR2_A9"                       LOC = "D1"; | IOSTANDARD = SSTL18_II ; ## P3 on U2
+#NET "DDR2_A10"                      LOC = "F4"; | IOSTANDARD = SSTL18_II ; ## M2 on U2
+#NET "DDR2_A11"                      LOC = "D3"; | IOSTANDARD = SSTL18_II ; ## P7 on U2
+#NET "DDR2_A12"                      LOC = "G6"; | IOSTANDARD = SSTL18_II ; ## R2 on U2
+#NET "DDR2_BA0"                      LOC = "F2"; | IOSTANDARD = SSTL18_II ; ## L2 on U2
+#NET "DDR2_BA1"                      LOC = "F1"; | IOSTANDARD = SSTL18_II ; ## L3 on U2
+#NET "DDR2_BA2"                      LOC = "E1"; | IOSTANDARD = SSTL18_II ; ## L1 on U2
+#NET "DDR2_CAS_B"                    LOC = "K5"; | IOSTANDARD = SSTL18_II ; ## L7 on U2
+#NET "DDR2_CKE"                      LOC = "H7"; | IOSTANDARD = SSTL18_II ; ## K2 on U2
+#NET "DDR2_CLK_N"                    LOC = "G1"; | IOSTANDARD = SSTL18_II ; ## K8 on U2
+#NET "DDR2_CLK_P"                    LOC = "G3"; | IOSTANDARD = SSTL18_II ; ## J8 on U2
+#NET "DDR2_DQ0"                      LOC = "L2"; | IOSTANDARD = SSTL18_II ; ## G8 on U2
+#NET "DDR2_DQ1"                      LOC = "L1"; | IOSTANDARD = SSTL18_II ; ## G2 on U2
+#NET "DDR2_DQ2"                      LOC = "K2"; | IOSTANDARD = SSTL18_II ; ## H7 on U2
+#NET "DDR2_DQ3"                      LOC = "K1"; | IOSTANDARD = SSTL18_II ; ## H3 on U2
+#NET "DDR2_DQ4"                      LOC = "H2"; | IOSTANDARD = SSTL18_II ; ## H1 on U2
+#NET "DDR2_DQ5"                      LOC = "H1"; | IOSTANDARD = SSTL18_II ; ## H9 on U2
+#NET "DDR2_DQ6"                      LOC = "J3"; | IOSTANDARD = SSTL18_II ; ## F1 on U2
+#NET "DDR2_DQ7"                      LOC = "J1"; | IOSTANDARD = SSTL18_II ; ## F9 on U2
+#NET "DDR2_DQ8"                      LOC = "M3"; | IOSTANDARD = SSTL18_II ; ## C8 on U2
+#NET "DDR2_DQ9"                      LOC = "M1"; | IOSTANDARD = SSTL18_II ; ## C2 on U2
+#NET "DDR2_DQ10"                     LOC = "N2"; | IOSTANDARD = SSTL18_II ; ## D7 on U2
+#NET "DDR2_DQ11"                     LOC = "N1"; | IOSTANDARD = SSTL18_II ; ## D3 on U2
+#NET "DDR2_DQ12"                     LOC = "T2"; | IOSTANDARD = SSTL18_II ; ## D1 on U2
+#NET "DDR2_DQ13"                     LOC = "T1"; | IOSTANDARD = SSTL18_II ; ## D9 on U2
+#NET "DDR2_DQ14"                     LOC = "U2"; | IOSTANDARD = SSTL18_II ; ## B1 on U2
+#NET "DDR2_DQ15"                     LOC = "U1"; | IOSTANDARD = SSTL18_II ; ## B9 on U2
+#NET "DDR2_LDM"                      LOC = "K3"; | IOSTANDARD = SSTL18_II ; ## F3 on U2
+#NET "DDR2_LDQS_N"                   LOC = "L3"; | IOSTANDARD = SSTL18_II ; ## E8 on U2
+#NET "DDR2_LDQS_P"                   LOC = "L4"; | IOSTANDARD = SSTL18_II ; ## F7 on U2
+#NET "DDR2_ODT"                      LOC = "K6"; | IOSTANDARD = SSTL18_II ; ## K9 on U2
+#NET "DDR2_RAS_B"                    LOC = "L5"; | IOSTANDARD = SSTL18_II ; ## K7 on U2
+#NET "DDR2_UDM"                      LOC = "K4"; | IOSTANDARD = SSTL18_II ; ## B3 on U2
+#NET "DDR2_UDQS_N"                   LOC = "P1"; | IOSTANDARD = SSTL18_II ; ## A8 on U2
+#NET "DDR2_UDQS_P"                   LOC = "P2"; | IOSTANDARD = SSTL18_II ; ## B7 on U2
+#NET "DDR2_WE_B"                     LOC = "E3"; | IOSTANDARD = SSTL18_II ; ## K3 on U2
+###
+#NET "FLASH_A0"                      LOC = "K18"; ## 32 on U10
+#NET "FLASH_A1"                      LOC = "K17"; ## 28 on U10
+#NET "FLASH_A2"                      LOC = "J18"; ## 27 on U10
+#NET "FLASH_A3"                      LOC = "J16"; ## 26 on U10
+#NET "FLASH_A4"                      LOC = "G18"; ## 25 on U10
+#NET "FLASH_A5"                      LOC = "G16"; ## 24 on U10
+#NET "FLASH_A6"                      LOC = "H16"; ## 23 on U10
+#NET "FLASH_A7"                      LOC = "H15"; ## 22 on U10
+#NET "FLASH_A8"                      LOC = "H14"; ## 20 on U10
+#NET "FLASH_A9"                      LOC = "H13"; ## 19 on U10
+#NET "FLASH_A10"                     LOC = "F18"; ## 18 on U10
+#NET "FLASH_A11"                     LOC = "F17"; ## 17 on U10
+#NET "FLASH_A12"                     LOC = "K13"; ## 13 on U10
+#NET "FLASH_A13"                     LOC = "K12"; ## 12 on U10
+#NET "FLASH_A14"                     LOC = "E18"; ## 11 on U10
+#NET "FLASH_A15"                     LOC = "E16"; ## 10 on U10
+#NET "FLASH_A16"                     LOC = "G13"; ## 8  on U10
+#NET "FLASH_A17"                     LOC = "H12"; ## 7  on U10
+#NET "FLASH_A18"                     LOC = "D18"; ## 6  on U10
+#NET "FLASH_A19"                     LOC = "D17"; ## 5  on U10
+#NET "FLASH_A20"                     LOC = "G14"; ## 4  on U10
+#NET "FLASH_A21"                     LOC = "F14"; ## 3  on U10
+#NET "FLASH_A22"                     LOC = "C18"; ## 1  on U10
+#NET "FLASH_A23"                     LOC = "C17"; ## 30 on U10
+#NET "FLASH_A24"                     LOC = "F16"; ## 56 on U10
+#NET "FLASH_CE_B"                    LOC = "L17"; ## 14 on U10
+#NET "FLASH_D3"                      LOC = "U5";  ## 40 on U10
+#NET "FLASH_D4"                      LOC = "V5";  ## 44 on U10
+#NET "FLASH_D5"                      LOC = "R3";  ## 46 on U10
+#NET "FLASH_D6"                      LOC = "T3";  ## 49 on U10
+#NET "FLASH_D7"                      LOC = "R5";  ## 51 on U10
+#NET "FLASH_OE_B"                    LOC = "L18"; ## 54 on U10
+#NET "FLASH_WE_B"                    LOC = "M16"; ## 55 on U10
+##
+#NET "FMC_CLK0_M2C_N"                LOC = "A10"; ## H5 on J1
+#NET "FMC_CLK0_M2C_P"                LOC = "C10"; ## H4 on J1
+#NET "FMC_CLK1_M2C_N"                LOC = "V9";  ## G3 on J1
+#NET "FMC_CLK1_M2C_P"                LOC = "T9";  ## G2 on J1
+#NET "FMC_LA00_CC_N"                 LOC = "C9";  ## G7 on J1
+#NET "FMC_LA00_CC_P"                 LOC = "D9";  ## G6 on J1
+#NET "FMC_LA01_CC_N"                 LOC = "C11"; ## D9 on J1
+#NET "FMC_LA01_CC_P"                 LOC = "D11"; ## D8 on J1
+#NET "FMC_LA02_N"                    LOC = "A15"; ## H8 on J1
+#NET "FMC_LA02_P"                    LOC = "C15"; ## H7 on J1
+#NET "FMC_LA03_N"                    LOC = "A13"; ## G10 on J1
+#NET "FMC_LA03_P"                    LOC = "C13"; ## G9 on J1
+#NET "FMC_LA04_N"                    LOC = "A16"; ## H11 on J1
+#NET "FMC_LA04_P"                    LOC = "B16"; ## H10 on J1
+#NET "FMC_LA05_N"                    LOC = "A14"; ## D12 on J1
+#NET "FMC_LA05_P"                    LOC = "B14"; ## D11 on J1
+#NET "FMC_LA06_N"                    LOC = "C12"; ## C11 on J1
+#NET "FMC_LA06_P"                    LOC = "D12"; ## C10 on J1
+#NET "FMC_LA07_N"                    LOC = "E8";  ## H14 on J1
+#NET "FMC_LA07_P"                    LOC = "E7";  ## H13 on J1
+#NET "FMC_LA08_N"                    LOC = "E11"; ## G13 on J1
+#NET "FMC_LA08_P"                    LOC = "F11"; ## G12 on J1
+#NET "FMC_LA09_N"                    LOC = "F10"; ## D15 on J1
+#NET "FMC_LA09_P"                    LOC = "G11"; ## D14 on J1
+#NET "FMC_LA10_N"                    LOC = "C8";  ## C15 on J1
+#NET "FMC_LA10_P"                    LOC = "D8";  ## C14 on J1
+#NET "FMC_LA11_N"                    LOC = "A12"; ## H17 on J1
+#NET "FMC_LA11_P"                    LOC = "B12"; ## H16 on J1
+#NET "FMC_LA12_N"                    LOC = "C6";  ## G16 on J1
+#NET "FMC_LA12_P"                    LOC = "D6";  ## G15 on J1
+#NET "FMC_LA13_N"                    LOC = "A11"; ## D18 on J1
+#NET "FMC_LA13_P"                    LOC = "B11"; ## D17 on J1
+#NET "FMC_LA14_N"                    LOC = "A2";  ## C19 on J1
+#NET "FMC_LA14_P"                    LOC = "B2";  ## C18 on J1
+#NET "FMC_LA15_N"                    LOC = "F9";  ## H20 on J1
+#NET "FMC_LA15_P"                    LOC = "G9";  ## H19 on J1
+#NET "FMC_LA16_N"                    LOC = "A7";  ## G19 on J1
+#NET "FMC_LA16_P"                    LOC = "C7";  ## G18 on J1
+#NET "FMC_LA17_CC_N"                 LOC = "T8";  ## D21 on J1
+#NET "FMC_LA17_CC_P"                 LOC = "R8";  ## D20 on J1
+#NET "FMC_LA18_CC_N"                 LOC = "T10"; ## C23 on J1
+#NET "FMC_LA18_CC_P"                 LOC = "R10"; ## C22 on J1
+#NET "FMC_LA19_N"                    LOC = "P7";  ## H23 on J1
+#NET "FMC_LA19_P"                    LOC = "N6";  ## H22 on J1
+#NET "FMC_LA20_N"                    LOC = "P8";  ## G22 on J1
+#NET "FMC_LA20_P"                    LOC = "N7";  ## G21 on J1
+#NET "FMC_LA21_N"                    LOC = "V4";  ## H26 on J1
+#NET "FMC_LA21_P"                    LOC = "T4";  ## H25 on J1
+#NET "FMC_LA22_N"                    LOC = "T7";  ## G25 on J1
+#NET "FMC_LA22_P"                    LOC = "R7";  ## G24 on J1
+#NET "FMC_LA23_N"                    LOC = "P6";  ## D24 on J1
+#NET "FMC_LA23_P"                    LOC = "N5";  ## D23 on J1
+#NET "FMC_LA24_N"                    LOC = "V8";  ## H29 on J1
+#NET "FMC_LA24_P"                    LOC = "U8";  ## H28 on J1
+#NET "FMC_LA25_N"                    LOC = "N11"; ## G28 on J1
+#NET "FMC_LA25_P"                    LOC = "M11"; ## G27 on J1
+#NET "FMC_LA26_N"                    LOC = "V7";  ## D27 on J1
+#NET "FMC_LA26_P"                    LOC = "U7";  ## D26 on J1
+#NET "FMC_LA27_N"                    LOC = "T11"; ## C27 on J1
+#NET "FMC_LA27_P"                    LOC = "R11"; ## C26 on J1
+#NET "FMC_LA28_N"                    LOC = "V11"; ## H32 on J1
+#NET "FMC_LA28_P"                    LOC = "U11"; ## H31 on J1
+#NET "FMC_LA29_N"                    LOC = "N8";  ## G31 on J1
+#NET "FMC_LA29_P"                    LOC = "M8";  ## G30 on J1
+#NET "FMC_LA30_N"                    LOC = "V12"; ## H35 on J1
+#NET "FMC_LA30_P"                    LOC = "T12"; ## H34 on J1
+#NET "FMC_LA31_N"                    LOC = "V6";  ## G34 on J1
+#NET "FMC_LA31_P"                    LOC = "T6";  ## G33 on J1
+#NET "FMC_LA32_N"                    LOC = "V15"; ## H38 on J1
+#NET "FMC_LA32_P"                    LOC = "U15"; ## H37 on J1
+#NET "FMC_LA33_N"                    LOC = "N9";  ## G37 on J1
+#NET "FMC_LA33_P"                    LOC = "M10"; ## G36 on J1
+#NET "FMC_PRSNT_M2C_L"               LOC = "U13"; ## H2 on J1
+#NET "FMC_PWR_GOOD_FLASH_RST_B"      LOC = "B3";  ## D1 on J1, 16 on U10
+##
+#NET "FPGA_AWAKE"                    LOC = "P15"; ## 2 on DS8 LED
+#NET "FPGA_CCLK"                     LOC = "R15"; ## 16 on U17, 7 on J12
+#NET "FPGA_CMP_CLK"                  LOC = "U16"; ## 3 on J3
+#NET "FPGA_CMP_CS_B"                 LOC = "P13"; ## 4 on J3
+#NET "FPGA_CMP_MOSI"                 LOC = "V16"; ## 2 on J3
+#NET "FPGA_D0_DIN_MISO_MISO1"        LOC = "R13"; ## 8 on U17 (thru series R187 100 ohm), 33 on U10, 6 on J12
+#NET "FPGA_D1_MISO2"                 LOC = "T14"; ## 9 on U17 (thru series R186 100 ohm), 35 on U10, 3 on J12
+#NET "FPGA_D2_MISO3"                 LOC = "V14"; ## 1 on U17, 38 on U10, 2 on J12
+#NET "FPGA_DONE"                     LOC = "V17"; ## 2 on DS9 LED
+#NET "FPGA_HSWAPEN"                  LOC = "D4";  ## 1 on R81 100 ohm to GND
+#NET "FPGA_INIT_B"                   LOC = "U3";  ## 1 on DS10 (thru series R90 27.4 ohm)
+#NET "FPGA_M0_CMP_MISO"              LOC = "T15"; ## 1 on J3, 1 on SW2 DIP Sw
+#NET "FPGA_M1"                       LOC = "N12"; ## 2 on SW2 DIP Sw
+#NET "FPGA_MOSI_CSI_B_MISO0"         LOC = "T13"; ## 15 on U17, 5 on J12
+#NET "FPGA_ONCHIP_TERM1"             LOC = "L6";  ## ZIO no connect (R86 is DNP)
+#NET "FPGA_ONCHIP_TERM2"             LOC = "C2";  ## RZQ 100 ohm to GND
+#NET "FPGA_PROG_B"                   LOC = "V2";  ## 1 on SW3 pushbutton
+#NET "FPGA_SUSPEND"                  LOC = "R16"; ## 2 on J14
+#NET "FPGA_TCK_BUF"                  LOC = "A17"; ## 14 on U21, D29 on J1
+#NET "FPGA_TDI_BUF"                  LOC = "D15"; ## 18 on U21
+#NET "FPGA_TDO"                      LOC = "D16"; ## 1 on J4, D30 on J1
+#NET "FPGA_TMS_BUF"                  LOC = "B18"; ## 16 on U21, D31 on J1
+#NET "FPGA_VTEMP"                    LOC = "P3";  ## 2 on R87 150 ohm p/u to VCC1V8
+###
+#NET "GPIO_BUTTON0"                  LOC = "P4";  ## 2 on SW6 pushbutton
+#NET "GPIO_BUTTON1"                  LOC = "F6";  ## 2 on SW4 pushbutton
+#NET "GPIO_BUTTON2"                  LOC = "E4";  ## 2 on SW5 pushbutton
+#NET "GPIO_BUTTON3"                  LOC = "F5";  ## 2 on SW7 pushbutton
+###
+#NET "GPIO_HDR<0>"                   LOC = "N17"; ## 1 on J13 (thru series R100 200 ohm)
+#NET "GPIO_HDR<1>"                   LOC = "M18"; ## 3 on J13 (thru series R102 200 ohm)
+#NET "GPIO_HDR<2>"                   LOC = "A3";  ## 5 on J13 (thru series R101 200 ohm)
+#NET "GPIO_HDR<3>"                   LOC = "L15"; ## 7 on J13 (thru series R103 200 ohm)
+#NET "GPIO_HDR<4>"                   LOC = "F15"; ## 2 on J13 (thru series R99 200 ohm)
+#NET "GPIO_HDR<5>"                   LOC = "B4";  ## 4 on J13 (thru series R98 200 ohm)
+#NET "GPIO_HDR<6>"                   LOC = "F13"; ## 6 on J13 (thru series R97 200 ohm)
+#NET "GPIO_HDR<7>"                   LOC = "P12"; ## 8 on J13 (thru series R96 200 ohm)
+##
+NET "GPIO_LED<0>"                   LOC = "E13"; ## 2 on DS11 LED
+NET "GPIO_LED<1>"                   LOC = "C14"; ## 2 on DS12 LED
+NET "GPIO_LED<2>"                   LOC = "C4";  ## 2 on DS13 LED
+NET "GPIO_LED<3>"                   LOC = "A4";  ## 2 on DS14 LED
+##
+#NET "GPIO_SWITCH_0"                 LOC = "D14"; ## 1 on SW8 DIP Sw
+#NET "GPIO_SWITCH_1"                 LOC = "E12"; ## 2 on SW8 DIP Sw
+#NET "GPIO_SWITCH_2"                 LOC = "F12"; ## 3 on SW8 DIP Sw
+#NET "GPIO_SWITCH_3"                 LOC = "V13"; ## 4 on SW8 DIP Sw
+##
+#NET "IIC_SCL_MAIN"                  LOC = "P11"; ## 6 on U7 (thru series R203 0 ohm), C30 on J1, 2 on J16
+#NET "IIC_SDA_MAIN"                  LOC = "N10"; ## 5 on U7 (thru series R204 0 ohm), C31 on J1, 1 on J16
+##
+#NET "PHY_COL"                       LOC = "L14"; ## 114 on U3
+#NET "PHY_CRS"                       LOC = "M13"; ## 115 on U3
+#NET "PHY_INT"                       LOC = "J13"; ## 32 on U3
+#NET "PHY_MDC"                       LOC = "N14"; ## 35 on U3
+#NET "PHY_MDIO"                      LOC = "P16"; ## 33 on U3
+#NET "PHY_RESET"                     LOC = "L13"; ## 36 on U3
+#NET "PHY_RXCLK"                     LOC = "L16"; ## 7 on U3
+#NET "PHY_RXCTL_RXDV"                LOC = "N18"; ## 4 on U3
+#NET "PHY_RXD0"                      LOC = "M14"; ## 3 on U3
+#NET "PHY_RXD1"                      LOC = "U18"; ## 128 on U3
+#NET "PHY_RXD2"                      LOC = "U17"; ## 126 on U3
+#NET "PHY_RXD3"                      LOC = "T18"; ## 125 on U3
+#NET "PHY_RXD4"                      LOC = "T17"; ## 124 on U3
+#NET "PHY_RXD5"                      LOC = "N16"; ## 123 on U3
+#NET "PHY_RXD6"                      LOC = "N15"; ## 121 on U3
+#NET "PHY_RXD7"                      LOC = "P18"; ## 120 on U3
+#NET "PHY_RXER"                      LOC = "P17"; ## 8 on U3
+#NET "PHY_TXCLK"                     LOC = "B9";  ## 10 on U3
+#NET "PHY_TXCTL_TXEN"                LOC = "B8";  ## 16 on U3
+#NET "PHY_TXC_GTXCLK"                LOC = "A9";  ## 14 on U3
+#NET "PHY_TXD0"                      LOC = "F8";  ## 18 on U3
+#NET "PHY_TXD1"                      LOC = "G8";  ## 19 on U3
+#NET "PHY_TXD2"                      LOC = "A6";  ## 20 on U3
+#NET "PHY_TXD3"                      LOC = "B6";  ## 24 on U3
+#NET "PHY_TXD4"                      LOC = "E6";  ## 25 on U3
+#NET "PHY_TXD5"                      LOC = "F7";  ## 26 on U3
+#NET "PHY_TXD6"                      LOC = "A5";  ## 28 on U3
+#NET "PHY_TXD7"                      LOC = "C5";  ## 29 on U3
+#NET "PHY_TXER"                      LOC = "A8";  ## 13 on U3
+##
+#NET "SMACLK_N"                      LOC = "H18"; ## 1 on J8 SMA
+#NET "SMACLK_P"                      LOC = "H17"; ## 1 on J7 SMA
+##
+#NET "SPI_CS_B"                      LOC = "V3";  ## 1 on J15, 4 on J12
+##
+NET "SYSCLK_N"                      LOC = "K16"; ## 5 on U5 EG2121CA, 5 of U20 SI500D (DNP)
+NET "SYSCLK_P"                      LOC = "K15"; ## 6 on U5 EG2121CA, 4 of U20 SI500D (DNP)
+##
+NET "USB_1_CTS"                     LOC = "U10"; ## 22 on U4
+#NET "USB_1_RTS"                     LOC = "T5";  ## 23 on U4
+NET "USB_1_RX"                      LOC = "L12"; ## 24 on U4
+NET "USB_1_TX"                      LOC = "K14"; ## 25 on U4
+##
+#NET "USER_CLOCK"                    LOC = "V10"; ## 5 on X2 USER OSC Socket
+
+NET "CLK" TNM_NET = "CLK" ;
+TIMESPEC "TS_CLK50" = PERIOD "CLK" 12500ps HIGH 50% ;
