@@ -1,6 +1,6 @@
 
 /*
- *  Copyright © 2003..2008 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
  *
  *	This file is part of pBlazASM.
  *
@@ -44,7 +44,9 @@ typedef enum {
 	tSTRING,
 	tHEX,
 	tBIN,
-	tDEC
+	tDEC,
+	tSTAMP,
+	tPC
 } type_e ;
 
 // token subtypes
@@ -53,16 +55,25 @@ typedef enum {
 	stCOMMENT,
 
 	// instruction types
-	stMOVE,
+	stMOVE3,
+	stMOVE6,
 	stINT,
 	stINTI,
 	stINTE,
-	stCJMP,
+	stCJMP3,
+	stCJMP6,
 	stCSKP,
-	stCRET,
-	stIO,
+	stCRET3,
+	stCRET6,
+	stIO3,
+	stIO6,
 	stSHIFT,
  	stINST,
+
+	stSTAR,
+	stOUTK,
+	stBANK,
+	stCORE,
 
 	// operators
 	stADD,
@@ -82,11 +93,21 @@ typedef enum {
 	stREG,
 	stCLONE,
 
+	// timestamp types
+	stHOURS,
+	stMINUTES,
+	stSECONDS,
+	stYEAR,
+	stMONTH,
+	stDAY,
+
+	stSTRING,
+
 	// directives
 	stORG,
 	stPAGE,
 
-	stIOSP,
+	stALIGN,
 	stSCRATCHPAD,
 	stEND,
 
@@ -100,6 +121,9 @@ typedef enum {
 	stBUFFER,
 	stSFR,
 
+	stIF,
+	stFI,
+
 	stDS,
 	stDSIN,
 	stDSOUT,
@@ -112,6 +136,8 @@ typedef enum {
 	stCONSTANT,
 	stNAMEREG,
 
+	// pBlazIDE (unsupported)
+	stEXEC,
 	stVHDL,
 	stXDL,
 	stMEM,
@@ -122,9 +148,14 @@ typedef enum {
 } subtype_e ;
 
 // token and symbol type
+typedef	union {
+	int integer ;
+	char * string ;
+} value_t ;
+
 typedef struct {
 	type_e type ;
 	subtype_e subtype ;
 	char * text ;
-	int32_t value ;
+	value_t value ;
 } symbol_t ;

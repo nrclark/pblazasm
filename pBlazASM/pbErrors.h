@@ -36,6 +36,8 @@ typedef enum {
 	etLEX,
 	etEMPTY,
 	etRANGE,
+	etSCRSIZE,
+	etSCRRNG,
 	etNOTIMPL,
 	etINTERNAL
 } error_t ;

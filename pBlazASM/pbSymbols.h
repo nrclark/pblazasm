@@ -1,5 +1,6 @@
+
 /*
- *  Copyright © 2003..2008 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
  *
  *	This file is part of pBlazASM.
  *
@@ -17,9 +18,9 @@
  *  along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-void init_symbol( void ) ;
+void init_symbol( bool b6 ) ;
 symbol_t * find_symbol( const char * text, bool bUpper ) ;
-bool add_symbol( const type_e type, const subtype_e subtype, const char * text, const uint32_t value ) ;
+bool add_symbol( const type_e type, const subtype_e subtype, const char * text, const value_t value ) ;
 void free_symbol( void ) ;
 
 void dump_map( void ) ;
