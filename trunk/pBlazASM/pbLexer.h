@@ -1,6 +1,6 @@
 
 /*
- *  Copyright © 2003..2008 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
  *
  *	This file is part of pBlazASM.
  *

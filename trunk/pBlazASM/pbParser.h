@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2003..2008 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
  *
  *	This file is part of pBlazASM.
  *
@@ -17,4 +17,4 @@
  *  along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-bool assembler( char ** sourcefilenames, char * codefilename, char * listfilename, bool mode, bool listcode, bool hex, bool zeros ) ;
+bool assembler( char ** sourcefilenames, char * codefilename, char * datafilename, char * listfilename, bool mode, bool b6, bool listcode, bool hex, bool zeros ) ;

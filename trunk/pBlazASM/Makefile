@@ -3,17 +3,16 @@
 # 16-jul-09	hvk	initial
 # 24-jul-09	hvk	fixed echo
 # 13-apr-10	hvk	using 'MinGW/gcc' of Qt and 'rm' of Xilinx/cygwin
-# 15-oct-10	hvk	using ''tcc' of http://bellard.org/tcc/ and 'rm' of Xilinx/cygwin
+# 15-oct-10	hvk	using 'tcc' of http://bellard.org/tcc/ and 'rm' of gnu fileutils
 #
 
 ## defines
 
-RM = rm
-#MP = "C:/Qt/2010.04/mingw/include"
-#CC = "C:/Qt/2010.04/mingw/bin/gcc"
-MP = "C:/tcc/inc"
-CC = "C:/tcc/tcc"
-
+RM = "C:\MinGW\msys\1.0\bin\rm"
+#MP = "C:/tcc/inc"
+#CC = "C:/tcc/tcc.exe"
+MP = "C:/MinGW/include"
+CC = "C:/MinGW/bin/gcc"
 
 C_SRCS += \
 ./pBlazASM.c \
@@ -23,12 +22,11 @@ C_SRCS += \
 ./pbSymbols.c \
 ./getopt.c
 
-EXE = "./pBlazASM.exe"
+EXE = "./pBlzASM6.exe"
 OBJS = $(C_SRCS:.c=.o)
 LIBS = 
-INCS = -I$(MP) -I"../inc"
-CFLAGS = $(INCS) -g3 -DWINDOWS -Wall -c -O3 -DTCC -DHAVE_STRING_H
-
+INCS = -I$(MP)
+CFLAGS = $(INCS) -g3 -DWINDOWS -Wall -c -O3 -DHAVE_STRING_H
 
 ## rules
 
@@ -36,7 +34,7 @@ CFLAGS = $(INCS) -g3 -DWINDOWS -Wall -c -O3 -DTCC -DHAVE_STRING_H
 all:	test
 
 test:	$(EXE)
-	$(EXE) -l -m pBlazASM_Syntax.psm
+#	./pBlzASM6.exe -l -m../pBlazMRG/test.mem -s../pBlazMRG/test_data.mem pBlzASM6_Syntax.psm
 
 # Tool invocations
 $(EXE):	$(OBJS)
@@ -49,8 +47,8 @@ $(EXE):	$(OBJS)
 
 # Other Targets
 clean:
-	$(RM) $(EXE)
 	$(RM) $(OBJS)
+	$(RM) $(EXE)
 
-.PHONY: all clean
+.PHONY: all clean test
 .SECONDARY:
