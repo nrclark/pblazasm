@@ -41,7 +41,7 @@
  * @param text application name
  */
 static void usage ( char * text ) {
-    printf ( "\n%s - %s\n", text, "Picoblaze Assembler V2.1" ) ;
+    printf ( "\n%s - %s\n", text, "Picoblaze Assembler V2.2" ) ;
     printf ( "\nUSAGE:\n" ) ;
     printf ( "   pBlazASM -3|-6 [-k] [-v] [-f] [-m[<MEMfile>]] [-s[<MEMfile>]] [-l[<LSTfile>]] <input file> <input file> <input file> ...\n"
              "   where:\n"
@@ -51,9 +51,9 @@ static void usage ( char * text ) {
              "         -x/-X   creates a HEX code file (not in combo with -m)\n"
              "         -s/-S   creates a data MEM file\n"
              "         -l      creates a LST file\n"
-             "         -k      to select KCPSM mode with limited expression handling\n"
+             "         -k      select KCPSM mode with limited expression handling (-3 only)\n"
              "         -v      generates verbose reporting\n"
-             "         -f      with -l creates a list file without code, to replace the source\n" ) ;
+             "         -f      with -l creates a list file without code to replace the source\n" ) ;
     printf ( "\nNote: All (max 255) input files are assembled to one output.\n" ) ;
     printf ( "\nNote: Option -k (KCPSM mode) is not supported in Picoblaze-6 mode.\n" ) ;
     printf ( "\nNote: -M, -S and -X generate fully populated MEM files for 'Data2Mem'.\n" ) ;
