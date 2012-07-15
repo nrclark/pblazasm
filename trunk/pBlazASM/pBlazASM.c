@@ -41,7 +41,7 @@
  * @param text application name
  */
 static void usage ( char * text ) {
-    printf ( "\n%s - %s\n", text, "Picoblaze Assembler V2.2" ) ;
+    printf ( "\n%s - %s\n", text, "Picoblaze Assembler V2.3" ) ;
     printf ( "\nUSAGE:\n" ) ;
     printf ( "   pBlazASM -3|-6 [-k] [-v] [-f] [-m[<MEMfile>]] [-s[<MEMfile>]] [-l[<LSTfile>]] <input file> <input file> <input file> ...\n"
              "   where:\n"
