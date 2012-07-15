@@ -681,7 +681,7 @@ static error_t build ( bool b6 ) {
                             if ( ( e = expression ( &result ) ) == etNONE ) {
                                 if ( bActive ) {
                                     gScrSize = result ;
-                                    if ( gSCR >= gScrSize )     // after the fact
+                                    if ( gSCR > gScrSize )     // after the fact
                                         return etSCRRNG ;
                                 }
                             } else
@@ -822,7 +822,7 @@ static error_t build ( bool b6 ) {
                                     gSCR += 1 ;
                                 }
                             }
-                            if ( gSCR >= gScrSize )
+                            if ( gSCR > gScrSize )
                                 return etSCRRNG ;
                         } while ( comma() ) ;
                         state = bsEND ;
@@ -839,7 +839,7 @@ static error_t build ( bool b6 ) {
                         if ( ( e = expression ( &result ) ) == etNONE ) {
                             if ( bActive ) {
                                 gSCR += result ;
-                                if ( gSCR >= gScrSize )
+                                if ( gSCR > gScrSize )
                                     return etSCRRNG ;
                             }
                         } else
@@ -870,7 +870,7 @@ static error_t build ( bool b6 ) {
                             } else
                                 return etEXPR ;
                             free ( dup ) ;
-                            if ( gSCR >= gScrSize )
+                            if ( gSCR > gScrSize )
                                 return etSCRRNG ;
                             tok_next() ;
                         } while ( comma() ) ;
@@ -1300,7 +1300,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                                     else
                                         return etSCRSIZE ;
                                     gScrSize = result ;
-                                    if ( gSCR >= gScrSize )
+                                    if ( gSCR > gScrSize )
                                         return etSCRRNG ;
                                 }
                                 *data = gScrSize ;
@@ -1364,7 +1364,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                                 if ( *data == 0xFFFFFFFF )
                                     *data = result ;
                             }
-                            if ( gSCR >= gScrSize )
+                            if ( gSCR > gScrSize )
                                 return etSCRRNG ;
                         } while ( comma() ) ;
                         break ;
@@ -1395,14 +1395,14 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                                         if ( *data == 0xFFFFFFFF )
                                             *data = ( result >> 0 ) & 0xFF  ;
                                     }
+                                    if ( gSCR > gScrSize )
+                                        return etSCRRNG ;
                                 }
                             } else if ( e == etEMPTY ) {
                                 // allow an empty expression list for generating a symbol only
                                 break ;
                             } else
                                 return e ;
-                            if ( gSCR >= gScrSize )
-                                return etSCRRNG ;
                         } while ( comma() ) ;
                         break ;
 
@@ -1441,7 +1441,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                                 return e ;
                             if ( *data == 0xFFFFFFFF )
                                 *data = result ;
-                            if ( gSCR >= gScrSize )
+                            if ( gSCR > gScrSize )
                                 return etSCRRNG ;
                         } while ( comma() ) ;
                         break ;
@@ -1456,7 +1456,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                                 *addr = gSCR ;
                                 gSCR += result ;
                                 *data = result ;
-                                if ( gSCR >= gScrSize )
+                                if ( gSCR > gScrSize )
                                     return etSCRRNG ;
                             }
                         } else
@@ -1489,7 +1489,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                                 }
                                 free ( dup ) ;
 
-                                if ( gSCR >= gScrSize )
+                                if ( gSCR > gScrSize )
                                     return etSCRRNG ;
                             } else
                                 return etEXPR ;
