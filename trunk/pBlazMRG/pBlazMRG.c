@@ -37,7 +37,7 @@
 uint32_t Code[ MAXMEM ] ;
 
 static void usage( char * text ) {
-	printf( "\n%s - %s\n", text, "Picoblaze Assembler merge utility V2.0" ) ;
+	printf( "\n%s - %s\n", text, "Picoblaze Assembler merge utility V2.1" ) ;
 	printf( "\nUSAGE:\n" ) ;
 	printf( "   pBlazMRG [-v] [-s<MEM data inputfile>[+offset]]* [-c<MEM code inputfile>[+offset]]* -e<entity_name> -t<TPL inputfile> <ROM outputfile>\n"
              "   where:\n"
@@ -248,7 +248,7 @@ bool mergeTPL( const char * strTPLfile, const char * strROMfile, const char * st
 							code  = ( ( ( Code[ i * 4 + 0 ] >> bit ) & 1 ) << 0 ) ;
 							code |=	( ( ( Code[ i * 4 + 1 ] >> bit ) & 1 ) << 1 ) ;
 							code |=	( ( ( Code[ i * 4 + 2 ] >> bit ) & 1 ) << 2 ) ;
-							code |=	( ( ( Code[ i * 4 + 2 ] >> bit ) & 1 ) << 3 ) ;
+							code |=	( ( ( Code[ i * 4 + 3 ] >> bit ) & 1 ) << 3 ) ;
 							fprintf( outfile, "%1X", code ) ;
 						}
 					}
@@ -260,7 +260,7 @@ bool mergeTPL( const char * strTPLfile, const char * strROMfile, const char * st
 							code  = ( ( ( Code[ i * 4 + 0 ] >> bit ) & 1 ) << 0 ) ;
 							code |=	( ( ( Code[ i * 4 + 1 ] >> bit ) & 1 ) << 1 ) ;
 							code |=	( ( ( Code[ i * 4 + 2 ] >> bit ) & 1 ) << 2 ) ;
-							code |=	( ( ( Code[ i * 4 + 2 ] >> bit ) & 1 ) << 3 ) ;
+							code |=	( ( ( Code[ i * 4 + 3 ] >> bit ) & 1 ) << 3 ) ;
 							fprintf( outfile, "%1X", code ) ;
 						}
 					}
@@ -272,7 +272,7 @@ bool mergeTPL( const char * strTPLfile, const char * strROMfile, const char * st
 							code  = ( ( ( Code[ i * 4 + 0 ] >> bit ) & 1 ) << 0 ) ;
 							code |=	( ( ( Code[ i * 4 + 1 ] >> bit ) & 1 ) << 1 ) ;
 							code |=	( ( ( Code[ i * 4 + 2 ] >> bit ) & 1 ) << 2 ) ;
-							code |=	( ( ( Code[ i * 4 + 2 ] >> bit ) & 1 ) << 3 ) ;
+							code |=	( ( ( Code[ i * 4 + 3 ] >> bit ) & 1 ) << 3 ) ;
 							fprintf( outfile, "%1X", code ) ;
 						}
 					}
