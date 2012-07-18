@@ -1776,11 +1776,12 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
     gCodeRange = 1024 ;
     gPC = 0 ;
     gSCR = 0 ;
-    gScrLoc = 0 ;
+    gScrLoc = -1 ;
     gScrSize = 0x100 ;
 
     bMode = mode ;
     bActive = true ;
+
     for ( gSource = *Sources++ ; gSource != NULL ; gSource = *Sources++ ) {
         // open source file
         fsrc = fopen ( gSource, "r" ) ;
@@ -1819,11 +1820,19 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
     gCodeRange = 1024 ;
     gPC = 0 ;
     gSCR = 0 ;
-    gScrLoc = 0 ;
+    gScrLoc = -1 ;
     gScrSize = 0x100 ;
 
     bMode = mode ;
     bActive = true ;
+
+    if ( bCode ) {
+        if ( b6 )
+            fprintf ( flist, "PB6\n" ) ;
+        else
+            fprintf ( flist, "PB3\n" ) ;
+    }
+
     for ( gSource = *Sources++ ; gSource != NULL ; gSource = *Sources++ ) {
 
         fsrc = fopen ( gSource, "r" ) ;
@@ -1850,8 +1859,8 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
         fclose ( fsrc ) ;
     }
 
-    // dump code and scratch pad
-    if ( strlen ( datafilename ) > 0 ) { // We want a separate file?
+    // dump scratch pad
+    if ( strlen ( datafilename ) > 0 ) { // We want a separate data file?
         fmem = fopen ( datafilename, "w" ) ;
         if ( fmem == NULL ) {
             fprintf ( stderr, "? unable to create data MEM file '%s'\n", datafilename ) ;
@@ -1860,15 +1869,18 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
             dump_data ( fmem, hex ) ;
             fclose ( fmem ) ;
         }
-    } else { // Merge data into code
+        // merge scratch pad in code
+    } else if ( gScrLoc > -1 ) { // Merge data into code
         for ( h = 0 ; h < gScrSize ; h += 2 ) {
             if ( gCode[ ( gScrLoc + h ) / 2 ] == 0xFFFC0000 ) { // Data not overlapping used code
                 gCode[ ( gScrLoc + h ) / 2 ] = ( gData[ h + 1 ] << 8 ) | gData[ h ];
             } else
-                fprintf ( stderr, "? data and code overlap at: 0x%3x\n", ( gScrLoc + h ) / 2 ) ;
+                fprintf ( stderr, "? data and code overlap at: 0x%03x\n", ( gScrLoc + h ) / 2 ) ;
         }
-    }
+    } else if ( gSCR > 0 )
+        fprintf ( stderr, "? data section discarded, no .SCR given\n" ) ;
 
+    // dump code (and optionally, scratch pad)
     if ( strlen ( codefilename ) > 0 ) { // We want a code file?
         fmem = fopen ( codefilename, "w" ) ;
         if ( fmem == NULL ) {
