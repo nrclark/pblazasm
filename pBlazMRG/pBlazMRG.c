@@ -37,7 +37,7 @@
 uint32_t Code[ MAXMEM ] ;
 
 static void usage( char * text ) {
-	printf( "\n%s - %s\n", text, "Picoblaze Assembler merge utility V2.1" ) ;
+	printf( "\n%s - %s\n", text, "Picoblaze Assembler merge utility V2.2" ) ;
 	printf( "\nUSAGE:\n" ) ;
 	printf( "   pBlazMRG [-v] [-s<MEM data inputfile>[+offset]]* [-c<MEM code inputfile>[+offset]]* -e<entity_name> -t<TPL inputfile> <ROM outputfile>\n"
              "   where:\n"
@@ -408,7 +408,7 @@ int main( int argc, char * argv[] ) {
 
     err = -2 ;
 	if ( ! tpl_filename ) {
-        fprintf( stderr, "? missing template VHD file\n" ) ;
+        fprintf( stderr, "? missing template file\n" ) ;
 		goto finally ;
     }
 
