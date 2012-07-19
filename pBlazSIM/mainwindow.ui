@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>  pBlazSIM  www.mediatronix.com</string>
+   <string/>
   </property>
   <property name="windowIcon">
    <iconset resource="resources.qrc">

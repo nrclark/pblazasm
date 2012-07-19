@@ -42,6 +42,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi( this ) ;
 
+    this->setWindowTitle( "pBlazSIM V1.2 - http://www.mediatronix.com" ) ;
+
     // font used for all views
     QFont fixedFont( "Consolas", 9 ) ;
 
@@ -826,7 +828,7 @@ void MainWindow::setScriptValue(uint32_t address, uint32_t value) {
 }
 
 void MainWindow::on_actionAbout_triggered() {
-    QMessageBox::about( this, "pBlazSIM", "http://www.mediatronix.com" ) ;
+    QMessageBox::about( this, "pBlazSIM", windowTitle() ) ;
 }
 
 void MainWindow::on_actionAbout_Qt_triggered() {
