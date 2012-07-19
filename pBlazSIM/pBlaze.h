@@ -194,11 +194,6 @@ public:
         Code[ address ].item = item ;
     }
 
-    void setRegisterItem ( uint32_t reg, QStandardItem * item ) {
-        registers[ reg ].value = 0 ;
-        registers[ reg ].item = item ;
-    }
-
     uint32_t getPcValue( void ) {
         return pc ;
     }
@@ -231,16 +226,23 @@ public:
         return scratchpad[ cell ].value ;
     }
 
+    void setRegisterItem ( uint32_t reg, QStandardItem * item ) {
+        registers[ 0 ][ reg ].value = 0 ;
+        registers[ 0 ][ reg ].item = item ;
+        registers[ 1 ][ reg ].value = 0 ;
+        registers[ 1 ][ reg ].item = item ;
+    }
+
     void setRegisterValue ( uint32_t cell, uint32_t value ) {
-        registers[ cell ].value = value ;
-        if ( registers[ cell ].item != NULL ) {
+        registers[ bank ][ cell ].value = value ;
+        if ( registers[ bank ][ cell ].item != NULL ) {
             QString s = QString("%1").arg( value, 2, 16 ).toUpper() ;
-            registers[ cell ].item->setData( s, Qt::DisplayRole ) ;
+            registers[ bank ][ cell ].item->setData( s, Qt::DisplayRole ) ;
         }
     }
 
     uint32_t getRegisterValue ( uint32_t cell ) {
-        return registers[ cell ].value ;
+        return registers[ bank ][ cell ].value ;
     }
 
     void setStateItem ( uint32_t row, QStandardItem * item ) {
@@ -301,14 +303,16 @@ private:
     INST_t Code[ MAXMEM ] ;
 
     bool bPB3 ;
+
     uint32_t pc, npc, barrier ;
     uint32_t sp, nsp ;
+    int bank ;
 
     DATA_t scratchpad[ MAXSCR ] ;
     STACK_t stack[ 32 ] ;
-    REG_t registers[ 16 ] ;
+    REG_t registers[ 2 ][ 16 ] ;
     IO_t IO[ MAXSCR ] ;
-    QStandardItem * stateItems[ 5 ] ;
+    QStandardItem * stateItems[ 6 ] ;
 
     bool carry, zero, enable ;
 
