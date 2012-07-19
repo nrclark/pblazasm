@@ -26,6 +26,7 @@ Picoblaze::Picoblaze( void ) {
     bPB3 = false ;
 
     clearCode() ;
+    bank = 0 ;
 
     for ( int io = 0 ; io < MAXIO ; io += 1 ) {
         IO[ io ].device = NULL ;
@@ -72,9 +73,9 @@ void Picoblaze::updateStack( void ) {
 
 void Picoblaze::updateRegisters( void ) {
     for ( int reg = 0 ; reg < MAXREG ; reg += 1 ) {
-        int n = registers[ reg ].value ;
+        int n = registers[ bank ][ reg ].value ;
         QString s = QString("%1").arg( n, 4, 16 ).toUpper() ;
-        registers[ reg ].item->setData( s, Qt::DisplayRole ) ;
+        registers[ bank ][ reg ].item->setData( s, Qt::DisplayRole ) ;
     }
 }
 
@@ -89,6 +90,8 @@ void Picoblaze::updateState( void ) {
     stateItems[ 3 ]->setData( s, Qt::DisplayRole ) ;
     s = QString("%1").arg( (int)enable, 4 ) ;
     stateItems[ 4 ]->setData( s, Qt::DisplayRole ) ;
+    s = bank == 0 ? "   A" : bank == 1 ? "   B" : "  ???" ;
+    stateItems[ 5 ]->setData( s, Qt::DisplayRole ) ;
 }
 
 void Picoblaze::updateIO( void )
@@ -110,9 +113,11 @@ void Picoblaze::initPB6 ( void ) {
     zero = false ;
     carry = false ;
     enable = false ;
+    bank = 0 ;
 
     for ( int reg = 0 ; reg < MAXREG ; reg += 1 ) {
-        registers[ reg ].value = 0 ;
+        registers[ 0 ][ reg ].value = 0 ;
+        registers[ 1 ][ reg ].value = 0 ;
     }
 
     for ( int sp = 0 ; sp < MAXSTK ; sp += 1 ) {
@@ -152,59 +157,58 @@ bool Picoblaze::stepPB6 ( void ) {
     switch ( c ) {
     case 0x00000 ... 0x00FFF : // MOVE sX, sY
     case 0x101000 ... 0x101FFF :
-        registers[ DestReg ( c ) ].value = registers[ SrcReg ( c ) ].value ;
+        registers[ bank ][ DestReg ( c ) ].value = registers[ bank ][ SrcReg ( c ) ].value ;
         break ;
     case 0x01000 ... 0x01FFF : // MOVE sX, K
     case 0x100000 ... 0x100FFF :
-        registers[ DestReg ( c ) ].value = Constant ( c ) ;
+        registers[ bank ][ DestReg ( c ) ].value = Constant ( c ) ;
         break ;
     case 0x16000 ... 0x16FFF : // STAR
-        return false ;
-
+        registers[ bank ^ 1 ][ DestReg ( c ) ].value = registers[ bank ][ SrcReg ( c ) ].value ;
         break ;
 
     case 0x02000 ... 0x02FFF : // AND sX, sY
     case 0x10B000 ... 0x10BFFF :
-        registers[ DestReg ( c ) ].value = registers[ DestReg ( c ) ].value & registers[ SrcReg ( c ) ].value ;
-        zero = registers[ DestReg ( c ) ].value == 0 ;
+        registers[ bank ][ DestReg ( c ) ].value = registers[ bank ][ DestReg ( c ) ].value & registers[ bank ][ SrcReg ( c ) ].value ;
+        zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
         carry = false ;
         break ;
     case 0x03000 ... 0x03FFF : // AND sX, K
     case 0x10A000 ... 0x10AFFF :
-        registers[ DestReg ( c ) ].value = registers[ DestReg ( c ) ].value & Constant ( c ) ;
-        zero = registers[ DestReg ( c ) ].value == 0 ;
+        registers[ bank ][ DestReg ( c ) ].value = registers[ bank ][ DestReg ( c ) ].value & Constant ( c ) ;
+        zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
         carry = false ;
         break ;
 
     case 0x04000 ... 0x04FFF : // OR sX, sY
     case 0x10D000 ... 0x10DFFF :
-        registers[ DestReg ( c ) ].value = registers[ DestReg ( c ) ].value | registers[ SrcReg ( c ) ].value ;
-        zero = registers[ DestReg ( c ) ].value == 0 ;
+        registers[ bank ][ DestReg ( c ) ].value = registers[ bank ][ DestReg ( c ) ].value | registers[ bank ][ SrcReg ( c ) ].value ;
+        zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
         carry = false ;
         break ;
     case 0x05000 ... 0x05FFF : // OR sX, K
     case 0x10C000 ... 0x10CFFF :
-        registers[ DestReg ( c ) ].value = registers[ DestReg ( c ) ].value | Constant ( c ) ;
-        zero = registers[ DestReg ( c ) ].value == 0 ;
+        registers[ bank ][ DestReg ( c ) ].value = registers[ bank ][ DestReg ( c ) ].value | Constant ( c ) ;
+        zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
         carry = false ;
         break ;
 
     case 0x06000 ... 0x06FFF : // XOR sX, sY
     case 0x10F000 ... 0x10FFFF :
-        registers[ DestReg ( c ) ].value = registers[ DestReg ( c ) ].value ^ registers[ SrcReg ( c ) ].value ;
-        zero = registers[ DestReg ( c ) ].value == 0 ;
+        registers[ bank ][ DestReg ( c ) ].value = registers[ bank ][ DestReg ( c ) ].value ^ registers[ bank ][ SrcReg ( c ) ].value ;
+        zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
         carry = false ;
         break ;
     case 0x07000 ... 0x07FFF : // XOR sX, K
     case 0x10E000 ... 0x10EFFF :
-        registers[ DestReg ( c ) ].value = registers[ DestReg ( c ) ].value ^ Constant ( c ) ;
-        zero = registers[ DestReg ( c ) ].value == 0 ;
+        registers[ bank ][ DestReg ( c ) ].value = registers[ bank ][ DestReg ( c ) ].value ^ Constant ( c ) ;
+        zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
         carry = false ;
         break ;
 
     case 0x0C000 ... 0x0CFFF : // TEST sX, sY
     case 0x113000 ... 0x113FFF :
-        t = registers[ DestReg ( c ) ].value & registers[ SrcReg ( c ) ].value ;
+        t = registers[ bank ][ DestReg ( c ) ].value & registers[ bank ][ SrcReg ( c ) ].value ;
         zero = ( t & 0xFF ) == 0 ;
         t ^= t >> 4 ;
         t ^= t >> 2 ;
@@ -213,7 +217,7 @@ bool Picoblaze::stepPB6 ( void ) {
         break ;
     case 0x0D000 ... 0x0DFFF : // TEST sX, K
     case 0x112000 ... 0x112FFF :
-        t = registers[ DestReg ( c ) ].value & Constant ( c ) ;
+        t = registers[ bank ][ DestReg ( c ) ].value & Constant ( c ) ;
         zero = ( t & 0xFF ) == 0 ;
         t ^= t >> 4 ;
         t ^= t >> 2 ;
@@ -221,7 +225,7 @@ bool Picoblaze::stepPB6 ( void ) {
         carry = ( t & 1 ) == 1 ;
         break ;
     case 0x0E000 ... 0x0EFFF : // TSTC sX, sY
-        t = registers[ DestReg ( c ) ].value & registers[ SrcReg ( c ) ].value ;
+        t = registers[ bank ][ DestReg ( c ) ].value & registers[ bank ][ SrcReg ( c ) ].value ;
         zero = ( t & 0xFF ) == 0 && zero ;
         t ^= t >> 4 ;
         t ^= t >> 2 ;
@@ -229,7 +233,7 @@ bool Picoblaze::stepPB6 ( void ) {
         carry = ( ( t & 1 ) == 1 ) ^ carry ;
         break ;
     case 0x0F000 ... 0x0FFFF : // TSTC sX, K
-        t = registers[ DestReg ( c ) ].value & Constant ( c ) ;
+        t = registers[ bank ][ DestReg ( c ) ].value & Constant ( c ) ;
         zero = ( t & 0xFF ) == 0 && zero ;
         t ^= t >> 4 ;
         t ^= t >> 2 ;
@@ -239,83 +243,83 @@ bool Picoblaze::stepPB6 ( void ) {
 
     case 0x10000 ... 0x10FFF : // ADD sX, sY
     case 0x119000 ... 0x119FFF :
-        t = registers[ DestReg ( c ) ].value + registers[ SrcReg ( c ) ].value ;
-        registers[ DestReg ( c ) ].value = t & 0xFF ;
+        t = registers[ bank ][ DestReg ( c ) ].value + registers[ bank ][ SrcReg ( c ) ].value ;
+        registers[ bank ][ DestReg ( c ) ].value = t & 0xFF ;
         zero = ( t & 0xFF ) == 0 ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
     case 0x11000 ... 0x11FFF : // ADD sX, K
     case 0x118000 ... 0x118FFF :
-        t = registers[ DestReg ( c ) ].value + Constant ( c ) ;
-        registers[ DestReg ( c ) ].value = t & 0xFF ;
+        t = registers[ bank ][ DestReg ( c ) ].value + Constant ( c ) ;
+        registers[ bank ][ DestReg ( c ) ].value = t & 0xFF ;
         zero = ( t & 0xFF ) == 0 ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
 
     case 0x12000 ... 0x12FFF : // ADDC sX, sY
     case 0x11B000 ... 0x11BFFF :
-        t = registers[ DestReg ( c ) ].value + registers[ SrcReg ( c ) ].value + ( carry ? 1 : 0 ) ;
-        registers[ DestReg ( c ) ].value = t & 0xFF ;
+        t = registers[ bank ][ DestReg ( c ) ].value + registers[ bank ][ SrcReg ( c ) ].value + ( carry ? 1 : 0 ) ;
+        registers[ bank ][ DestReg ( c ) ].value = t & 0xFF ;
         zero = ( t & 0xFF ) == 0 ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
     case 0x13000 ... 0x13FFF : // ADDC sX, K
     case 0x11A000 ... 0x11AFFF :
-        t = registers[ DestReg ( c ) ].value + Constant ( c ) + ( carry ? 1 : 0 ) ;
-        registers[ DestReg ( c ) ].value = t & 0xFF ;
+        t = registers[ bank ][ DestReg ( c ) ].value + Constant ( c ) + ( carry ? 1 : 0 ) ;
+        registers[ bank ][ DestReg ( c ) ].value = t & 0xFF ;
         zero = ( t & 0xFF ) == 0 ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
 
     case 0x18000 ... 0x18FFF : // SUB sX, sY
     case 0x11D000 ... 0x11DFFF :
-        t = registers[ DestReg ( c ) ].value - registers[ SrcReg ( c ) ].value ;
-        registers[ DestReg ( c ) ].value = t & 0xFF ;
+        t = registers[ bank ][ DestReg ( c ) ].value - registers[ bank ][ SrcReg ( c ) ].value ;
+        registers[ bank ][ DestReg ( c ) ].value = t & 0xFF ;
         zero = ( t & 0xFF ) == 0 ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
     case 0x19000 ... 0x19FFF : // SUB sX, K
     case 0x11C000 ... 0x11CFFF :
-        t = registers[ DestReg ( c ) ].value - Constant ( c ) ;
-        registers[ DestReg ( c ) ].value = t & 0xFF ;
+        t = registers[ bank ][ DestReg ( c ) ].value - Constant ( c ) ;
+        registers[ bank ][ DestReg ( c ) ].value = t & 0xFF ;
         zero = ( t & 0xFF ) == 0 ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
 
     case 0x1A000 ... 0x1AFFF : // SUBC sX, sY
     case 0x11F000 ... 0x11FFFF :
-        t = registers[ DestReg ( c ) ].value - registers[ SrcReg ( c ) ].value - ( carry ? 1 : 0 )  ;
-        registers[ DestReg ( c ) ].value = t & 0xFF ;
+        t = registers[ bank ][ DestReg ( c ) ].value - registers[ bank ][ SrcReg ( c ) ].value - ( carry ? 1 : 0 )  ;
+        registers[ bank ][ DestReg ( c ) ].value = t & 0xFF ;
         zero = ( t & 0xFF ) == 0 ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
     case 0x1B000 ... 0x1BFFF : // SUBC sX, K
     case 0x11E000 ... 0x11EFFF :
-        t = registers[ DestReg ( c ) ].value - Constant ( c ) - ( carry ? 1 : 0 ) ;
-        registers[ DestReg ( c ) ].value = t & 0xFF ;
+        t = registers[ bank ][ DestReg ( c ) ].value - Constant ( c ) - ( carry ? 1 : 0 ) ;
+        registers[ bank ][ DestReg ( c ) ].value = t & 0xFF ;
         zero = ( t & 0xFF ) == 0 ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
 
     case 0x1C000 ... 0x1CFFF : // COMP sX, sY
     case 0x115000 ... 0x115FFF :
-        t = registers[ DestReg ( c ) ].value - registers[ SrcReg ( c ) ].value ;
+        t = registers[ bank ][ DestReg ( c ) ].value - registers[ bank ][ SrcReg ( c ) ].value ;
         zero = ( t & 0xFF ) == 0 ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
     case 0x1D000 ... 0x1DFFF : // COMP sX, K
     case 0x114000 ... 0x114FFF :
-        t = registers[ DestReg ( c ) ].value - Constant ( c ) ;
+        t = registers[ bank ][ DestReg ( c ) ].value - Constant ( c ) ;
         zero = ( t & 0xFF ) == 0 ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
     case 0x1E000 ... 0x1EFFF : // CMPC sX, sY
-        t = registers[ DestReg ( c ) ].value - registers[ SrcReg ( c ) ].value - ( carry ? 1 : 0 )  ;
+        t = registers[ bank ][ DestReg ( c ) ].value - registers[ bank ][ SrcReg ( c ) ].value - ( carry ? 1 : 0 )  ;
         zero = ( t & 0xFF ) == 0 ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
     case 0x1F000 ... 0x1FFFF : // CMPC sX, K
-        t = registers[ DestReg ( c ) ].value - Constant ( c ) - ( carry ? 1 : 0 ) ;
+        t = registers[ bank ][ DestReg ( c ) ].value - Constant ( c ) - ( carry ? 1 : 0 ) ;
         zero = ( t & 0xFF ) == 0 ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
@@ -325,68 +329,68 @@ bool Picoblaze::stepPB6 ( void ) {
         if ( c & 0xF0 ) {
             if ( bPB3 )
                 return false ;
-            registers[ DestReg ( c ) ].value = 0x42 ;
+            registers[ bank ][ DestReg ( c ) ].value = 0x42 ;
         } else
             switch ( c & 0xF ) {
             case 0x2 : // RL sX
-                t = registers[ DestReg ( c ) ].value ;
-                registers[ DestReg ( c ) ].value = ( ( t << 1 ) | ( t >> 7 ) ) & 0xFF ;
-                zero = registers[ DestReg ( c ) ].value == 0 ;
+                t = registers[ bank ][ DestReg ( c ) ].value ;
+                registers[ bank ][ DestReg ( c ) ].value = ( ( t << 1 ) | ( t >> 7 ) ) & 0xFF ;
+                zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
                 carry = ( ( t >> 7 ) & 1 ) == 1 ;
                 break ;
             case 0x6 : // SL0 sX
-                t = registers[ DestReg ( c ) ].value ;
-                registers[ DestReg ( c ) ].value = ( ( t << 1 ) | 0 ) & 0xFF ;
-                zero = registers[ DestReg ( c ) ].value == 0 ;
+                t = registers[ bank ][ DestReg ( c ) ].value ;
+                registers[ bank ][ DestReg ( c ) ].value = ( ( t << 1 ) | 0 ) & 0xFF ;
+                zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
                 carry = ( ( t >> 7 ) & 1 ) == 1 ;
                 break ;
             case 0x7 : // SL1 sX
-                t = registers[ DestReg ( c ) ].value ;
-                registers[ DestReg ( c ) ].value = ( ( t << 1 ) | 1 ) & 0xFF ;
-                zero = registers[ DestReg ( c ) ].value == 0 ;
+                t = registers[ bank ][ DestReg ( c ) ].value ;
+                registers[ bank ][ DestReg ( c ) ].value = ( ( t << 1 ) | 1 ) & 0xFF ;
+                zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
                 carry = ( ( t >> 7 ) & 1 ) == 1 ;
                 break ;
             case 0x0 : // SLA sX
-                t = registers[ DestReg ( c ) ].value ;
-                registers[ DestReg ( c ) ].value = ( t << 1 ) | ( carry ? 1 : 0 ) ;
-                zero = registers[ DestReg ( c ) ].value == 0 ;
+                t = registers[ bank ][ DestReg ( c ) ].value ;
+                registers[ bank ][ DestReg ( c ) ].value = ( t << 1 ) | ( carry ? 1 : 0 ) ;
+                zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
                 carry = ( ( t >> 7 ) & 1 ) == 1 ;
                 break ;
             case 0x4 : // SLX sX
-                t = registers[ DestReg ( c ) ].value ;
-                registers[ DestReg ( c ) ].value = ( t << 1 ) | ( t & 1 ) ;
-                zero = registers[ DestReg ( c ) ].value == 0 ;
+                t = registers[ bank ][ DestReg ( c ) ].value ;
+                registers[ bank ][ DestReg ( c ) ].value = ( t << 1 ) | ( t & 1 ) ;
+                zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
                 carry = ( ( t >> 7 ) & 1 ) == 1 ;
                 break ;
 
             case 0xC : // RR sX
-                t = registers[ DestReg ( c ) ].value ;
-                registers[ DestReg ( c ) ].value = ( ( t >> 1 ) | ( t << 7 ) ) & 0xFF ;
-                zero = registers[ DestReg ( c ) ].value == 0 ;
+                t = registers[ bank ][ DestReg ( c ) ].value ;
+                registers[ bank ][ DestReg ( c ) ].value = ( ( t >> 1 ) | ( t << 7 ) ) & 0xFF ;
+                zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
                 carry = ( t & 1 ) == 1 ;
                 break ;
             case 0xE : // SR0 sX
-                t = registers[ DestReg ( c ) ].value ;
-                registers[ DestReg ( c ) ].value = ( ( t >> 1 ) | ( 0 << 7 ) ) & 0xFF ;
-                zero = registers[ DestReg ( c ) ].value == 0 ;
+                t = registers[ bank ][ DestReg ( c ) ].value ;
+                registers[ bank ][ DestReg ( c ) ].value = ( ( t >> 1 ) | ( 0 << 7 ) ) & 0xFF ;
+                zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
                 carry = ( t & 1 ) == 1 ;
                 break ;
             case 0xF : // SR1 sX
-                t = registers[ DestReg ( c ) ].value ;
-                registers[ DestReg ( c ) ].value = ( ( t >> 1 ) | ( 1 << 7 ) ) & 0xFF ;
-                zero = registers[ DestReg ( c ) ].value == 0 ;
+                t = registers[ bank ][ DestReg ( c ) ].value ;
+                registers[ bank ][ DestReg ( c ) ].value = ( ( t >> 1 ) | ( 1 << 7 ) ) & 0xFF ;
+                zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
                 carry = ( t & 1 ) == 1 ;
                 break ;
             case 0x8 : // SRA sX
-                t = registers[ DestReg ( c ) ].value ;
-                registers[ DestReg ( c ) ].value = ( t >> 1 ) | ( carry ? ( 1 << 7 ) : 0 ) ;
-                zero = registers[ DestReg ( c ) ].value == 0 ;
+                t = registers[ bank ][ DestReg ( c ) ].value ;
+                registers[ bank ][ DestReg ( c ) ].value = ( t >> 1 ) | ( carry ? ( 1 << 7 ) : 0 ) ;
+                zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
                 carry = ( t & 1 ) == 1 ;
                 break ;
             case 0xA : // SRX sX
-                t = registers[ DestReg ( c ) ].value ;
-                registers[ DestReg ( c ) ].value = ( t >> 1 ) | ( t & 0x80 ) ;
-                zero = registers[ DestReg ( c ) ].value == 0 ;
+                t = registers[ bank ][ DestReg ( c ) ].value ;
+                registers[ bank ][ DestReg ( c ) ].value = ( t >> 1 ) | ( t & 0x80 ) ;
+                zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
                 carry = ( t  & 1 ) == 1 ;
                 break ;
 
@@ -521,58 +525,58 @@ bool Picoblaze::stepPB6 ( void ) {
         if ( sp <= 0 )
             return false ;
         npc = stack[ --sp ].pc ;
-        registers[ DestReg ( c ) ].value = Constant ( c ) ;
+        registers[ bank ][ DestReg ( c ) ].value = Constant ( c ) ;
         break ;
 
 
     case 0x2E000 ... 0x2EFFF : // ST sX, sY
     case 0x12F000 ... 0x12FFFF : // ST sX, sY
-        scratchpad[ registers[ SrcReg ( c ) ].value ].value = registers[ DestReg ( c ) ].value & 0xFF ;
+        scratchpad[ registers[ bank ][ SrcReg ( c ) ].value ].value = registers[ bank ][ DestReg ( c ) ].value & 0xFF ;
         break ;
     case 0x2F000 ... 0x2FFFF : // ST sX, K
     case 0x12E000 ... 0x12EFFF : // ST sX, K
-        scratchpad[ Constant ( c ) ].value = registers[ DestReg ( c ) ].value & 0xFF ;
+        scratchpad[ Constant ( c ) ].value = registers[ bank ][ DestReg ( c ) ].value & 0xFF ;
         break ;
 
     case 0x0A000 ... 0x0AFFF : // LD sX, sY
     case 0x107000 ... 0x107FFF : // LD sX, sY
-        registers[ DestReg ( c ) ].value = scratchpad[ registers[ SrcReg ( c ) ].value ].value & 0xFF ;
+        registers[ bank ][ DestReg ( c ) ].value = scratchpad[ registers[ bank ][ SrcReg ( c ) ].value ].value & 0xFF ;
         break ;
     case 0x0B000 ... 0x0BFFF : // LD sX, K
     case 0x106000 ... 0x106FFF : // LD sX, K
-        registers[ DestReg ( c ) ].value = scratchpad[ Constant ( c ) ].value & 0xFF ;
+        registers[ bank ][ DestReg ( c ) ].value = scratchpad[ Constant ( c ) ].value & 0xFF ;
         break ;
 
     case 0x2C000 ... 0x2CFFF : // OUT sX, sY
     case 0x12D000 ... 0x12DFFF : // OUT sX, sY
-        addr = registers[ SrcReg ( c ) ].value ;
+        addr = registers[ bank ][ SrcReg ( c ) ].value ;
         if ( IO[ addr ].device == NULL )
             return false ;
-         IO[ addr ].device->setValue( addr, registers[ DestReg ( c ) ].value & 0xFF ) ;
+         IO[ addr ].device->setValue( addr, registers[ bank ][ DestReg ( c ) ].value & 0xFF ) ;
         break ;
     case 0x2D000 ... 0x2DFFF : // OUT sX, K
     case 0x12C000 ... 0x12CFFF : // OUT sX, K
         addr = Constant ( c ) ;
         if ( IO[ addr ].device == NULL )
             return false ;
-        IO[ addr ].device->setValue( addr, registers[ DestReg ( c ) ].value & 0xFF ) ;
+        IO[ addr ].device->setValue( addr, registers[ bank ][ DestReg ( c ) ].value & 0xFF ) ;
         break ;
     case 0x2B000 ... 0x2BFFF : // OUTK
         break ;
 
     case 0x08000 ... 0x08FFF : // IN sX, sY
     case 0x105000 ... 0x105FFF : // IN sX, sY
-        addr = registers[ SrcReg ( c ) ].value ;
+        addr = registers[ bank ][ SrcReg ( c ) ].value ;
         if ( IO[ addr ].device == NULL )
             return false ;
-        registers[ DestReg ( c ) ].value = IO[ addr ].device->getValue( addr ) & 0xFF ;
+        registers[ bank ][ DestReg ( c ) ].value = IO[ addr ].device->getValue( addr ) & 0xFF ;
         break ;
     case 0x09000 ... 0x09FFF : // IN sX, K
     case 0x104000 ... 0x104FFF : // IN sX, K
         addr = Constant ( c ) ;
         if ( IO[ addr ].device == NULL )
             return false ;
-        registers[ DestReg ( c ) ].value = IO[ addr ].device->getValue( addr ) & 0xFF ;
+        registers[ bank ][ DestReg ( c ) ].value = IO[ addr ].device->getValue( addr ) & 0xFF ;
         break ;
 
     case 0x28000 : // DINT
@@ -603,12 +607,10 @@ bool Picoblaze::stepPB6 ( void ) {
         break ;
 
     case 0x37000 : // BANK A
-
-        return false ;
+        bank = 0 ;
         break ;
     case 0x37001 : // BANK B
-
-        return false ;
+        bank = 1 ;
         break ;
 
     default :

@@ -125,7 +125,10 @@ MainWindow::MainWindow(QWidget *parent) :
     item = new QStandardItem(QString("enable"));
     stateModel->setItem( 4, 0, item);
 
-    for ( int row = 0 ; row < 5 ; row += 1 ) {
+    item = new QStandardItem(QString("bank"));
+    stateModel->setItem( 5, 0, item);
+
+    for ( int row = 0 ; row < 6 ; row += 1 ) {
         item = new QStandardItem(QString(""));
         stateModel->setItem( row, 1, item);
         pBlaze->setStateItem( row, item ) ;
