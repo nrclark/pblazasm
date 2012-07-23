@@ -44,8 +44,8 @@ static void usage( char * text ) {
              "         -v      generates verbose reporting\n"
              "         -s      loads one or more data MEM files\n"
              "         -c      loads one or more code MEM files\n"
-             "         -e      name of the VHD entity\n"
-             "         -t      template file for the code rom\n" ) ;
+             "         -e      name of the entity name in the HDL output file\n"
+             "         -t      HDL template file for the code or data rom\n" ) ;
 }
 
 bool loadCode( const char * strCodefile, const int offset ) {
