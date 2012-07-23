@@ -348,6 +348,7 @@ int main( int argc, char * argv[] ) {
 			    if ( iCodeFileIdx >= MAXFILES ) {
                     fprintf( stderr, "? Maximum of code files reached: %d\n", iCodeFileIdx ) ;
 			    } else {
+			        iCodeOffsets[ iCodeFileIdx ] = 0 ;
                     code_filenames[ iCodeFileIdx ] = strdup( optarg ) ;
                     if ( strrchr( code_filenames[ iCodeFileIdx ], '.' ) == NULL )
                         strcat( code_filenames[ iCodeFileIdx ], ".mem" ) ;
@@ -363,6 +364,7 @@ int main( int argc, char * argv[] ) {
 			    if ( iDataFileIdx >= MAXFILES ) {
                     fprintf( stderr, "? Maximum of data files reached: %d", iDataFileIdx ) ;
 			    } else {
+			        iDataOffsets[ iDataFileIdx ] = 0 ;
                     data_filenames[ iDataFileIdx ] = strdup( optarg ) ;
                     if ( strrchr( data_filenames[ iDataFileIdx ], '.' ) == NULL )
                         strcat( data_filenames[ iDataFileIdx ], ".mem" ) ;
