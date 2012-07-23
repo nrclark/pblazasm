@@ -125,7 +125,14 @@ const symbol_t opcodes6[] = {
     { tOPCODE, stCRET6,   "RETURN",   {0x21000} },
     { tOPCODE, stINTE,    "RETURNI",  {0x29000} },
     { tOPCODE, stIO6,     "STORE",    {0x2E000} },
-    { tOPCODE, stMOVE6,   "SUBCY",    {0x1A000} }
+    { tOPCODE, stMOVE6,   "SUBCY",    {0x1A000} },
+
+    { tOPCODE, stMOVE6,   "STAR",     {0x16000} },
+    { tOPCODE, stOUTK,    "OUTPUTK",  {0x2B000} },
+    { tOPCODE, stBANK,    "REGBANK",  {0x37000} },
+    { tOPCODE, stMOVE6,   "TESTCY",   {0x0E000} },
+    { tOPCODE, stMOVE6,   "COMPARECY",{0x1E000} },
+    { tOPCODE, stSHIFT,   "HWBUILD",  {0x14080} }
 } ;
 
 const symbol_t conditions3[] = {

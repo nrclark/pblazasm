@@ -36,26 +36,28 @@
 #include "getopt.h"
 #endif
 
+#include "version.h"
 /**
  * usage prints usage text
  * @param text application name
  */
-static void usage ( char * text ) {
-    printf ( "\n%s - %s\n", text, "Picoblaze Assembler V2.4" ) ;
+static void usage ( char * text )
+{
+    printf ( "\n%s - Picoblaze Assembler V%ld.%ld.%ld (%s)\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
     printf ( "\nUSAGE:\n" ) ;
     printf ( "   pBlazASM -3|-6 [-k] [-v] [-f] [-m[<MEMfile>]] [-s[<MEMfile>]] [-l[<LSTfile>]] <input file> <input file> <input file> ...\n"
              "   where:\n"
              "         -3      select Picoblaze-3, mandatory\n"
              "         -6      select Picoblaze-6, mandatory\n"
-             "         -m/-M   creates a MEM code file (not in combo with -x)\n"
-             "         -x/-X   creates a HEX code file (not in combo with -m)\n"
-             "         -s/-S   creates a data MEM file\n"
+             "         -m/-M   creates a MEM code (.MEM) file (not in combo with -x)\n"
+             "         -x/-X   creates a HEX code (.HEX) file (not in combo with -m)\n"
+             "         -s/-S   creates a data MEM (.SCR) file\n"
              "         -l      creates a LST file\n"
              "         -k      select KCPSM mode with limited expression handling (-3 only)\n"
              "         -v      generates verbose reporting\n"
              "         -f      with -l creates a list file without code to replace the source\n" ) ;
-    printf ( "\nNote: All (max 255) input files are assembled to one output.\n" ) ;
-    printf ( "\nNote: Option -k (KCPSM mode) is not supported in Picoblaze-6 mode.\n" ) ;
+    printf ( "\nNote: All (max 255) input files are assembled to one output." ) ;
+    printf ( "\nNote: Option -k (KCPSM mode) is not supported in Picoblaze-6 mode." ) ;
     printf ( "\nNote: -M, -S and -X generate fully populated MEM files for 'Data2Mem'.\n" ) ;
 }
 
@@ -64,7 +66,8 @@ static void usage ( char * text ) {
  * processes command line and
  * calls actual assembler()
  */
-int main ( int argc, char ** argv ) {
+int main ( int argc, char ** argv )
+{
     char * src_filenames[ 256 ] =
     { NULL } ;
     char code_filename[ 256 ] =
@@ -97,14 +100,18 @@ int main ( int argc, char ** argv ) {
         switch ( optch ) {
         case '3' :
             bKCPSM6 = false ;
-            if ( bKCPSM_mode )
+            if ( bKCPSM_mode ) {
                 bOptErr = true ;
+            }
             bMandatory = false ;
             break ;
         case '6' :
             bKCPSM6 = true ;
             bMandatory = false ;
-            break ;
+            if ( bKCPSM_mode ) {
+                bOptErr = true ;
+            }
+           break ;
         case 'f' :
             bList_mode = false ;
             break ;
@@ -113,14 +120,16 @@ int main ( int argc, char ** argv ) {
             break ;
         case 's' :
             bWantSCR = true ;
-            if ( optarg != NULL )
+            if ( optarg != NULL ) {
                 strcpy ( data_filename, optarg ) ;
+            }
             break ;
         case 'S' :
             bWantSCR = true ;
             bWantZEROs = true ;
-            if ( optarg != NULL )
+            if ( optarg != NULL ) {
                 strcpy ( data_filename, optarg ) ;
+            }
             break ;
         case 'x' :
             if ( bWantMEM ) {
@@ -128,8 +137,9 @@ int main ( int argc, char ** argv ) {
                 bOptErr = true ;
             } else {
                 bWantHEX = true ;
-                if ( optarg != NULL )
+                if ( optarg != NULL ) {
                     strcpy ( code_filename, optarg ) ;
+                }
             }
             break ;
         case 'X' :
@@ -139,8 +149,9 @@ int main ( int argc, char ** argv ) {
             } else {
                 bWantHEX = true ;
                 bWantZEROs = true ;
-                if ( optarg != NULL )
+                if ( optarg != NULL ) {
                     strcpy ( code_filename, optarg ) ;
+                }
             }
         case 'c' :
         case 'm' :
@@ -149,8 +160,9 @@ int main ( int argc, char ** argv ) {
                 bOptErr = true ;
             } else {
                 bWantMEM = true ;
-                if ( optarg != NULL )
+                if ( optarg != NULL ) {
                     strcpy ( code_filename, optarg ) ;
+                }
             }
             break ;
         case 'C' :
@@ -161,20 +173,23 @@ int main ( int argc, char ** argv ) {
             } else {
                 bWantMEM = true ;
                 bWantZEROs = true ;
-                if ( optarg != NULL )
+                if ( optarg != NULL ) {
                     strcpy ( code_filename, optarg ) ;
+                }
             }
             break ;
             break ;
         case 'l' :
             bWantLST = true ;
-            if ( optarg != NULL )
+            if ( optarg != NULL ) {
                 strcpy ( list_filename, optarg ) ;
+            }
             break ;
         case 'k' :
             bKCPSM_mode = true ;
-            if ( bKCPSM6 )
+            if ( bKCPSM6 ) {
                 bOptErr = true ;
+            }
             break ;
         case 'v' :
             bVerbose = true ;
@@ -197,14 +212,16 @@ int main ( int argc, char ** argv ) {
     }
 
     if ( bVerbose ) {
-        if ( bKCPSM6 )
+        if ( bKCPSM6 ) {
             printf ( "! PB6 option chosen\n" ) ;
-        else
+        } else {
             printf ( "! PB3 option chosen\n" ) ;
+        }
     }
 
-    if ( bVerbose && bKCPSM_mode )
+    if ( bVerbose && bKCPSM_mode ) {
         fprintf ( stdout, "! KCPSM compatible mode selected\n" ) ;
+    }
 
     if ( argv[ optind ] == NULL ) {
         fprintf ( stderr, "? source file(s) missing\n" ) ;
@@ -217,10 +234,12 @@ int main ( int argc, char ** argv ) {
         src_filenames[ nInputfile ] = calloc ( strlen ( argv[ optind ] ) + 16, sizeof ( char ) ) ;
         strcpy ( src_filenames[ nInputfile ], argv[ optind ] ) ;
 
-        if ( strrchr ( src_filenames[ nInputfile ], '.' ) == NULL )
+        if ( strrchr ( src_filenames[ nInputfile ], '.' ) == NULL ) {
             strcat ( src_filenames[ nInputfile ], ".psm" ) ;
-        if ( bVerbose )
+        }
+        if ( bVerbose ) {
             fprintf ( stdout, "! Sourcefile: %s\n", src_filenames[ nInputfile ] ) ;
+        }
     }
 
     if ( bWantMEM || bWantHEX ) {
@@ -234,10 +253,12 @@ int main ( int argc, char ** argv ) {
             free ( ppath ) ;
             free ( pfile ) ;
         }
-        if ( strrchr ( code_filename, '.' ) == NULL )
+        if ( strrchr ( code_filename, '.' ) == NULL ) {
             strcat ( code_filename, bWantHEX ? ".hex" : ".mem" ) ;
-        if ( bVerbose )
+        }
+        if ( bVerbose ) {
             fprintf ( stdout, "! MEM file: %s\n", code_filename ) ;
+        }
     }
 
     if ( bWantSCR ) {
@@ -251,10 +272,12 @@ int main ( int argc, char ** argv ) {
             free ( ppath ) ;
             free ( pfile ) ;
         }
-        if ( strrchr ( data_filename, '.' ) == NULL )
+        if ( strrchr ( data_filename, '.' ) == NULL ) {
             strcat ( data_filename, ".scr" ) ;
-        if ( bVerbose )
+        }
+        if ( bVerbose ) {
             fprintf ( stdout, "! SCR file: %s\n", data_filename ) ;
+        }
     }
 
     if ( bWantLST ) {
@@ -268,22 +291,26 @@ int main ( int argc, char ** argv ) {
             free ( ppath ) ;
             free ( pfile ) ;
         }
-        if ( strrchr ( list_filename, '.' ) == NULL )
+        if ( strrchr ( list_filename, '.' ) == NULL ) {
             strcat ( list_filename, ".lst" ) ;
-        if ( bVerbose )
+        }
+        if ( bVerbose ) {
             fprintf ( stdout, "! LST file: %s\n", list_filename ) ;
+        }
     }
 
-    if ( assembler ( src_filenames, code_filename, data_filename, list_filename, bKCPSM_mode, bKCPSM6, bList_mode, bWantHEX, bWantZEROs ) )
+    if ( assembler ( src_filenames, code_filename, data_filename, list_filename, bKCPSM_mode, bKCPSM6, bList_mode, bWantHEX, bWantZEROs ) ) {
         result = 0 ;
-    else
+    } else {
         result = -1 ;
+    }
 
 finally: {
         int i ;
 
-        for ( i = 0 ; i < nInputfile ; i += 1 )
+        for ( i = 0 ; i < nInputfile ; i += 1 ) {
             free ( src_filenames[ i ] ) ;
+        }
     }
     exit ( result ) ;
 }
