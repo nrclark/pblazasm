@@ -42,8 +42,8 @@ static void usage( char * text ) {
 	printf( "   pBlazMRG [-v] [-s<MEM data inputfile>[+offset]]* [-c<MEM code inputfile>[+offset]]* -e<entity_name> -t<TPL inputfile> <ROM outputfile>\n"
              "   where:\n"
              "         -v      generates verbose reporting\n"
-             "         -s      loads one or more a data MEM file\n"
-             "         -c      loads one or more a code MEM file\n"
+             "         -s      loads one or more data MEM files\n"
+             "         -c      loads one or more code MEM files\n"
              "         -e      name of the VHD entity\n"
              "         -t      template file for the code rom\n" ) ;
 }
