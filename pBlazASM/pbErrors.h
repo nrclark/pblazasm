@@ -18,7 +18,7 @@
  */
 
 // error types
-typedef enum {
+typedef enum _ERROR {
 	etNONE = 0,
 	etEND,
 	etDOUBLE,

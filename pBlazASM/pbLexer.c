@@ -26,7 +26,7 @@
 #include "pbErrors.h"
 
 // lexer states
-typedef enum {
+typedef enum _LEX_STATE {
     lsBin,
     lsChar,
     lsComment,
@@ -44,7 +44,7 @@ typedef enum {
     lsPunct,
     lsIndex,
     lsString
-} LexState ;
+} LexState_e ;
 
 // global token list
 static symbol_t tokens[ 256 ] ; // global token list
@@ -88,7 +88,7 @@ void tok_free( void ) {
 bool lex( char * line, const bool mode ) {
     char * start = NULL, *end = NULL, *s = line ;
     char term[ 256 ], *pterm = NULL ;
-    LexState state = lsInit ;
+    LexState_e state = lsInit ;
 
     // state machine
     for ( ptok = tokens ; ptok < &tokens[ 256 ] ; ) {
@@ -248,7 +248,7 @@ bool lex( char * line, const bool mode ) {
             break ;
 
         case lsHex :
-            if ( isxdigit( *s ) )
+            if ( isxdigit( *s ) /* || *s == '_' */ )
                 s++ ;
             else {
                 end = s ;
@@ -258,7 +258,7 @@ bool lex( char * line, const bool mode ) {
             break ;
 
         case lsBin :
-            if ( *s == '0' || *s == '1' )
+            if ( *s == '0' || *s == '1' || *s == '_' )
                 s++ ;
             else {
                 end = s ;
