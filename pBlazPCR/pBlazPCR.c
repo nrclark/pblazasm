@@ -1,20 +1,20 @@
 /*
  *  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
  *
- *  This file is part of pBlazPCR.
+ *  This file is part of pBlazASM.
  *
  *  pBlazPCR is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  pBlazPCR is distributed in the hope that it will be useful,
+ *  pBlazASM is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with pBlazPCR.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>
@@ -27,6 +27,7 @@
 #include "pbTypes.h"
 #include "pbLibgen.h"
 #include "pbPicoCore.h"
+#include "version.h"
 
 #ifdef TCC
 #include "getopt.h"
@@ -36,17 +37,13 @@ INST_t Code[ MAXMEM ] ;
 uint32_t Data[ MAXSCR ] ;
 
 static void usage ( char * text ) {
-    printf ( "\n%s - %s\n", text, "Picoblaze Core Builder utility V0.0" ) ;
-    printf ( "\nUSAGE:\n" ) ;
-    printf ( "   pBlazPCR [-p] [-v] -c<MEM code inputfile> -s<MEM data inputfile> <VHD outputfile>\n" ) ;
+    printf ( "\n%s - PicoCore Builder V%ld.%ld.%ld (%s)\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
+    printf ( "\nUsage:\n" ) ;
+    printf ( "   pBlazPCR [-v] -c<MEM code inputfile> -s<MEM data inputfile> <VHD outputfile>\n" ) ;
     printf ( "   where:\n"
              "         -c      loads a code MEM file\n"
-             "         -x      loads an XDL file clip\n"
-             "         -n      loads an NDF file clip\n"
              "         -s      loads a data MEM file\n"
-             "         -6      use Picoblaze6 opcodes\n"
              "         -v      generates verbose reporting\n"
-//             "         -p      generate a PicoCore VHDL file\n"
            ) ;
 }
 
