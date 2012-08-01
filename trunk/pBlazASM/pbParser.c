@@ -44,9 +44,9 @@
 /**
  * assemler states
  */
-typedef enum {
+typedef enum _BUILD_STATE {
     bsINIT, bsLABEL, bsLABELED, bsSYMBOL, bsOPCODE, bsDIRECTIVE, bsOPERAND, bsEND, bsDIS
-} build_state ;
+} build_state_e ;
 
 // options
 static bool bMode = false ; // KCPSM mode, accepts 'NAMEREG' etc
@@ -258,9 +258,11 @@ static error_t term ( uint32_t * result ) {
         // parse a binary value
         val = 0 ;
         for ( p = s ; *p != 0 ; p++ ) {
-            val <<= 1 ;
-            if ( *p == '1' )
-                val |= 1 ;
+            if ( *p != '_' ) {
+                val <<= 1 ;
+                if ( *p == '1' )
+                    val |= 1 ;
+            }
         }
         break ;
     case tIDENT :
@@ -544,7 +546,7 @@ static bool indexed ( uint32_t * result ) {
  * @return error code
  */
 static error_t build ( bool b6 ) {
-    build_state state = bsINIT ;
+    build_state_e state = bsINIT ;
     symbol_t * symtok = NULL ;
     symbol_t * h = NULL ;
     symbol_t * r = NULL ;
@@ -940,7 +942,7 @@ static error_t build ( bool b6 ) {
  * @return error code
  */
 static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, bool b6 ) {
-    build_state state = bsINIT ;
+    build_state_e state = bsINIT ;
     symbol_t * h = NULL ;
     uint32_t result = 0 ;
     uint32_t operand1 = 0 ;
@@ -1058,8 +1060,20 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                         break ;
 
                     case stCSKP :
-                        condition ( &operand1 ) ;
-                        opcode = h->value.integer | operand1 | ( oPC + 2 ) ;
+                        operand1 = 0 ;
+                        operand2 = oPC + 2 ;
+                        if ( condition ( &operand1 ) ) {
+                             if ( comma() ) {
+                                if ( ( e = expression ( &operand2 ) ) != etNONE )
+                                    return e ;
+                                operand2 += oPC + 1 ;
+                            }
+                        } else if ( tok_current()->type != tNONE ) {
+                            if ( ( e = expression ( &operand2 ) ) != etNONE )
+                                return e ;
+                            operand2 += oPC + 1 ;
+                        }
+                        opcode = h->value.integer | operand1 | operand2 ;
                         break ;
 
                     case stCRET3 :
