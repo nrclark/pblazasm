@@ -35,6 +35,8 @@
 
 INST_t Code[ MAXMEM ] ;
 uint32_t Data[ MAXSCR ] ;
+int stack_size = 0, pad_size = 0, bank_size = 0, want_alu = 0 ;
+
 
 static void usage ( char * text ) {
     printf ( "\n%s - PicoCore Builder V%ld.%ld.%ld (%s)\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
@@ -342,7 +344,7 @@ int main ( int argc, char * argv[] ) {
 
     checkPB6 ( 0 ) ;
 
-    result = writeVHD6 ( vhd_filename, Code, Data ) ;
+    result = writeVHD6 ( vhd_filename, Code, Data, stack_size, pad_size, bank_size, want_alu ) ;
     if ( ! result )
         exit ( -2 ) ;
 
