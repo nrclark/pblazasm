@@ -352,13 +352,13 @@ bool Picoblaze::stepPB6 ( void ) {
                 break ;
             case 0x0 : // SLA sX
                 t = registers[ bank ][ DestReg ( c ) ].value ;
-                registers[ bank ][ DestReg ( c ) ].value = ( t << 1 ) | ( carry ? 1 : 0 ) ;
+                registers[ bank ][ DestReg ( c ) ].value = ( ( t << 1 ) | ( carry ? 1 : 0 ) ) & 0xFF ;
                 zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
                 carry = ( ( t >> 7 ) & 1 ) == 1 ;
                 break ;
             case 0x4 : // SLX sX
                 t = registers[ bank ][ DestReg ( c ) ].value ;
-                registers[ bank ][ DestReg ( c ) ].value = ( t << 1 ) | ( t & 1 ) ;
+                registers[ bank ][ DestReg ( c ) ].value = ( ( t << 1 ) | ( t & 1 ) ) & 0xFF ;
                 zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
                 carry = ( ( t >> 7 ) & 1 ) == 1 ;
                 break ;
@@ -383,13 +383,13 @@ bool Picoblaze::stepPB6 ( void ) {
                 break ;
             case 0x8 : // SRA sX
                 t = registers[ bank ][ DestReg ( c ) ].value ;
-                registers[ bank ][ DestReg ( c ) ].value = ( t >> 1 ) | ( carry ? ( 1 << 7 ) : 0 ) ;
+                registers[ bank ][ DestReg ( c ) ].value = ( ( t >> 1 ) | ( carry ? ( 1 << 7 ) : 0 ) ) & 0xFF ;
                 zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
                 carry = ( t & 1 ) == 1 ;
                 break ;
             case 0xA : // SRX sX
                 t = registers[ bank ][ DestReg ( c ) ].value ;
-                registers[ bank ][ DestReg ( c ) ].value = ( t >> 1 ) | ( t & 0x80 ) ;
+                registers[ bank ][ DestReg ( c ) ].value = ( ( t >> 1 ) | ( t & 0x80 ) ) & 0xFF ;
                 zero = registers[ bank ][ DestReg ( c ) ].value == 0 ;
                 carry = ( t  & 1 ) == 1 ;
                 break ;
@@ -521,7 +521,7 @@ bool Picoblaze::stepPB6 ( void ) {
             npc = stack[ --sp ].pc ;
         }
         break ;
-    case 0x21000 :
+    case 0x21000 : // RET sX, KK
         if ( sp <= 0 )
             return false ;
         npc = stack[ --sp ].pc ;
