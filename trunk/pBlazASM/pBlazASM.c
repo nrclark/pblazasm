@@ -44,21 +44,21 @@
 static void usage ( char * text )
 {
     printf ( "\n%s - Picoblaze Assembler V%ld.%ld.%ld (%s)\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
-    printf ( "\nUSAGE:\n" ) ;
+    printf ( "\nUsage:\n" ) ;
     printf ( "   pBlazASM -3|-6 [-k] [-v] [-f] [-m[<MEMfile>]] [-s[<MEMfile>]] [-l[<LSTfile>]] <input file> <input file> <input file> ...\n"
              "   where:\n"
              "         -3      select Picoblaze-3, mandatory\n"
              "         -6      select Picoblaze-6, mandatory\n"
-             "         -m/-M   creates a MEM code (.MEM) file (not in combo with -x)\n"
-             "         -x/-X   creates a HEX code (.HEX) file (not in combo with -m)\n"
-             "         -s/-S   creates a data MEM (.SCR) file\n"
+             "         -c/-C   creates a code (.MEM) file (not in combo with -x/-X)\n"
+             "         -x/-X   creates a code (.HEX) file (not in combo with -c/-C)\n"
+             "         -s/-S   creates a data (.SCR) file\n"
              "         -l      creates a LST file\n"
              "         -k      select KCPSM mode with limited expression handling (-3 only)\n"
              "         -v      generates verbose reporting\n"
              "         -f      with -l creates a list file without code to replace the source\n" ) ;
     printf ( "\nNote: All (max 255) input files are assembled to one output." ) ;
     printf ( "\nNote: Option -k (KCPSM mode) is not supported in Picoblaze-6 mode." ) ;
-    printf ( "\nNote: -M, -S and -X generate fully populated MEM files for 'Data2Mem'.\n" ) ;
+    printf ( "\nNote: -C, -S and -X generate fully populated MEM files for 'Data2Mem'.\n" ) ;
 }
 
 /**
@@ -111,7 +111,7 @@ int main ( int argc, char ** argv )
             if ( bKCPSM_mode ) {
                 bOptErr = true ;
             }
-           break ;
+            break ;
         case 'f' :
             bList_mode = false ;
             break ;
