@@ -28,4 +28,24 @@ typedef struct _instr {
     bool label ;
 } INST_t ;
 
-bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data ) ;
+inline static uint32_t DestReg ( const int code )
+{
+    return ( code >> 8 ) & 0xF ;
+}
+
+inline static uint32_t SrcReg ( const int code )
+{
+    return ( code >> 4 ) & 0xF ;
+}
+
+inline static uint32_t Constant ( const int code )
+{
+    return code & 0xFF ;
+}
+
+inline static uint32_t Address12 ( const int code )
+{
+    return code & 0xFFF ;
+}
+
+bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int stack_size, int pad_size, int bank_size, bool want_alu ) ;
