@@ -91,7 +91,8 @@ static error_t expression ( uint32_t * result ) ;
  * @param oper ref to operator to be used
  * @return success
  */
-static bool processOperator ( unsigned int * result, unsigned int term, symbol_t ** oper ) {
+static bool processOperator ( unsigned int * result, unsigned int term, symbol_t ** oper )
+{
     if ( *oper == NULL ) {
         *result = term ;
         return true ;
@@ -139,10 +140,10 @@ static bool processOperator ( unsigned int * result, unsigned int term, symbol_t
  * @param p ref to character sequence
  * @return converted character
  */
-static char convert_char ( char * * p ) {
+static char convert_char ( char * * p )
+{
     int r = 0 ;
     char * s = *p ;
-
     if ( *s == '\\' ) { // '\r' or '\013'
         s++ ;
         switch ( *s++ ) { // \a \b \f \n \r \t \v
@@ -183,26 +184,30 @@ static char convert_char ( char * * p ) {
         case 'V' :
             r = '\v' ;
             break ;
-
         case 'x' :
         case 'X' :
-            if ( sscanf ( s, "%x", &r ) != 1 )
+            if ( sscanf ( s, "%x", &r ) != 1 ) {
                 return etLEX ;
-            while ( isxdigit ( *s ) )
+            }
+            while ( isxdigit ( *s ) ) {
                 s++ ;
+            }
             break ;
         case '0' :
             --s ;
-            if ( sscanf ( s, "%o", &r ) != 1 )
+            if ( sscanf ( s, "%o", &r ) != 1 ) {
                 return etLEX ;
-            while ( isdigit ( *s ) && *s != '8' && *s != '9' )
+            }
+            while ( isdigit ( *s ) && *s != '8' && *s != '9' ) {
                 s++ ;
+            }
             break ;
         default :
             return etLEX ;
         }
-    } else
+    } else {
         r = *s++ ;
+    }
     *p = s ;
     return r ;
 }
@@ -212,11 +217,12 @@ static char convert_char ( char * * p ) {
  * @param s string to be converted
  * @return new string with result (needs to be freeed)
  */
-static char * convert_string ( char * s ) {
+static char * convert_string ( char * s )
+{
     char * r = calloc ( 1, 256 ), *p ;
-
-    for ( p = r ; *s != '\0' ; )
+    for ( p = r ; *s != '\0' ; ) {
         *p++ = convert_char ( &s ) ;
+    }
     *p++ = '\0' ;
     return r ;
 }
@@ -226,33 +232,35 @@ static char * convert_string ( char * s ) {
  * @param resulting value of term
  * @result error code
  */
-static error_t term ( uint32_t * result ) {
+static error_t term ( uint32_t * result )
+{
     symbol_t * oper = NULL ;
     const char * p = NULL ;
     symbol_t * h = NULL ;
     error_t e = etNONE ;
     char * s = NULL ;
     uint32_t val ;
-
     // full expression handling
-    if ( tok_current()->type == tNONE )
+    if ( tok_current()->type == tNONE ) {
         return etEXPR ;
-
-    if ( tok_current()->type == tOPERATOR )
+    }
+    if ( tok_current()->type == tOPERATOR ) {
         oper = tok_next() ;
-
+    }
     s = tok_current()->text ;
     switch ( tok_current()->type ) {
     case tDEC :
-        if ( sscanf ( s, "%d", &val ) != 1 )
+        if ( sscanf ( s, "%d", &val ) != 1 ) {
             return etEXPR ;
+        }
         break ;
     case tCHAR :
         val = convert_char ( &s ) ;
         break ;
     case tHEX :
-        if ( sscanf ( s, "%X", &val ) != 1 )
+        if ( sscanf ( s, "%X", &val ) != 1 ) {
             return etEXPR ;
+        }
         break ;
     case tBIN :
         // parse a binary value
@@ -260,30 +268,36 @@ static error_t term ( uint32_t * result ) {
         for ( p = s ; *p != 0 ; p++ ) {
             if ( *p != '_' ) {
                 val <<= 1 ;
-                if ( *p == '1' )
+                if ( *p == '1' ) {
                     val |= 1 ;
+                }
             }
         }
         break ;
     case tIDENT :
         h = find_symbol ( s, false ) ;
-        if ( h == NULL )
+        if ( h == NULL ) {
             return etUNDEF ;
+        }
         // label as a moving target
         if ( h->subtype == stDOT && strlen ( h->text ) == 1 ) {
             val = oPC ;
-        } else
+        } else {
             val = h->value.integer ;
-        if ( h->type != tVALUE && h->type != tLABEL )
+        }
+        if ( h->type != tVALUE && h->type != tLABEL ) {
             return etVALUE ;
+        }
         break ;
     case tLPAREN :
         tok_next() ;
         e = expression ( &val ) ;
-        if ( e != etNONE )
+        if ( e != etNONE ) {
             return e ;
-        if ( tok_current()->type != tRPAREN )
+        }
+        if ( tok_current()->type != tRPAREN ) {
             return etEXPR ;
+        }
         break ;
     default :
         return etEXPR ;
@@ -300,8 +314,9 @@ static error_t term ( uint32_t * result ) {
         default :
             return etOPERATOR ;
         }
-    } else
+    } else {
         *result = val ;
+    }
     return etNONE ;
 }
 
@@ -311,25 +326,26 @@ static error_t term ( uint32_t * result ) {
  * @param result resulting value of expression
  * @return error code
  */
-static error_t expression ( uint32_t * result ) {
+static error_t expression ( uint32_t * result )
+{
     symbol_t * h = NULL ;
     char * s = NULL ;
     symbol_t * oper = NULL ;
     error_t e = etNONE ;
     uint32_t val ;
-
     *result = 0 ;
-
     // crippled expression handling
     while ( bMode && tok_current()->type != tNONE ) {
         switch ( tok_current()->type ) {
         case tLPAREN :
             tok_next() ;
             e = expression ( &val ) ;
-            if ( e != etNONE )
+            if ( e != etNONE ) {
                 return e ;
-            if ( !processOperator ( result, val, &oper ) )
+            }
+            if ( !processOperator ( result, val, &oper ) ) {
                 return etOPERATOR ;
+            }
         case tRPAREN :
             tok_next() ;
             return etNONE ;
@@ -340,8 +356,9 @@ static error_t expression ( uint32_t * result ) {
             h = find_symbol ( s, false ) ;
             if ( h != NULL ) {
                 val = h->value.integer ;
-            } else if ( sscanf ( s, "%X", &val ) != 1 )
+            } else if ( sscanf ( s, "%X", &val ) != 1 ) {
                 return etEXPR ;
+            }
             tok_next() ;
             *result = val ;
             return etNONE ;
@@ -349,23 +366,23 @@ static error_t expression ( uint32_t * result ) {
             return etEXPR ;
         }
     }
-
     if ( tok_current()->type == tNONE ) {
         return etEMPTY ;
     }
-
     // full expression handling
     while ( tok_current()->type != tNONE ) {
         switch ( tok_current()->type ) {
         case tLPAREN :
             tok_next() ;
             e = expression ( &val ) ;
-            if ( e != etNONE )
+            if ( e != etNONE ) {
                 return e ;
+            }
             if ( tok_current()->type == tRPAREN ) {
                 tok_next() ;
-            } else
+            } else {
                 return etEXPR ;
+            }
             break ;
         case tOPERATOR :
         case tDEC :
@@ -374,22 +391,26 @@ static error_t expression ( uint32_t * result ) {
         case tBIN :
         case tIDENT :
             e = term ( &val ) ;
-            if ( e != etNONE )
+            if ( e != etNONE ) {
                 return e ;
+            }
             break ;
         default :
             return etNONE ;
         }
         if ( oper != NULL ) {
-            if ( !processOperator ( result, val, &oper ) )
+            if ( !processOperator ( result, val, &oper ) ) {
                 return etOPERATOR ;
+            }
             oper = NULL ;
-        } else
+        } else {
             *result = val ;
-        if ( tok_current()->type == tOPERATOR )
+        }
+        if ( tok_current()->type == tOPERATOR ) {
             oper = tok_next() ;
-        else
+        } else {
             break ;
+        }
     }
     return etNONE ;
 }
@@ -399,13 +420,13 @@ static error_t expression ( uint32_t * result ) {
  * @param result value of destination register, shifted already in position
  * @return success
  */
-static bool destreg ( uint32_t * result ) {
+static bool destreg ( uint32_t * result )
+{
     symbol_t * h ;
-
-    if ( result == NULL )
+    if ( result == NULL ) {
         return false ;
+    }
     *result = 0 ;
-
     h = find_symbol ( tok_current()->text, false ) ;
     if ( h != NULL && h->type == tREGISTER ) {
         tok_next() ;
@@ -420,41 +441,39 @@ static bool destreg ( uint32_t * result ) {
  * @param result value of source register, shifted already in position
  * @return success
  */
-static bool srcreg ( uint32_t * result ) {
+static bool srcreg ( uint32_t * result )
+{
     symbol_t * h ;
     bool bpar = false ;
     bool retval = true ;
     symbol_t * back = tok_current() ;
-
-    if ( result == NULL )
+    if ( result == NULL ) {
         return false ;
+    }
     *result = 0 ;
-
     if ( tok_current()->type == tLPAREN ) {
         bpar = true ;
         tok_next() ;
     }
-
     h = find_symbol ( tok_current()->text, false ) ;
     if ( h == NULL || h->type != tREGISTER ) {
         retval = false ;
         goto finally ;
     }
     *result = h->value.integer << 4 ;
-
     tok_next() ;
     if ( bpar ) {
-        if ( tok_current()->type == tRPAREN )
+        if ( tok_current()->type == tRPAREN ) {
             tok_next() ;
-        else {
+        } else {
             retval = false ;
             goto finally ;
         }
     }
-
 finally: {
-        if ( !retval )
+        if ( !retval ) {
             tok_back ( back ) ;
+        }
         return retval ;
     }
 }
@@ -463,12 +482,14 @@ finally: {
  * eat comma in token stream
  * @return success
  */
-static bool comma ( void ) {
+static bool comma ( void )
+{
     if ( tok_current()->type == tCOMMA ) {
         tok_next() ;
         return true ;
-    } else
+    } else {
         return false ;
+    }
 }
 
 /**
@@ -476,13 +497,13 @@ static bool comma ( void ) {
  * @param result value of condition, already in position
  * @return success
  */
-static bool condition ( uint32_t * result ) {
+static bool condition ( uint32_t * result )
+{
     symbol_t * h ;
-
-    if ( result == NULL )
+    if ( result == NULL ) {
         return false ;
+    }
     *result = 0 ;
-
     if ( tok_current()->type != tNONE ) {
         h = find_symbol ( tok_current()->text, true ) ;
         if ( h != NULL && h->type == tCONDITION ) {
@@ -499,13 +520,13 @@ static bool condition ( uint32_t * result ) {
  * @param result value of enable, already in position
  * @return success
  */
-static bool enadis ( uint32_t * result ) {
+static bool enadis ( uint32_t * result )
+{
     symbol_t * h ;
-
-    if ( result == NULL )
+    if ( result == NULL ) {
         return false ;
+    }
     *result = 0 ;
-
     h = find_symbol ( tok_current()->text, true ) ;
     if ( h != NULL && h->type == tOPCODE && h->subtype == stINTI ) {
         tok_next() ;
@@ -520,13 +541,13 @@ static bool enadis ( uint32_t * result ) {
  * @param result value of indexed construct, already in position
  * @return success
  */
-static bool indexed ( uint32_t * result ) {
+static bool indexed ( uint32_t * result )
+{
     symbol_t * h ;
-
-    if ( result == NULL )
+    if ( result == NULL ) {
         return false ;
+    }
     *result = 0 ;
-
     if ( tok_current()->type != tNONE ) {
         h = find_symbol ( tok_current()->text, true ) ;
         if ( h != NULL && h->type == tINDEX ) {
@@ -545,7 +566,8 @@ static bool indexed ( uint32_t * result ) {
  * @param core type
  * @return error code
  */
-static error_t build ( bool b6 ) {
+static error_t build ( bool b6 )
+{
     build_state_e state = bsINIT ;
     symbol_t * symtok = NULL ;
     symbol_t * h = NULL ;
@@ -553,218 +575,246 @@ static error_t build ( bool b6 ) {
     uint32_t result = 0 ;
     error_t e = etNONE ;
     value_t value ;
-
     // process statement
     for ( tok_first(), state = bsINIT ; state != bsEND && state != bsDIS ; tok_next() ) {
         oPC = gPC ;
-
         switch ( tok_current()->type ) {
         case tNONE :
             // empty line?
-            if ( state != bsINIT && state != bsLABELED )
+            if ( state != bsINIT && state != bsLABELED ) {
                 return etSYNTAX ;
+            }
             state = bsEND ;
             break ;
-
             // opcode or symbol definition
         case tIDENT :
             // opcode or directive?
             h = find_symbol ( tok_current()->text, false ) ;
             if ( h == NULL ) {
                 h = find_symbol ( tok_current()->text, true ) ;
-                if ( h == NULL || h->type != tOPCODE )
+                if ( h == NULL || h->type != tOPCODE ) {
                     h = NULL ;
+                }
             }
             if ( h != NULL ) {
                 switch ( h->type ) {
                 case tLABEL :
-                    if ( state != bsINIT )
+                    if ( state != bsINIT ) {
                         return etSYNTAX ;
-
-                    if ( h->subtype != stDOT )
+                    }
+                    if ( h->subtype != stDOT ) {
                         return etSYNTAX ;
-
+                    }
                     h->value.integer = oPC ;
                     symtok = tok_current() ;
                     state = bsLABEL ;
                     break ;
-
                 case tOPCODE :
-                    if ( state != bsINIT && state != bsLABELED )
+                    if ( state != bsINIT && state != bsLABELED ) {
                         return etSYNTAX ;
-                    if ( bActive )                    gPC += 1 ;
+                    }
+                    if ( bActive ) {
+                        gPC += 1 ;
+                    }
                     state = bsEND ; // we know enough for now
                     break ;
-
                 case tDIRECTIVE :
                     switch ( h->subtype ) {
-
                     case stFI:
                         bActive = true ;
                         state = bsDIS ;
                         break ;
-
                     case stIF:
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
+                        }
                         tok_next() ;
                         if ( ( e = expression ( &result ) ) == etNONE ) {
                             bActive = result != 0 ;
-                        } else
+                        } else {
                             return e ;
+                        }
                         break ;
-
                     case stPAGE :
                         state = bsEND ;
                         break ;
-
                         // .ORG
                     case stADDRESS :
                     case stORG :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
+                        }
                         tok_next() ;
                         if ( ( e = expression ( &result ) ) == etNONE ) {
-                            if ( result >= gCodeRange )     // within code range
+                            if ( result >= gCodeRange ) {   // within code range
                                 return etRANGE ;
-                            if ( bActive )
+                            }
+                            if ( bActive ) {
                                 gPC = result ;
-                        } else
+                            }
+                        } else {
                             return e ;
+                        }
                         state = bsEND ;
                         break ;
-
                     case stALIGN :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
+                        }
                         tok_next() ;
                         if ( ( e = expression ( &result ) ) == etNONE ) {
-                            if ( result <= 0 )
+                            if ( result <= 0 ) {
                                 return etRANGE ;
+                            }
                             if ( bActive ) {
                                 gPC = ( gPC + ( result - 1 ) ) / result * result ;
-                                if ( gPC >= gCodeRange )        // within code range
+                                if ( gPC >= gCodeRange ) {      // within code range
                                     return etRANGE ;
+                                }
                             }
-                        } else
+                        } else {
                             return e ;
+                        }
                         state = bsEND ;
                         break ;
-
                         // .END
                     case stEND :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
+                        }
                         tok_next() ;
                         if ( ( e = expression ( &result ) ) == etNONE ) {
-                            if ( result >= CODESIZE )       // within possible code range
+                            if ( result >= CODESIZE ) {     // within possible code range
                                 return etRANGE ;
-                            if ( bActive )
+                            }
+                            if ( bActive ) {
                                 gCodeRange = result + 1 ;
-                        } else
+                            }
+                        } else {
                             return e ;
+                        }
                         state = bsEND ;
                         break ;
-
                         // .SCR
                     case stSCRATCHPAD :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
+                        }
                         tok_next() ;
                         if ( ( e = expression ( &result ) ) == etNONE ) {
                             if ( bActive ) {
                                 gScrLoc = result * 2  ;
-                                if ( result >= CODESIZE )       // within possible code range
+                                if ( result >= CODESIZE ) {    // within possible code range
                                     return etRANGE ;
+                                }
                             }
-                        } else
+                        } else {
                             return e ;
+                        }
                         if ( comma() ) {
                             if ( ( e = expression ( &result ) ) == etNONE ) {
                                 if ( bActive ) {
+                                    if ( result > 256 ) {
+                                        return etSCRSIZE ;
+                                    }
                                     gScrSize = result ;
-                                    if ( gSCR > gScrSize )     // after the fact
+                                    if ( gSCR > gScrSize ) {  // after the fact
                                         return etSCRRNG ;
+                                    }
                                 }
-                            } else
+                            } else {
                                 return e ;
-                        } else
+                            }
+                        } else {
                             gScrSize = 256 ;
+                        }
                         state = bsEND ;
                         break ;
-
                         // .EQU
                     case stEQU :
-                        if ( state != bsSYMBOL )
+                        if ( state != bsSYMBOL ) {
                             return etSYNTAX ;
+                        }
                         tok_next() ;
                         if ( symtok != NULL ) {
                             if ( tok_current()->type == tSTRING ) {
                                 // string value?
                                 value.string = strdup ( tok_current()->text ) ;
-                                if ( !add_symbol ( tVALUE, stSTRING, symtok->text, value ) )
+                                if ( !add_symbol ( tVALUE, stSTRING, symtok->text, value ) ) {
                                     return etDOUBLE ;
+                                }
                             } else {
                                 r = find_symbol ( tok_current()->text, false ) ;
                                 if ( r != NULL && r->type == tREGISTER ) {
                                     // register clone?
                                     value = r->value ;
-                                    if ( !add_symbol ( tREGISTER, stCLONE, symtok->text, value ) )
+                                    if ( !add_symbol ( tREGISTER, stCLONE, symtok->text, value ) ) {
                                         return etDOUBLE ;
+                                    }
                                 } else if ( ( e = expression ( &result ) ) == etNONE ) {
                                     // normal expression?
                                     value.integer = result ;
-                                    if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) )
+                                    if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) ) {
                                         return etDOUBLE ;
-                                } else
+                                    }
+                                } else {
                                     return e ;
+                                }
                             }
-                        } else
+                        } else {
                             return etMISSING ;
+                        }
                         state = bsEND ;
                         break ;
-
                     case stCONSTANT :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
-
+                        }
                         tok_next() ;
                         symtok = tok_next() ;
-                        if ( symtok->type != tIDENT )
+                        if ( symtok->type != tIDENT ) {
                             return etSYNTAX ;
-                        if ( !comma() )
+                        }
+                        if ( !comma() ) {
                             return etCOMMA ;
+                        }
                         // normal expression?
                         if ( ( e = expression ( &result ) ) == etNONE ) {
                             value.integer = result ;
-                            if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) )
+                            if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) ) {
                                 return etDOUBLE ;
-                        } else
+                            }
+                        } else {
                             return e ;
+                        }
                         state = bsEND ;
                         break ;
-
                     case stNAMEREG :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
+                        }
                         tok_next() ;
                         symtok = tok_next() ;
-                        if ( symtok->type != tIDENT )
+                        if ( symtok->type != tIDENT ) {
                             return etSYNTAX ;
+                        }
                         r = find_symbol ( symtok->text, true ) ;
-                        if ( r == NULL || r->type != tREGISTER )
+                        if ( r == NULL || r->type != tREGISTER ) {
                             return etREGISTER ;
-                        if ( !comma() )
+                        }
+                        if ( !comma() ) {
                             return etCOMMA ;
+                        }
                         if ( tok_current()->type == tIDENT ) {
                             value = r->value ;
-                            if ( !add_symbol ( tREGISTER, stCLONE, tok_current()->text, value ) )
+                            if ( !add_symbol ( tREGISTER, stCLONE, tok_current()->text, value ) ) {
                                 return etDOUBLE ;
-                        } else
+                            }
+                        } else {
                             return etSYNTAX ;
+                        }
                         state = bsEND ;
                         break ;
-
                     case stSFR :
                         // DS, pBlazIDE support
                     case stDS :
@@ -773,42 +823,47 @@ static error_t build ( bool b6 ) {
                     case stDSIO :
                     case stDSRAM :
                     case stDSROM :
-                        if ( state != bsSYMBOL )
+                        if ( state != bsSYMBOL ) {
                             return etSYNTAX ;
+                        }
                         tok_next() ;
                         if ( symtok != NULL ) {
                             if ( ( e = expression ( &result ) ) == etNONE ) {
                                 if ( bActive ) {
                                     value.integer = result ;
-                                    if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) )
+                                    if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) ) {
                                         return etDOUBLE ;
+                                    }
                                 }
-                            } else
+                            } else {
                                 return e ;
-                        } else
+                            }
+                        } else {
                             return etMISSING ;
+                        }
                         state = bsEND ;
                         break ;
-
                         // .BYT etc
                     case stBYTE :
                     case stWORD_BE :
                     case stWORD_LE :
                     case stLONG_BE :
                     case stLONG_LE :
-                        if ( state != bsINIT && state != bsSYMBOL )
+                        if ( state != bsINIT && state != bsSYMBOL ) {
                             return etSYNTAX ;
+                        }
                         tok_next() ;
                         value.integer = gSCR ;
-
-                        if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value ) )
+                        if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value ) ) {
                             return etDOUBLE ;
+                        }
                         do {
                             if ( ( e = expression ( &result ) ) != etNONE ) {
-                                if ( e == etEMPTY )
-                                    break ; // allow an empty expression list for generating a symbol only
-                                else
+                                if ( e == etEMPTY ) {
+                                    break ;    // allow an empty expression list for generating a symbol only
+                                } else {
                                     return e ;
+                                }
                             }
                             if ( bActive ) {
                                 switch ( h->subtype ) {
@@ -824,71 +879,80 @@ static error_t build ( bool b6 ) {
                                     gSCR += 1 ;
                                 }
                             }
-                            if ( gSCR > gScrSize )
+                            if ( gSCR > gScrSize ) {
                                 return etSCRRNG ;
+                            }
                         } while ( comma() ) ;
                         state = bsEND ;
                         break ;
-
                         // .BUF
                     case stBUFFER :
-                        if ( state != bsINIT && state != bsSYMBOL )
+                        if ( state != bsINIT && state != bsSYMBOL ) {
                             return etSYNTAX ;
+                        }
                         tok_next() ;
                         value.integer = gSCR & 0xFF ;
-                        if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value ) )
+                        if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value ) ) {
                             return etDOUBLE ;
+                        }
                         if ( ( e = expression ( &result ) ) == etNONE ) {
                             if ( bActive ) {
                                 gSCR += result ;
-                                if ( gSCR > gScrSize )
+                                if ( gSCR > gScrSize ) {
                                     return etSCRRNG ;
+                                }
                             }
-                        } else
+                        } else {
                             return e ;
+                        }
                         state = bsEND ;
                         break ;
-
                         // .TXT
                     case stTEXT :
-                        if ( state != bsINIT && state != bsSYMBOL )
+                        if ( state != bsINIT && state != bsSYMBOL ) {
                             return etSYNTAX ;
+                        }
                         tok_next() ;
                         value.integer = gSCR & 0xFF ;
-                        if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value ) )
+                        if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value ) ) {
                             return etDOUBLE ;
+                        }
                         do {
                             char * dup = convert_string ( tok_current()->text ) ;
                             if ( tok_current()->type == tSTRING ) {
-                                if ( bActive )
+                                if ( bActive ) {
                                     gSCR += strlen ( dup ) + 1 ;
+                                }
                             } else if ( tok_current()->type == tIDENT ) {
                                 h = find_symbol ( tok_current()->text, false ) ;
-                                if ( h == NULL || h->type != tVALUE || h->subtype != stSTRING )
+                                if ( h == NULL || h->type != tVALUE || h->subtype != stSTRING ) {
                                     return etSYNTAX ;
+                                }
                                 dup = convert_string ( h->value.string ) ;
-                                if ( bActive )
+                                if ( bActive ) {
                                     gSCR += strlen ( dup ) + 1 ;
-                            } else
+                                }
+                            } else {
                                 return etEXPR ;
+                            }
                             free ( dup ) ;
-                            if ( gSCR > gScrSize )
+                            if ( gSCR > gScrSize ) {
                                 return etSCRRNG ;
+                            }
                             tok_next() ;
                         } while ( comma() ) ;
                         state = bsEND ;
                         break ;
-
                     case stEXEC :
                     case stVHDL :
                     case stHEX :
                     case stMEM :
                     case stCOE :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
+                        }
                         state = bsEND ;
                         break ;
-
                     default :
                         return etSYNTAX ;
                     }
@@ -904,14 +968,14 @@ static error_t build ( bool b6 ) {
                 // maybe opcode mnemonic in lower/mixed case?
                 h = find_symbol ( tok_current()->text, true ) ;
                 if ( h != NULL && h->type == tOPCODE ) {
-                    if ( state != bsINIT && state != bsLABELED )
+                    if ( state != bsINIT && state != bsLABELED ) {
                         return etSYNTAX ;
+                    }
                     gPC += 1 ;
                     state = bsEND ; // we know enough for now
                 }
             }
             break ;
-
         case tCOLON :
             value.integer = oPC ;
             if ( state == bsLABEL ) {
@@ -919,12 +983,12 @@ static error_t build ( bool b6 ) {
             } else if ( state != bsSYMBOL ) {
                 return etSYNTAX ;
             } else {
-                if ( !add_symbol ( tLABEL, symtok->subtype, symtok->text, value ) )
+                if ( !add_symbol ( tLABEL, symtok->subtype, symtok->text, value ) ) {
                     return etDOUBLE ;
+                }
             }
             state = bsLABELED ;
             break ;
-
         default :
             return etSYNTAX ;
         }
@@ -941,7 +1005,8 @@ static error_t build ( bool b6 ) {
  * @param core type
  * @return error code
  */
-static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, bool b6 ) {
+static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, bool b6 )
+{
     build_state_e state = bsINIT ;
     symbol_t * h = NULL ;
     uint32_t result = 0 ;
@@ -950,76 +1015,85 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
     uint32_t opcode = 0 ;
     error_t e = etNONE ;
     bool bInParen = false ;
-
     *addr = 0xFFFFFFFF ;
     *code = 0xFFFFFFFF ;
     *data = 0xFFFFFFFF ;
-
     // process statement
     for ( tok_first(), state = bsINIT ; state != bsEND && state != bsDIS ; ) {
         oPC = gPC ;
         switch ( tok_current()->type ) {
         case tNONE :
             // empty line?
-            if ( state != bsINIT && state != bsLABELED )
+            if ( state != bsINIT && state != bsLABELED ) {
                 return etSYNTAX ;
+            }
             state = bsEND ;
             break ;
-
         case tIDENT :
             h = find_symbol ( tok_current()->text, false ) ;
             // opcode mnemonic in lower/mixed case?
             if ( h == NULL ) {
                 h = find_symbol ( tok_current()->text, true ) ;
-                if ( h == NULL || h->type != tOPCODE )
+                if ( h == NULL || h->type != tOPCODE ) {
                     h = NULL ;
+                }
             }
             if ( h != NULL ) {
                 switch ( h->type ) {
                     // opcodes
                 case tOPCODE :
-                    if ( state != bsINIT && state != bsLABELED )
+                    if ( state != bsINIT && state != bsLABELED ) {
                         return etSYNTAX ;
+                    }
                     tok_next() ;
                     opcode = 0xFFFFFFFF ;
                     operand1 = 0 ;
                     operand2 = 0 ;
-                    if ( bActive )
+                    if ( bActive ) {
                         gPC += 1 ;
-
+                    }
                     switch ( h->subtype ) {
                     case stMOVE3 :
-                        if ( !destreg ( &operand1 ) )
+                        if ( !destreg ( &operand1 ) ) {
                             return etREGISTER ;
-                        if ( !comma() )
+                        }
+                        if ( !comma() ) {
                             return etCOMMA ;
+                        }
                         if ( !srcreg ( &operand2 ) ) {
-                            if ( ( e = expression ( &operand2 ) ) != etNONE )
+                            if ( ( e = expression ( &operand2 ) ) != etNONE ) {
                                 return e ;
+                            }
                             opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) ;
-                        } else
+                        } else {
                             opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) | 0x01000 ;
+                        }
                         break ;
                     case stMOVE6 :
-                        if ( !destreg ( &operand1 ) )
+                        if ( !destreg ( &operand1 ) ) {
                             return etREGISTER ;
-                        if ( !comma() )
+                        }
+                        if ( !comma() ) {
                             return etCOMMA ;
+                        }
                         if ( !srcreg ( &operand2 ) ) {
-                            if ( ( e = expression ( &operand2 ) ) != etNONE )
+                            if ( ( e = expression ( &operand2 ) ) != etNONE ) {
                                 return e ;
+                            }
                             opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) | 0x01000 ;
-                        } else
+                        } else {
                             opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) ;
+                        }
                         break ;
-
                     case stCJMP3 :
                         if ( condition ( &operand1 ) ) {
-                            if ( !comma() )
+                            if ( !comma() ) {
                                 return etCOMMA ;
+                            }
                         }
-                        if ( ( e = expression ( &operand2 ) ) != etNONE )
+                        if ( ( e = expression ( &operand2 ) ) != etNONE ) {
                             return e ;
+                        }
                         opcode = h->value.integer | operand1 | ( operand2 & 0x3FF ) ;
                         break ;
                     case stCJMP6 :
@@ -1028,54 +1102,62 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                             bInParen = true ;
                         }
                         if ( condition ( &operand1 ) ) {        // JUMP NZ, DONE
-                            if ( !comma() )
+                            if ( !comma() ) {
                                 return etCOMMA ;
-                            if ( ( e = expression ( &operand2 ) ) != etNONE )
+                            }
+                            if ( ( e = expression ( &operand2 ) ) != etNONE ) {
                                 return e ;
-                            if ( operand2 >= gCodeRange )
+                            }
+                            if ( operand2 >= gCodeRange ) {
                                 return etRANGE ;
+                            }
                             opcode = h->value.integer | operand1 | ( operand2 ) ;
                         } else if ( destreg ( &operand1 ) ) {   // JUMP s0, s1
-                            if ( !comma() )
+                            if ( !comma() ) {
                                 return etCOMMA ;
-                            if ( !srcreg ( &operand2 ) )
+                            }
+                            if ( !srcreg ( &operand2 ) ) {
                                 return etREGISTER ;
-                            if ( operand2 >= gCodeRange )
+                            }
+                            if ( operand2 >= gCodeRange ) {
                                 return etRANGE ;
+                            }
                             opcode = h->value.integer | operand1 | operand2 | 0x4000 ;
-                        } else if ( ( e = expression ( &operand2 ) ) != etNONE ) // JUMP DONE
+                        } else if ( ( e = expression ( &operand2 ) ) != etNONE ) { // JUMP DONE
                             return e ;
-                        else {
-                            if ( operand2 >= gCodeRange )
+                        } else {
+                            if ( operand2 >= gCodeRange ) {
                                 return etRANGE ;
+                            }
                             opcode = h->value.integer | operand2 ;
                         }
                         if ( bInParen ) {
-                            if ( tok_current()->type == tRPAREN )
+                            if ( tok_current()->type == tRPAREN ) {
                                 tok_next() ;
-                            else
+                            } else {
                                 return etSYNTAX ;
+                            }
                         }
                         bInParen = false ;
                         break ;
-
                     case stCSKP :
                         operand1 = 0 ;
                         operand2 = oPC + 2 ;
                         if ( condition ( &operand1 ) ) {
-                             if ( comma() ) {
-                                if ( ( e = expression ( &operand2 ) ) != etNONE )
+                            if ( comma() ) {
+                                if ( ( e = expression ( &operand2 ) ) != etNONE ) {
                                     return e ;
+                                }
                                 operand2 += oPC + 1 ;
                             }
                         } else if ( tok_current()->type != tNONE ) {
-                            if ( ( e = expression ( &operand2 ) ) != etNONE )
+                            if ( ( e = expression ( &operand2 ) ) != etNONE ) {
                                 return e ;
+                            }
                             operand2 += oPC + 1 ;
                         }
                         opcode = h->value.integer | operand1 | operand2 ;
                         break ;
-
                     case stCRET3 :
                         condition ( &operand1 ) ;
                         opcode = h->value.integer | operand1 ;
@@ -1085,82 +1167,94 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                         if ( condition ( &operand1 ) ) {        // RET NZ
                             opcode = h->value.integer | operand1 ;
                         } else if ( destreg ( &operand1 ) ) {   // RET s0, $FF
-                            if ( !comma() )
+                            if ( !comma() ) {
                                 return etCOMMA ;
-                            if ( ( e = expression ( &operand2 ) ) != etNONE )
+                            }
+                            if ( ( e = expression ( &operand2 ) ) != etNONE ) {
                                 return e ;
+                            }
                             opcode =  h->value.integer | operand1 | ( operand2 & 0xFF ) ;
-                        } else
-                            opcode = 0x25000 ;                  // RET
+                        } else {
+                            opcode = 0x25000 ;    // RET
+                        }
                         break ;
-
                     case stINT :
                         opcode = h->value.integer ;
                         break ;
-
                     case stINTI :
-                        if ( !bMode )
+                        if ( !bMode ) {
                             return etNOTIMPL ;
+                        }
                         opcode = h->value.integer ;
-                        if ( tok_current()->type != tIDENT || strcasecmp ( tok_current()->text, "INTERRUPT" ) != 0 )
+                        if ( tok_current()->type != tIDENT || strcasecmp ( tok_current()->text, "INTERRUPT" ) != 0 ) {
                             return etMISSING ;
+                        }
                         tok_next() ;
                         break ;
-
                     case stINTE :
                         opcode = h->value.integer ;
-                        if ( enadis ( &operand1 ) )
+                        if ( enadis ( &operand1 ) ) {
                             opcode = ( h->value.integer & 0xFFFFE ) | operand1 ;
+                        }
                         break ;
-
                     case stIO3 :
-                        if ( !destreg ( &operand1 ) )
+                        if ( !destreg ( &operand1 ) ) {
                             return etREGISTER ;
-                        if ( !comma() )
+                        }
+                        if ( !comma() ) {
                             return etCOMMA ;
+                        }
                         if ( !srcreg ( &operand2 ) ) {
                             if ( !indexed ( &operand2 ) ) {
-                                if ( ( e = expression ( &operand2 ) ) != etNONE )
+                                if ( ( e = expression ( &operand2 ) ) != etNONE ) {
                                     return e ;
+                                }
                                 opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) ;
-                            } else
+                            } else {
                                 opcode = h->value.integer | operand1 | operand2 ;
-                        } else
+                            }
+                        } else {
                             opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) | 0x01000 ;
+                        }
                         break ;
                     case stIO6 :
-                        if ( !destreg ( &operand1 ) )
+                        if ( !destreg ( &operand1 ) ) {
                             return etREGISTER ;
-                        if ( !comma() )
+                        }
+                        if ( !comma() ) {
                             return etCOMMA ;
+                        }
                         if ( !srcreg ( &operand2 ) ) {
                             if ( !indexed ( &operand2 ) ) {
-                                if ( ( e = expression ( &operand2 ) ) != etNONE )
+                                if ( ( e = expression ( &operand2 ) ) != etNONE ) {
                                     return e ;
+                                }
                                 opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) | 0x01000 ;
-                            } else
+                            } else {
                                 opcode = h->value.integer | operand1 | operand2 ;
-                        } else
+                            }
+                        } else {
                             opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) ;
+                        }
                         break ;
-
                     case stSHIFT :
-                        if ( !destreg ( &operand1 ) )
+                        if ( !destreg ( &operand1 ) ) {
                             return etREGISTER ;
+                        }
                         opcode = h->value.integer | operand1 ;
                         break ;
-
                     case stINST :
-                        if ( ( e = expression ( &opcode ) ) != etNONE )
+                        if ( ( e = expression ( &opcode ) ) != etNONE ) {
                             return e ;
-                        if ( opcode > 0x3FFFF )
+                        }
+                        if ( opcode > 0x3FFFF ) {
                             return etOVERFLOW ;
+                        }
                         break ;
-
                     case stBANK :
-                        if ( !b6 )
+                        if ( !b6 ) {
                             return etSYNTAX ;
-
+                        }
                         if ( tok_current()->text != NULL ) {
                             if ( strcmp ( tok_current()->text, "A" ) == 0 ) {
                                 tok_next() ;
@@ -1168,109 +1262,122 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                             } else if ( strcmp ( tok_current()->text, "B" ) == 0 ) {
                                 tok_next() ;
                                 opcode = h->value.integer + 1 ;
-                            } else
+                            } else {
                                 return etSYNTAX ;
-                        } else
+                            }
+                        } else {
                             return etSYNTAX ;
+                        }
                         break ;
-
                     case stOUTK :
-                        if ( !b6 )
+                        if ( !b6 ) {
                             return etSYNTAX ;
-
-                        if ( ( e = expression ( &operand1 ) ) != etNONE )
+                        }
+                        if ( ( e = expression ( &operand1 ) ) != etNONE ) {
                             return e ;
-                        if ( !comma() )
+                        }
+                        if ( !comma() ) {
                             return etCOMMA ;
-                        if ( ( e = expression ( &operand2 ) ) != etNONE )
+                        }
+                        if ( ( e = expression ( &operand2 ) ) != etNONE ) {
                             return e ;
-                        if ( operand1 > 0xFF )
+                        }
+                        if ( operand1 > 0xFF ) {
                             return etOVERFLOW ;
-                        if ( operand2 > 0x0F )
+                        }
+                        if ( operand2 > 0x0F ) {
                             return etOVERFLOW ;
+                        }
                         opcode = h->value.integer | ( operand1 << 4 ) | operand2 ;
                         break ;
-
                     default :
                         return etNOTIMPL ;
                     }
-                    if ( opcode == 0xFFFFFFFF )
+                    if ( opcode == 0xFFFFFFFF ) {
                         return etINTERNAL ;
+                    }
                     if ( oPC < gCodeRange ) {
                         if ( bActive ) {
                             gCode[ oPC ] = opcode ;
                             *addr = oPC ;
                             *code = opcode ;
                         }
-                    } else
+                    } else {
                         return etRANGE ;
+                    }
                     state = bsEND ;
                     break ;
-
                     // directives
                 case tDIRECTIVE :
                     tok_next() ;
-
                     switch ( h->subtype ) {
-
                     case stFI:
                         bActive = true ;
                         state = bsDIS ;
                         break ;
-
                     case stIF:
                         if ( ( e = expression ( &result ) ) == etNONE ) {
                             bActive = result != 0 ;
-                        } else
+                        } else {
                             return e ;
+                        }
                         *data = result ;
                         state = bsEND ;
                         break ;
-
                     case stPAGE :
                         state = bsEND ;
                         break ;
-
                     case stADDRESS :
-                        if ( !bMode )
+                        if ( !bMode ) {
                             return etNOTIMPL ;
+                        }
                     case stORG :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
+                        }
                         if ( ( e = expression ( &result ) ) == etNONE ) {
                             *addr = result ;
-                            if ( result < 0 )
+                            if ( result < 0 ) {
                                 return etRANGE ;
-                            if ( result >= gCodeRange ) // within code range
+                            }
+                            if ( result >= gCodeRange ) { // within code range
                                 return etRANGE ;
-                            if ( bActive )
+                            }
+                            if ( bActive ) {
                                 gPC = result ;
-                        } else
+                            }
+                        } else {
                             return e ;
+                        }
                         break ;
-
                     case stALIGN :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
+                        }
                         if ( ( e = expression ( &result ) ) == etNONE ) {
-                            if ( result <= 0 )
+                            if ( result <= 0 ) {
                                 return etRANGE ;
-                            if ( bActive )
+                            }
+                            if ( bActive ) {
                                 gPC = ( gPC + ( result - 1 ) ) / result * result ;
+                            }
                             *addr = gPC ;
-                        } else
+                        } else {
                             return e ;
-                        if ( gPC >= gCodeRange ) // within code range
+                        }
+                        if ( gPC >= gCodeRange ) { // within code range
                             return etRANGE ;
+                        }
                         state = bsEND ;
                         break ;
-
                     case stEND :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
+                        }
                         if ( ( e = expression ( &result ) ) == etNONE ) {
-                            if ( result >= CODESIZE )
+                            if ( result >= CODESIZE ) {
                                 return etRANGE ;
+                            }
                             if ( bActive ) {
                                 gCodeRange = result + 1 ;
                                 if ( gCodeRange == 64 )
@@ -1283,50 +1390,50 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                                     ;
                                 else if ( gCodeRange == 4096 )
                                     ;
-                                else
+                                else {
                                     return etRANGE ;
+                                }
                             }
                             *addr = result ;
-                        } else
+                        } else {
                             return e ;
+                        }
                         break ;
-
                     case stSCRATCHPAD :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
+                        }
                         if ( ( e = expression ( &result ) ) == etNONE ) {
                             if ( bActive ) {
                                 gScrLoc = result * 2 ;
                             }
                             *addr = gScrLoc ;
-                        } else
+                        } else {
                             return e ;
+                        }
                         if ( comma() ) {
                             if ( ( e = expression ( &result ) ) == etNONE ) {
-                                // within code range
                                 if ( bActive ) {
-                                    if ( result == 64 )
-                                        ;
-                                    else if ( result == 128 )
-                                        ;
-                                    else if ( result == 256 )
-                                        ;
-                                    else
+                                    if ( result > 256 ) {
                                         return etSCRSIZE ;
+                                    }
                                     gScrSize = result ;
-                                    if ( gSCR > gScrSize )
+                                    if ( gSCR > gScrSize ) {
                                         return etSCRRNG ;
+                                    }
                                 }
                                 *data = gScrSize ;
-                            } else
+                            } else {
                                 return e ;
-                        } else                            if ( bActive )
+                            }
+                        } else                            if ( bActive ) {
                             gScrSize = 256 ;
+                        }
                         break ;
-
                     case stEQU :
-                        if ( state != bsSYMBOL )
+                        if ( state != bsSYMBOL ) {
                             return etSYNTAX ;
+                        }
                         // NO-OP, just eat tokens in an orderly way
                         e = etSYNTAX ;
                         if ( tok_current()->type == tSTRING ) {
@@ -1336,10 +1443,10 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                             *data = result ;
                         } else if ( ( e = expression ( &result ) ) == etNONE ) {
                             *data = result ;
-                        } else
+                        } else {
                             return e ;
+                        }
                         break ;
-
                     case stSFR :
                     case stDS :
                     case stDSIN :
@@ -1347,85 +1454,100 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                     case stDSIO :
                     case stDSRAM :
                     case stDSROM :
-                        if ( state != bsSYMBOL )
+                        if ( state != bsSYMBOL ) {
                             return etSYNTAX ;
+                        }
                         // NO-OP, just eat tokens in an orderly way
                         do {
                             if ( ( e = expression ( &result ) ) == etNONE ) {
-                            } else
+                            } else {
                                 return e ;
+                            }
                         } while ( comma() ) ;
                         break ;
-
                     case stBYTE :
-                        if ( state != bsINIT && state != bsSYMBOL )
+                        if ( state != bsINIT && state != bsSYMBOL ) {
                             return etSYNTAX ;
-                        if ( bActive )
+                        }
+                        if ( bActive ) {
                             *addr = gSCR ;
+                        }
                         *data = 0xFFFFFFFF;
                         do {
                             if ( ( e = expression ( &result ) ) == etNONE ) {
-                                if ( result > 0xFF )
+                                if ( result > 0xFF ) {
                                     return etOVERFLOW ;
-                                if ( bActive )
+                                }
+                                if ( bActive ) {
                                     gData[ gSCR++ ] = result ;
+                                }
                             } else if ( e == etEMPTY ) {
                                 // allow an empty expression list for generating a symbol only
                                 break ;
-                            } else
+                            } else {
                                 return e ;
-                            if ( bActive ) {
-                                if ( *data == 0xFFFFFFFF )
-                                    *data = result ;
                             }
-                            if ( gSCR > gScrSize )
+                            if ( bActive ) {
+                                if ( *data == 0xFFFFFFFF ) {
+                                    *data = result ;
+                                }
+                            }
+                            if ( gSCR > gScrSize ) {
                                 return etSCRRNG ;
+                            }
                         } while ( comma() ) ;
                         break ;
-
                     case stWORD_BE :
                     case stWORD_LE :
-                        if ( state != bsINIT && state != bsSYMBOL )
+                        if ( state != bsINIT && state != bsSYMBOL ) {
                             return etSYNTAX ;
-                        if ( bActive )
+                        }
+                        if ( bActive ) {
                             *addr = gSCR ;
+                        }
                         *data = 0xFFFFFFFF;
                         do {
                             if ( ( e = expression ( &result ) ) == etNONE ) {
-                                if ( result > 0xFFFF )
+                                if ( result > 0xFFFF ) {
                                     return etOVERFLOW ;
+                                }
                                 result &= 0xFFFF ;
                                 if ( h->subtype == stWORD_BE ) {
                                     if ( bActive ) {
                                         gData[ gSCR++ ] = ( result >> 8 ) & 0x00FF ;
                                         gData[ gSCR++ ] = ( result >> 0 ) & 0x00FF ;
-                                        if ( *data == 0xFFFFFFFF )
+                                        if ( *data == 0xFFFFFFFF ) {
                                             *data = ( result >> 8 ) & 0xFF  ;
+                                        }
                                     }
                                 } else {
                                     if ( bActive ) {
                                         gData[ gSCR++ ] = ( result >> 0 ) & 0x00FF ;
                                         gData[ gSCR++ ] = ( result >> 8 ) & 0x00FF ;
-                                        if ( *data == 0xFFFFFFFF )
+                                        if ( *data == 0xFFFFFFFF ) {
                                             *data = ( result >> 0 ) & 0xFF  ;
+                                        }
                                     }
-                                    if ( gSCR > gScrSize )
+                                    if ( gSCR > gScrSize ) {
                                         return etSCRRNG ;
+                                    }
                                 }
                             } else if ( e == etEMPTY ) {
                                 // allow an empty expression list for generating a symbol only
                                 break ;
-                            } else
+                            } else {
                                 return e ;
+                            }
                         } while ( comma() ) ;
                         break ;
-
                     case stLONG_BE :
                     case stLONG_LE :
-                        if ( state != bsINIT && state != bsSYMBOL )
+                        if ( state != bsINIT && state != bsSYMBOL ) {
                             return etSYNTAX ;
-                        if ( bActive )
+                        }
+                        if ( bActive ) {
                             *addr = gSCR ;
+                        }
                         *data = 0xFFFFFFFF;
                         do {
                             if ( ( e = expression ( &result ) ) == etNONE ) {
@@ -1435,8 +1557,9 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                                         gData[ gSCR++ ] = ( result >> 16 ) & 0x00FF ;
                                         gData[ gSCR++ ] = ( result >> 8 ) & 0x00FF ;
                                         gData[ gSCR++ ] = ( result >> 0 ) & 0x00FF ;
-                                        if ( *data == 0xFFFFFFFF )
+                                        if ( *data == 0xFFFFFFFF ) {
                                             *data = ( result >> 24 ) & 0xFF  ;
+                                        }
                                     }
                                 } else {
                                     if ( bActive ) {
@@ -1444,197 +1567,214 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                                         gData[ gSCR++ ] = ( result >> 8 ) & 0x00FF ;
                                         gData[ gSCR++ ] = ( result >> 16 ) & 0x00FF ;
                                         gData[ gSCR++ ] = ( result >> 24 ) & 0x00FF ;
-                                        if ( *data == 0xFFFFFFFF )
+                                        if ( *data == 0xFFFFFFFF ) {
                                             *data = ( result >> 0 ) & 0xFF  ;
+                                        }
                                     }
                                 }
                             } else if ( e == etEMPTY ) {
                                 // allow an empty expression list for generating a symbol only
                                 break ;
-                            } else
+                            } else {
                                 return e ;
-                            if ( *data == 0xFFFFFFFF )
+                            }
+                            if ( *data == 0xFFFFFFFF ) {
                                 *data = result ;
-                            if ( gSCR > gScrSize )
+                            }
+                            if ( gSCR > gScrSize ) {
                                 return etSCRRNG ;
+                            }
                         } while ( comma() ) ;
                         break ;
-
                         // .BUF
                     case stBUFFER :
-                        if ( state != bsINIT && state != bsSYMBOL )
+                        if ( state != bsINIT && state != bsSYMBOL ) {
                             return etSYNTAX ;
+                        }
                         *data = 0xFFFFFFFF;
                         if ( ( e = expression ( &result ) ) == etNONE ) {
                             if ( bActive ) {
                                 *addr = gSCR ;
                                 gSCR += result ;
                                 *data = result ;
-                                if ( gSCR > gScrSize )
+                                if ( gSCR > gScrSize ) {
                                     return etSCRRNG ;
+                                }
                             }
-                        } else
+                        } else {
                             return e ;
+                        }
                         break ;
-
                         // .TXT
                     case stTEXT :
-                        if ( state != bsINIT && state != bsSYMBOL )
+                        if ( state != bsINIT && state != bsSYMBOL ) {
                             return etSYNTAX ;
-                        if ( bActive )
+                        }
+                        if ( bActive ) {
                             *addr = gSCR ;
+                        }
                         *data = 0xFFFFFFFF ;
                         do {
                             if ( tok_current()->type == tSTRING || tok_current()->type == tIDENT ) {
                                 char * dup ;
                                 if ( tok_current()->type == tIDENT ) {
                                     h = find_symbol ( tok_current()->text, false ) ;
-                                    if ( h == NULL || h->type != tVALUE || h->subtype != stSTRING )
+                                    if ( h == NULL || h->type != tVALUE || h->subtype != stSTRING ) {
                                         return etSYNTAX ;
+                                    }
                                     dup = convert_string ( h->value.string ) ;
-                                } else
+                                } else {
                                     dup = convert_string ( tok_current()->text ) ;
+                                }
                                 int i = 0 ;
                                 if ( bActive ) {
-                                    if ( *data == 0xFFFFFFFF && strlen ( dup ) > 0 )
+                                    if ( *data == 0xFFFFFFFF && strlen ( dup ) > 0 ) {
                                         *data = dup[ 0 ] ;
-                                    for ( i = 0 ; i < strlen ( dup ) + 1 ; i += 1 )
+                                    }
+                                    for ( i = 0 ; i < strlen ( dup ) + 1 ; i += 1 ) {
                                         gData[ gSCR++ ] = dup[ i ] ;
+                                    }
                                 }
                                 free ( dup ) ;
-
-                                if ( gSCR > gScrSize )
+                                if ( gSCR > gScrSize ) {
                                     return etSCRRNG ;
-                            } else
+                                }
+                            } else {
                                 return etEXPR ;
+                            }
                             tok_next();
                         } while ( comma() ) ;
                         break ;
-
                     case stEXEC :
                     case stVHDL :
                     case stHEX :
                     case stMEM :
                     case stCOE :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
+                        }
                         return etNOTIMPL ;
                         break ;
-
                     case stCONSTANT :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
+                        }
                         tok_next() ;
-                        if ( !comma() )
+                        if ( !comma() ) {
                             return etCOMMA ;
+                        }
                         // normal expression?
                         if ( ( e = expression ( &result ) ) == etNONE ) {
 //                           if ( bActive )
                             *code = result ;
-                        } else
+                        } else {
                             return e ;
+                        }
                         break ;
-
                     case stNAMEREG :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT ) {
                             return etSYNTAX ;
-                        if ( !bMode )
+                        }
+                        if ( !bMode ) {
                             return etNOTIMPL ;
+                        }
                         tok_next() ;
                         tok_next() ;
                         tok_next() ;
                         break ;
-
                     default :
                         return etSYNTAX ;
                     }
                     state = bsEND ;
                     break ;
-
                     // labels
                 case tLABEL :
-                    if ( state != bsINIT )
+                    if ( state != bsINIT ) {
                         return etSYNTAX ;
-
-                    if ( h->value.integer != oPC && h->subtype != stDOT )
+                    }
+                    if ( h->value.integer != oPC && h->subtype != stDOT ) {
                         return etPHASING ;
+                    }
                     tok_next()->type = tLABEL ; // just for formatting
                     h->value.integer = oPC ; // for dotted labels
-                    if ( bActive )
+                    if ( bActive ) {
                         *addr = h->value.integer ;
+                    }
                     state = bsLABEL ;
                     break ;
-
                     // equated values
                 case tVALUE :
                 case tREGISTER :
-                    if ( state != bsINIT )
+                    if ( state != bsINIT ) {
                         return etSYNTAX ;
-
+                    }
                     tok_next()->subtype = stEQU ; // just for formatting
 //                   if ( bActive )
                     *data = h->value.integer & 0xFFFF ;
                     state = bsSYMBOL ;
                     break ;
-
                 default :
                     return etSYNTAX ;
                 }
-            } else if ( bActive )
+            } else if ( bActive ) {
                 return etUNDEF ;
-            else {
+            } else {
                 tok_next()->type = tLABEL ; // just for formatting
                 tok_next()->subtype = stEQU ; // just for formatting
                 state = bsDIS ;
             }
             break ;
-
         case tCOLON :
             // if we have a potential label, we need a ':'
-            if ( state != bsLABEL )
+            if ( state != bsLABEL ) {
                 return etSYNTAX ;
+            }
             tok_next() ;
             state = bsLABELED ;
             break ;
-
         default :
             return etSYNTAX ;
         }
     }
 // only comment may follow
-    if ( state != bsDIS &&  tok_current()->type != tNONE )
+    if ( state != bsDIS &&  tok_current()->type != tNONE ) {
         return etEND ;
+    }
     return etNONE ;
 }
 
 // error printer
-static bool error ( const error_t e ) {
+static bool error ( const error_t e )
+{
     if ( e != etNONE ) {
         fprintf ( stdout, "%s:%d: %s\n", gSource, gLinenr, s_errors[ e ] ) ;
         return false ;
-    } else
+    } else {
         return true ;
+    }
 }
 
 // dump code in mem file format
-static void dump_code ( FILE * f, bool hex, bool zeros ) {
+static void dump_code ( FILE * f, bool hex, bool zeros )
+{
     int h, l = 0 ;
     bool b_addr = true ;
-
     if ( hex ) {
         // find last used entry
         for ( h = 0 ; h < gCodeRange && ! zeros ; h += 1 )
-            if ( gCode[ h ] != 0xFFFC0000 )
+            if ( gCode[ h ] != 0xFFFC0000 ) {
                 l = h ;
+            }
         // list all
-        for ( h = 0 ; h <= l ; h += 1 )
+        for ( h = 0 ; h <= l ; h += 1 ) {
             fprintf ( f, "%05X\n", gCode[ h ] & 0x3FFFF ) ;
+        }
     } else {
         // list used entries, prepend an origin
         for ( h = 0 ; h < gCodeRange  ; h += 1 ) {
-            if ( gCode[ h ] == 0xFFFC0000 && ! zeros )
+            if ( gCode[ h ] == 0xFFFC0000 && ! zeros ) {
                 b_addr = true ;
-            else {
+            } else {
                 if ( b_addr ) {
                     fprintf ( f, "@%08X\n", h ) ;
                     b_addr = false ;
@@ -1646,62 +1786,64 @@ static void dump_code ( FILE * f, bool hex, bool zeros ) {
 }
 
 // dump data in mem file format
-static void dump_data ( FILE * f, bool hex ) {
+static void dump_data ( FILE * f, bool hex )
+{
     int h ;
-
     fprintf ( f, "@%08X\n", gScrLoc ) ;
-    for ( h = 0 ; h < gScrSize ; h += 1 )
+    for ( h = 0 ; h < gScrSize ; h += 1 ) {
         fprintf ( f, "%02X\n", gData[ h ] ) ;
+    }
 }
 
 // format list file
-static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint32_t data ) {
+static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint32_t data )
+{
     int n = 0 ;
     char * s = NULL ;
-
     tok_first() ;
-
-    if ( e != etNONE )
+    if ( e != etNONE ) {
         fprintf ( f, "?? %s:\n", s_errors[ e ] ) ;
-
+    }
     if ( tok_current()->type == tDIRECTIVE && tok_current()->subtype == stPAGE ) {
         fprintf ( f, "\f" ) ;
         return ;
     }
-
     if ( bCode ) {                              // listing with binary info or just a formatted source?
         if ( data != 0xFFFFFFFF ) {
-            if ( data > 0xFFFF )
+            if ( data > 0xFFFF ) {
                 n += fprintf ( f, " %08X  ", data ) ;
-            else {
+            } else {
                 if ( addr != 0xFFFFFFFF ) {
-                    if ( addr >= 0x100 )
+                    if ( addr >= 0x100 ) {
                         n += fprintf ( f, "%03X ", addr ) ;
-                    else
+                    } else {
                         n += fprintf ( f, " %02X ", addr ) ;
-                } else
+                    }
+                } else {
                     n += fprintf ( f, "    " ) ;
-
-                if ( data > 0xFF )
+                }
+                if ( data > 0xFF ) {
                     n += fprintf ( f, " %04X  ", data & 0xFFFF ) ;
-                else
+                } else {
                     n += fprintf ( f, "   %02X  ", data & 0xFF ) ;
+                }
             }
         } else if ( code != 0xFFFFFFFF ) {
-            if ( addr != 0xFFFFFFFF )
+            if ( addr != 0xFFFFFFFF ) {
                 n += fprintf ( f, "%03X ", addr ) ;
-            else
+            } else {
                 n += fprintf ( f, "   " ) ;
+            }
             n += fprintf ( f, "%05X  ", code ) ;
         } else {
             if ( addr != 0xFFFFFFFF ) {
                 // address info
                 n += fprintf ( f, "%03X        ", addr ) ;
-            } else
+            } else {
                 n += fprintf ( f, "           " ) ;
+            }
         }
     }
-
     if ( tok_current()->type == tLABEL ) {
         // labels in the margin
         n += fprintf ( f, "%*s", -16, tok_next()->text ) ;
@@ -1711,20 +1853,22 @@ static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint
         n += fprintf ( f, "%*s", - ( 16 + 1 ), tok_next()->text ) ;
     } else if ( tok_current()->type != tNONE )
         // else print a blank margin
+    {
         n += fprintf ( f, "%*s", 16 + 1, "" ) ;
-
+    }
     // opcode
     if ( tok_current()->type != tNONE && tok_current()->text != NULL ) {
-        for ( s = tok_current()->text ; s != NULL && isalpha ( *s ) ; s++ )
+        for ( s = tok_current()->text ; s != NULL && isalpha ( *s ) ; s++ ) {
             *s = toupper ( *s ) ;
+        }
         n += fprintf ( f, " %*s", -6, tok_next()->text ) ;
     }
-
     // operand
     for ( ; tok_current()->type != tNONE ; tok_next() ) {
         if ( tok_current()->text != NULL ) {
-            if ( tok_current()->type != tCOMMA )
+            if ( tok_current()->type != tCOMMA ) {
                 n += fprintf ( f, " " ) ;
+            }
             switch ( tok_current()->type ) {
             case tHEX :
                 n += fprintf ( f, "0x%s", tok_current()->text ) ;
@@ -1744,27 +1888,30 @@ static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint
             }
         }
     }
-
     // comment
     if ( tok_current()->type == tNONE && tok_current()->subtype == stCOMMENT ) {
         if ( tok_current()->text != NULL ) {
             if ( n <= 11 )
                 // at the start
+            {
                 fprintf ( f, "%s", tok_current()->text ) ;
-            else if ( n < 60 ) {
+            } else if ( n < 60 ) {
                 // at column 60
                 fprintf ( f, "%*s", 60 - n, "" ) ;
                 fprintf ( f, "%s", tok_current()->text ) ;
             } else
                 // after the rest
+            {
                 fprintf ( f, " %s", tok_current()->text ) ;
+            }
         }
     }
     fprintf ( f, "\n" ) ;
 }
 
 // main entry for the 2-pass assembler
-bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilename, char * listfilename, bool mode, bool b6, bool listcode, bool hex, bool zeros ) {
+bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilename, char * listfilename, bool mode, bool b6, bool listcode, bool hex, bool zeros )
+{
     FILE * fsrc = NULL ;
     FILE * fmem = NULL ;
     FILE * flist = NULL ;
@@ -1773,29 +1920,25 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
     error_t e = etNONE ;
     int h = 0 ;
     bool result = true ;
-
     uint32_t addr, code, data ;
-
     // set up symbol table with keywords
     init_symbol ( b6 ) ;
-
     // clear code
-    for ( h = 0 ; h < CODESIZE ; h += 1 )
+    for ( h = 0 ; h < CODESIZE ; h += 1 ) {
         gCode[ h ] = 0xFFFC0000 ;
+    }
     // clear data
-    for ( h = 0 ; h < DATASIZE ; h += 1 )
+    for ( h = 0 ; h < DATASIZE ; h += 1 ) {
         gData[ h ] = 0x00 ;
-
+    }
     Sources = sourcefilenames ;
     gCodeRange = 1024 ;
     gPC = 0 ;
     gSCR = 0 ;
     gScrLoc = -1 ;
     gScrSize = 0x100 ;
-
     bMode = mode ;
     bActive = true ;
-
     for ( gSource = *Sources++ ; gSource != NULL ; gSource = *Sources++ ) {
         // open source file
         fsrc = fopen ( gSource, "r" ) ;
@@ -1804,7 +1947,6 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
             result = false ;
             goto finally ;
         }
-
         // pass 1, add symbols from source
         for ( gLinenr = 1 ; fgets ( line, sizeof ( line ), fsrc ) != NULL ; gLinenr += 1 ) {
             if ( lex ( line, mode ) ) {
@@ -1816,11 +1958,10 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
         }
         fclose ( fsrc ) ;
     }
-
     // give up if errors in pass 1
-    if ( !result )
+    if ( !result ) {
         goto finally ;
-
+    }
     if ( strlen ( listfilename ) > 0 ) {
         flist = fopen ( listfilename, "w" ) ;
         if ( flist == NULL ) {
@@ -1828,7 +1969,6 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
             result = false ;
         }
     }
-
     bCode = listcode ;
     Sources = sourcefilenames ;
     gCodeRange = 1024 ;
@@ -1836,43 +1976,40 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
     gSCR = 0 ;
     gScrLoc = -1 ;
     gScrSize = 0x100 ;
-
     bMode = mode ;
     bActive = true ;
-
     if ( bCode ) {
-        if ( b6 )
+        if ( b6 ) {
             fprintf ( flist, "PB6\n" ) ;
-        else
+        } else {
             fprintf ( flist, "PB3\n" ) ;
+        }
     }
-
     for ( gSource = *Sources++ ; gSource != NULL ; gSource = *Sources++ ) {
-
         fsrc = fopen ( gSource, "r" ) ;
         if ( fsrc == NULL ) {
             fprintf ( stderr, "? unable to re-open source file '%s'\n", gSource ) ;
             result = false ;
             goto finally ;
         }
-
         fprintf ( flist, "---------- source file: %-75s\n", gSource ) ;
         // pass 2, build code and scratchpad
         for ( gLinenr = 1 ; fgets ( line, sizeof ( line ), fsrc ) != NULL ; gLinenr += 1 ) {
             if ( lex ( line, mode ) ) {
                 result &= error ( e = assemble ( &addr, &code, &data, b6 ) ) ;
-                if ( flist != NULL )
+                if ( flist != NULL ) {
                     print_line ( flist, e, addr, code, data ) ;
+                }
             } else {
                 result &= error ( etLEX ) ;
-                if ( flist != NULL )
+                if ( flist != NULL ) {
                     print_line ( flist, etLEX, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF ) ;
+                }
             }
             tok_free() ;
         }
         fclose ( fsrc ) ;
     }
-
     // dump scratch pad
     if ( strlen ( datafilename ) > 0 ) { // We want a separate data file?
         fmem = fopen ( datafilename, "w" ) ;
@@ -1888,12 +2025,13 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
         for ( h = 0 ; h < gScrSize ; h += 2 ) {
             if ( gCode[ ( gScrLoc + h ) / 2 ] == 0xFFFC0000 ) { // Data not overlapping used code
                 gCode[ ( gScrLoc + h ) / 2 ] = ( gData[ h + 1 ] << 8 ) | gData[ h ];
-            } else
+            } else {
                 fprintf ( stderr, "? data and code overlap at: 0x%03x\n", ( gScrLoc + h ) / 2 ) ;
+            }
         }
-    } else if ( gSCR > 0 )
+    } else if ( gSCR > 0 ) {
         fprintf ( stderr, "? data section discarded, no .SCR given\n" ) ;
-
+    }
     // dump code (and optionally, scratch pad)
     if ( strlen ( codefilename ) > 0 ) { // We want a code file?
         fmem = fopen ( codefilename, "w" ) ;
@@ -1905,12 +2043,11 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
             fclose ( fmem ) ;
         }
     }
-
 finally: {
-        if ( flist != NULL )
+        if ( flist != NULL ) {
             fclose ( flist ) ;
+        }
         free_symbol() ;
     }
-
     return result ;
 }
