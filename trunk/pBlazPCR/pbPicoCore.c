@@ -27,27 +27,7 @@
 #include "pbTypes.h"
 #include "pbPicoCore.h"
 
-inline static uint32_t DestReg ( const int code )
-{
-    return ( code >> 8 ) & 0xF ;
-}
-
-inline static uint32_t SrcReg ( const int code )
-{
-    return ( code >> 4 ) & 0xF ;
-}
-
-inline static uint32_t Constant ( const int code )
-{
-    return code & 0xFF ;
-}
-
-inline static uint32_t Address12 ( const int code )
-{
-    return code & 0xFFF ;
-}
-
-bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int stack_size, int pad_size, int bank_size, int want_alu )
+bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int stack_size, int pad_size, int bank_size, bool want_alu )
 {
     FILE * outfile = NULL ;
     int  pc = 0 ;
@@ -76,13 +56,13 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int st
               "\tgeneric ( \n"
             ) ;
     fprintf ( outfile,
-              "\t\tconstant STACK_SIZE : integer := '%d' ; \n"
-              "\t\tconstant PAD_SIZE : integer := '%d' ; \n"
-              "\t\tconstant BANK_SIZE : integer := '%d' ; \n"
-              "\t\tconstant WANT_ALU : boolean := '%d' ; \n"
-              stack_size, pad_size, bank_size, want_alu ) ;
+              "\t\tconstant STACK_SIZE : integer := %d ; \n"
+              "\t\tconstant PAD_SIZE : integer := %d ; \n"
+              "\t\tconstant BANK_SIZE : integer := %d ; \n"
+              "\t\tconstant WANT_ALU : boolean := %s \n"
+              , stack_size, pad_size, bank_size, want_alu ? "true" : "false" ) ;
     fprintf ( outfile,
-              "\t ) \n"
+              "\t ) ; \n"
               "\tport ( \n"
               "\t\tclk : in std_logic ; \n"
               "\t\trst : in std_logic ; \n"
@@ -93,7 +73,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int st
 
               "\n"
               "\t\tPB2_IRQ : in std_logic ; \n"
-              "\t\tPB2_IQA : out std_logic\n"
+              "\t\tPB2_IQA : out std_logic \n"
               "\t ) ; \n"
               "end PicoCore ; \n"
             ) ;
@@ -121,7 +101,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int st
               "\tsignal nspR : SP_t ; \n"
               "\tsignal stackW : std_logic := '0' ; \n"
               "\tsignal stackT : std_logic_vector( 13 downto 0 ) ; \n"
-              "\talias addrR : std_logic_vector is stackT( 11 downto 0 ) ; \n"
+              "\talias addrR : std_logic_vector( 11 downto 0 ) is stackT( 11 downto 0 ) ; \n"
 
               "\n"
               "\t-- scratchpad\n"
@@ -135,17 +115,17 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int st
               "\tsignal inst : IN_t := X\"%05X\" ; \n", Code[ 0 ].code & 0x3FFFF
             ) ;
     fprintf ( outfile,
-              "\talias addrN : unsigned is inst( 11 downto 0 ) ; \n"
-              "\talias regA_addr : unsigned is inst( 11 downto 8 ) ; \n"
-              "\talias regB_addr : unsigned is inst( 7 downto 4 ) ; \n"
-              "\talias dataK : unsigned is inst( 7 downto 0 ) ; \n"
+              "\talias addrN : unsigned( 11 downto 0 ) is inst( 11 downto 0 ) ; \n"
+              "\talias regA_addr : unsigned( 3 downto 0 ) is inst( 11 downto 8 ) ; \n"
+              "\talias regB_addr : unsigned( 3 downto 0 ) is inst( 7 downto 4 ) ; \n"
+              "\talias dataK : unsigned( 7 downto 0 ) is inst( 7 downto 0 ) ; \n"
 
-              "\tsignal regA : std_logic_vector( 7 downto 0 ) ; \n"
-              "\talias dataA : std_logic_vector is regA( 7 downto 0 ) ; \n"
-              "\tsignal regB : std_logic_vector( 7 downto 0 ) ; \n"
-              "\tsignal dataB : std_logic_vector( 7 downto 0 ) ; \n"
+              "\tsignal regA : std_logic_vector( 7 downto 0 ) := ( others => '0' ) ; \n"
+              "\talias dataA : std_logic_vector( 7 downto 0 ) is regA( 7 downto 0 ) ; \n"
+              "\tsignal regB : std_logic_vector( 7 downto 0 ) := ( others => '0' ) ; \n"
+              "\tsignal dataB : std_logic_vector( 7 downto 0 ) := ( others => '0' ) ; \n"
 
-              "\tsignal regI : std_logic_vector( 7 downto 0 ) ; \n"
+              "\tsignal regI : std_logic_vector( 7 downto 0 ) := ( others => '0' ) ; \n"
               "\tsignal regW : std_logic := '0' ; \n"
 
               "\n"
@@ -163,8 +143,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int st
 
               "\n"
               "\t-- alu \n"
-              "\tsignal aluOP : std_logic_vector( 2 downto 0 ) ; \n"
-              "\tsignal alu : std_logic_vector( 7 downto 0 ) ; \n"
+              "\tsignal aluOP : std_logic_vector( 2 downto 0 ) := ( others => '0' ) ; \n"
+              "\tsignal alu : std_logic_vector( 7 downto 0 ) := ( others => '0' ) ; \n"
               "\tsignal ci, co : std_logic ; \n"
             ) ;
 
@@ -238,9 +218,9 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int st
     fprintf ( outfile,
               "\n"
               "\t-- registers\n"
-              "\trb : if REG_SIZE > 0 is\n"
+              "\trb : if BANK_SIZE > 0 generate \n"
               "\t\ttype REG_t is array( 0 to BANK_SIZE - 1 ) of std_logic_vector( 7 downto 0 ) ; \n"
-              "\t\tsignal register_ram : REG_t ; \n"
+              "\t\tsignal register_ram : REG_t := ( others => X\"00\" ) ; \n"
               "\tbegin\n"
               "\t\tprocess ( clk ) is\n"
               "\t\tbegin\n"
@@ -254,7 +234,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int st
               "\n"
               "\t\tregA <= register_ram( to_integer( regA_addr ) ) ; \n"
               "\t\tregB <= register_ram( to_integer( regB_addr ) ) ; \n"
-              "\tend block ; \n"
+              "\tend generate ; \n"
             ) ;
 
     fprintf ( outfile,
@@ -298,7 +278,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int st
 
     fprintf ( outfile,
               "\t-- alu\n"
-              "\talu_b : if WANT_ALU is\n"
+              "\talu_b : if WANT_ALU generate \n"
               "\t\tsignal mask : std_logic_vector( 7 downto 0 ) ; \n"
               "\t\tsignal sum : std_logic_vector( 7 downto 0 ) ; \n"
               "\t\tsignal chain : std_logic_vector( 8 downto 0 ) ; \n"
@@ -329,7 +309,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int st
               "\t\tend generate ; \n"
               "\n"
               "\t\tco <= chain( 8 ) ; \n"
-              "\tend block ; \n"
+              "\tend generate ; \n"
               "\n"
             ) ;
 
@@ -1047,7 +1027,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int st
                     ) ;
             break ;
         case 0x29000 :
-            fprintf ( outfile, "\t\t\t\t-- RETI\tDISABLE\t; %03X : %05X \n", pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- RETI\t DISABLE\t; %03X : %05X \n", pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tni <= inst( 0 ) ; \n"
                       "\t\t\t\tnpc <= unsigned( addrR ) ; \n"
@@ -1060,7 +1040,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int st
                     ) ;
             break ;
         case 0x29001 :
-            fprintf ( outfile, "\t\t\t\t-- RETI\tENABLE\t; %03X : %05X \n", pc, c ) ;
+            fprintf ( outfile, "\t\t\t\t-- RETI\t ENABLE\t; %03X : %05X \n", pc, c ) ;
             fprintf ( outfile,
                       "\t\t\t\tni <= inst( 0 ) ; \n"
                       "\t\t\t\tnpc <= unsigned( addrR ) ; \n"
