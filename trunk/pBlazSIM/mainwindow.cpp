@@ -45,14 +45,15 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setWindowTitle( "pBlazSIM V1.2 - http://www.mediatronix.com" ) ;
 
     // font used for all views
-    QFont fixedFont( "Consolas", 9 ) ;
+//    QFont fixedFont( "Consolas [Monaco]", 9 ) ;
+    QFont fixedFont( "Inconsolata", 10 ) ;
 
 
     // script engine
     engine = new QScriptEngine() ;
     debugger = new QScriptEngineDebugger() ;
     debugger->attachTo( engine ) ;
-    QFile scriptFile( qApp->applicationDirPath() + "/" + "IO.js" ) ;
+    QFile scriptFile( /* qApp->applicationDirPath() + "/" + */ ":/files/IO.js" ) ;
     if ( ! scriptFile.open( QIODevice::ReadOnly ) )
         qDebug() << "no IO config script file: " << scriptFile.fileName() ;
     QTextStream stream( &scriptFile ) ;
