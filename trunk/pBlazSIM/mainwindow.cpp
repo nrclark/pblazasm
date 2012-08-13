@@ -42,7 +42,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi( this ) ;
 
-    this->setWindowTitle( "pBlazSIM V1.2 - http://www.mediatronix.com" ) ;
+    this->setWindowTitle( "pBlazSIM V1.3 - http://www.mediatronix.com" ) ;
+    this->setWindowIcon(QIcon(":/files/bug_red.ico"));
 
     // font used for all views
 //    QFont fixedFont( "Consolas [Monaco]", 9 ) ;

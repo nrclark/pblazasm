@@ -27,6 +27,3 @@ HEADERS  += \
 FORMS    += mainwindow.ui
 
 RESOURCES += resources.qrc
-
-OTHER_FILES += \
-    ../pBlazSIM-build-desktop-Qt_4_8_1_for_Desktop_-_MinGW__Qt_SDK__Debug/debug/IO.js
