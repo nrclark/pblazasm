@@ -29,9 +29,9 @@
 #include "pbLexer.h"
 #include "pbErrors.h"
 
-//#ifdef _MSC_VER   //Microsoft Visual C doesn't have strcasemcp, but has stricmp instead
+#ifdef _MSC_VER   //Microsoft Visual C doesn't have strcasemcp, but has stricmp instead
 #define strcasecmp  stricmp
-//#endif
+#endif
 
 #define CODESIZE 4096
 #define DATASIZE 256
