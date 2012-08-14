@@ -2,24 +2,24 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="pBlzASM6" />
+		<Option title="pBlazASM" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="bin\Debug\pBlazASM" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj\Debug\" />
+				<Option output="bin/Debug/pBlazASM" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="-3 -l -k led_ctrl" />
+				<Option parameters="-6 -l test" />
 				<Compiler>
 					<Add option="-Wall" />
 					<Add option="-g" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
-				<Option output="bin\Release\pBlzASM6" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj\Release\" />
+				<Option output="bin/Release/pBlzASM6" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -29,7 +29,7 @@
 					<Add option="-s" />
 				</Linker>
 				<ExtraCommands>
-					<Add after="./bin/Debug/pBlzASM6.exe -l -m../pBlazMRG/test.mem -s../pBlazMRG/test_data.mem pBlzASM6_Syntax.psm" />
+					<Add after="./bin/Debug/pBlzASM6.exe -l -m../pBlazMRG/test.mem -s../pBlazMRG/test_data.mem test.psm" />
 					<Mode after="always" />
 				</ExtraCommands>
 			</Target>
@@ -83,6 +83,7 @@
 		<Unit filename="pbTypes.h">
 			<Option target="Release" />
 		</Unit>
+		<Unit filename="test.psm" />
 		<Unit filename="version.h" />
 		<Extensions>
 			<code_completion />
