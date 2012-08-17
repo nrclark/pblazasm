@@ -1,5 +1,5 @@
 /*
- *  Copyright Â© 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
  *
  *  This file is part of pBlazASM.
  *
@@ -41,24 +41,23 @@
  * usage prints usage text
  * @param text application name
  */
-static void usage ( char * text )
-{
-    printf ( "\n%s - Picoblaze Assembler V%ld.%ld.%ld (%s)\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
-    printf ( "\nUsage:\n" ) ;
-    printf ( "   pBlazASM -3|-6 [-k] [-v] [-f] [-m[<MEMfile>]] [-s[<MEMfile>]] [-l[<LSTfile>]] <input file> <input file> <input file> ...\n"
-             "   where:\n"
-             "         -3      select Picoblaze-3, mandatory\n"
-             "         -6      select Picoblaze-6, mandatory\n"
-             "         -c/-C   creates a code (.MEM) file (not in combo with -x/-X)\n"
-             "         -x/-X   creates a code (.HEX) file (not in combo with -c/-C)\n"
-             "         -s/-S   creates a data (.SCR) file\n"
-             "         -l      creates a LST file\n"
-             "         -k      select KCPSM mode with limited expression handling (-3 only)\n"
-             "         -v      generates verbose reporting\n"
-             "         -f      with -l creates a list file without code to replace the source\n" ) ;
-    printf ( "\nNote: All (max 255) input files are assembled to one output." ) ;
-    printf ( "\nNote: Option -k (KCPSM mode) is not supported in Picoblaze-6 mode." ) ;
-    printf ( "\nNote: -C, -S and -X generate fully populated MEM files for 'Data2Mem'.\n" ) ;
+static void usage ( char * text ) {
+	printf ( "\n%s - Picoblaze Assembler V%ld.%ld.%ld (%s)\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
+	printf ( "\nUsage:\n" ) ;
+	printf ( "   pBlazASM -3|-6 [-k] [-v] [-f] [-c[<MEMfile>]] [-s[<MEMfile>]] [-l[<LSTfile>]] <input file> <input file> <input file> ...\n"
+	         "   where:\n"
+	         "         -3      select Picoblaze-3, mandatory\n"
+	         "         -6      select Picoblaze-6, mandatory\n"
+	         "         -c/-C   creates a code (.MEM) file (not in combo with -x/-X)\n"
+	         "         -x/-X   creates a code (.HEX) file (not in combo with -c/-C)\n"
+	         "         -s/-S   creates a data (.SCR) file\n"
+	         "         -l      creates a LST file\n"
+	         "         -k      select KCPSM mode with limited expression handling (-3 only)\n"
+	         "         -v      generates verbose reporting\n"
+	         "         -f      with -l creates a list file without code to replace the source\n" ) ;
+	printf ( "\nNote: All (max 255) input files are assembled to one output." ) ;
+	printf ( "\nNote: Option -k (KCPSM mode) is not supported in Picoblaze-6 mode." ) ;
+	printf ( "\nNote: -C, -S and -X generate fully populated MEM files for 'Data2Mem'.\n" ) ;
 }
 
 /**
@@ -66,251 +65,246 @@ static void usage ( char * text )
  * processes command line and
  * calls actual assembler()
  */
-int main ( int argc, char ** argv )
-{
-    char * src_filenames[ 256 ] =
-    { NULL } ;
-    char code_filename[ 256 ] =
-    { 0 } ;
-    char data_filename[ 256 ] =
-    { 0 } ;
-    char list_filename[ 256 ] =
-    { 0 } ;
-    char * pfile, *ppath ;
-    int result = 0 ;
-    int nInputfile = 0 ;
+int main ( int argc, char ** argv ) {
+	char * src_filenames[ 256 ] = { NULL } ;
+	char code_filename[ 256 ] = { 0 } ;
+	char data_filename[ 256 ] = { 0 } ;
+	char list_filename[ 256 ] = { 0 } ;
+	char * pfile, *ppath ;
+	int result = 0 ;
+	int nInputfile = 0 ;
 
-    bool bKCPSM6 = true ;
-    bool bMandatory = true ;
-    bool bKCPSM_mode = false ; // KCPSM mode, accepts 'NAMEREG' etc
-    bool bList_mode = true ;
-    bool bOptErr = false ;
-    bool bWantMEM = false ;
-    bool bWantHEX = false ;
-    bool bWantSCR = false ;
-    bool bWantZEROs = false ;
-    bool bWantLST = false ;
-    bool bVerbose = false ;
+	bool bKCPSM6 = true ;
+	bool bMandatory = true ;
+	bool bKCPSM_mode = false ; // KCPSM mode, accepts 'NAMEREG' etc
+	bool bList_mode = true ;
+	bool bOptErr = false ;
+	bool bWantMEM = false ;
+	bool bWantHEX = false ;
+	bool bWantSCR = false ;
+	bool bWantZEROs = false ;
+	bool bWantLST = false ;
+	bool bVerbose = false ;
 
-    extern char * optarg ;
-    extern int optind, optopt ;
-    int optch ;
+	extern char * optarg ;
+	extern int optind, optopt ;
+	int optch ;
 
-    while ( ( optch = getopt ( argc, argv, "36c::C::fhkl::m::M::s::S::vx::X::" ) ) != -1 ) {
-        switch ( optch ) {
-        case '3' :
-            bKCPSM6 = false ;
-            if ( bKCPSM_mode ) {
-                bOptErr = true ;
-            }
-            bMandatory = false ;
-            break ;
-        case '6' :
-            bKCPSM6 = true ;
-            bMandatory = false ;
-            if ( bKCPSM_mode ) {
-                bOptErr = true ;
-            }
-            break ;
-        case 'f' :
-            bList_mode = false ;
-            break ;
-        case 'h' :
-            bOptErr = true ;
-            break ;
-        case 's' :
-            bWantSCR = true ;
-            if ( optarg != NULL ) {
-                strcpy ( data_filename, optarg ) ;
-            }
-            break ;
-        case 'S' :
-            bWantSCR = true ;
-            bWantZEROs = true ;
-            if ( optarg != NULL ) {
-                strcpy ( data_filename, optarg ) ;
-            }
-            break ;
-        case 'x' :
-            if ( bWantMEM ) {
-                fprintf ( stderr, "? conflicting option -%c\n", optch ) ;
-                bOptErr = true ;
-            } else {
-                bWantHEX = true ;
-                if ( optarg != NULL ) {
-                    strcpy ( code_filename, optarg ) ;
-                }
-            }
-            break ;
-        case 'X' :
-            if ( bWantMEM ) {
-                fprintf ( stderr, "? conflicting option -%c\n", optch ) ;
-                bOptErr = true ;
-            } else {
-                bWantHEX = true ;
-                bWantZEROs = true ;
-                if ( optarg != NULL ) {
-                    strcpy ( code_filename, optarg ) ;
-                }
-            }
-        case 'c' :
-        case 'm' :
-            if ( bWantHEX ) {
-                fprintf ( stderr, "? conflicting option -%c\n", optch ) ;
-                bOptErr = true ;
-            } else {
-                bWantMEM = true ;
-                if ( optarg != NULL ) {
-                    strcpy ( code_filename, optarg ) ;
-                }
-            }
-            break ;
-        case 'C' :
-        case 'M' :
-            if ( bWantHEX ) {
-                fprintf ( stderr, "? conflicting option -%c\n", optch ) ;
-                bOptErr = true ;
-            } else {
-                bWantMEM = true ;
-                bWantZEROs = true ;
-                if ( optarg != NULL ) {
-                    strcpy ( code_filename, optarg ) ;
-                }
-            }
-            break ;
-            break ;
-        case 'l' :
-            bWantLST = true ;
-            if ( optarg != NULL ) {
-                strcpy ( list_filename, optarg ) ;
-            }
-            break ;
-        case 'k' :
-            bKCPSM_mode = true ;
-            if ( bKCPSM6 ) {
-                bOptErr = true ;
-            }
-            break ;
-        case 'v' :
-            bVerbose = true ;
-            break ;
-        case ':' :
-            fprintf ( stderr, "? missing option -%c\n", optopt ) ;
-            bOptErr = true ;
-            break ;
-        default :
-            fprintf ( stderr, "? unknown option -%c\n", optopt ) ;
-            bOptErr = true ;
-            break ;
-        }
-    }
+	while ( ( optch = getopt ( argc, argv, "36c::C::fhkl::m::M::s::S::vx::X::" ) ) != -1 ) {
+		switch ( optch ) {
+		case '3' :
+			bKCPSM6 = false ;
+			if ( bKCPSM_mode ) {
+				bOptErr = true ;
+			}
+			bMandatory = false ;
+			break ;
+		case '6' :
+			bKCPSM6 = true ;
+			bMandatory = false ;
+			if ( bKCPSM_mode ) {
+				bOptErr = true ;
+			}
+			break ;
+		case 'f' :
+			bList_mode = false ;
+			break ;
+		case 'h' :
+			bOptErr = true ;
+			break ;
+		case 's' :
+			bWantSCR = true ;
+			if ( optarg != NULL ) {
+				strcpy ( data_filename, optarg ) ;
+			}
+			break ;
+		case 'S' :
+			bWantSCR = true ;
+			bWantZEROs = true ;
+			if ( optarg != NULL ) {
+				strcpy ( data_filename, optarg ) ;
+			}
+			break ;
+		case 'x' :
+			if ( bWantMEM ) {
+				fprintf ( stderr, "? conflicting option -%c\n", optch ) ;
+				bOptErr = true ;
+			} else {
+				bWantHEX = true ;
+				if ( optarg != NULL ) {
+					strcpy ( code_filename, optarg ) ;
+				}
+			}
+			break ;
+		case 'X' :
+			if ( bWantMEM ) {
+				fprintf ( stderr, "? conflicting option -%c\n", optch ) ;
+				bOptErr = true ;
+			} else {
+				bWantHEX = true ;
+				bWantZEROs = true ;
+				if ( optarg != NULL ) {
+					strcpy ( code_filename, optarg ) ;
+				}
+			}
+		case 'c' :
+		case 'm' :
+			if ( bWantHEX ) {
+				fprintf ( stderr, "? conflicting option -%c\n", optch ) ;
+				bOptErr = true ;
+			} else {
+				bWantMEM = true ;
+				if ( optarg != NULL ) {
+					strcpy ( code_filename, optarg ) ;
+				}
+			}
+			break ;
+		case 'C' :
+		case 'M' :
+			if ( bWantHEX ) {
+				fprintf ( stderr, "? conflicting option -%c\n", optch ) ;
+				bOptErr = true ;
+			} else {
+				bWantMEM = true ;
+				bWantZEROs = true ;
+				if ( optarg != NULL ) {
+					strcpy ( code_filename, optarg ) ;
+				}
+			}
+			break ;
+			break ;
+		case 'l' :
+			bWantLST = true ;
+			if ( optarg != NULL ) {
+				strcpy ( list_filename, optarg ) ;
+			}
+			break ;
+		case 'k' :
+			bKCPSM_mode = true ;
+			if ( bKCPSM6 ) {
+				bOptErr = true ;
+			}
+			break ;
+		case 'v' :
+			bVerbose = true ;
+			break ;
+		case ':' :
+			fprintf ( stderr, "? missing option -%c\n", optopt ) ;
+			bOptErr = true ;
+			break ;
+		default :
+			fprintf ( stderr, "? unknown option -%c\n", optopt ) ;
+			bOptErr = true ;
+			break ;
+		}
+	}
 
-    if ( bOptErr || bMandatory ) {
-        usage ( basename ( argv[ 0 ] ) ) ;
-        result = -1 ;
-        goto finally ;
-    }
+	if ( bOptErr || bMandatory ) {
+		usage ( basename ( argv[ 0 ] ) ) ;
+		result = -1 ;
+		goto finally ;
+	}
 
-    if ( bVerbose ) {
-        if ( bKCPSM6 ) {
-            printf ( "! PB6 option chosen\n" ) ;
-        } else {
-            printf ( "! PB3 option chosen\n" ) ;
-        }
-    }
+	if ( bVerbose ) {
+		if ( bKCPSM6 ) {
+			printf ( "! PB6 option chosen\n" ) ;
+		} else {
+			printf ( "! PB3 option chosen\n" ) ;
+		}
+	}
 
-    if ( bVerbose && bKCPSM_mode ) {
-        fprintf ( stdout, "! KCPSM compatible mode selected\n" ) ;
-    }
+	if ( bVerbose && bKCPSM_mode ) {
+		fprintf ( stdout, "! KCPSM compatible mode selected\n" ) ;
+	}
 
-    if ( argv[ optind ] == NULL ) {
-        fprintf ( stderr, "? source file(s) missing\n" ) ;
-        usage ( basename ( argv[ 0 ] ) ) ;
-        result = -1 ;
-        goto finally ;
-    }
+	if ( argv[ optind ] == NULL ) {
+		fprintf ( stderr, "? source file(s) missing\n" ) ;
+		usage ( basename ( argv[ 0 ] ) ) ;
+		result = -1 ;
+		goto finally ;
+	}
 
-    for ( nInputfile = 0 ; argv[ optind ] != NULL && nInputfile < 256 ; nInputfile += 1, optind += 1 ) {
-        src_filenames[ nInputfile ] = calloc ( strlen ( argv[ optind ] ) + 16, sizeof ( char ) ) ;
-        strcpy ( src_filenames[ nInputfile ], argv[ optind ] ) ;
+	for ( nInputfile = 0 ; argv[ optind ] != NULL && nInputfile < 256 ; nInputfile += 1, optind += 1 ) {
+		src_filenames[ nInputfile ] = calloc ( strlen ( argv[ optind ] ) + 16, sizeof ( char ) ) ;
+		strcpy ( src_filenames[ nInputfile ], argv[ optind ] ) ;
 
-        if ( strrchr ( src_filenames[ nInputfile ], '.' ) == NULL ) {
-            strcat ( src_filenames[ nInputfile ], ".psm" ) ;
-        }
-        if ( bVerbose ) {
-            fprintf ( stdout, "! Sourcefile: %s\n", src_filenames[ nInputfile ] ) ;
-        }
-    }
+		if ( strrchr ( src_filenames[ nInputfile ], '.' ) == NULL ) {
+			strcat ( src_filenames[ nInputfile ], ".psm" ) ;
+		}
+		if ( bVerbose ) {
+			fprintf ( stdout, "! Sourcefile: %s\n", src_filenames[ nInputfile ] ) ;
+		}
+	}
 
-    if ( bWantMEM || bWantHEX ) {
-        if ( strlen ( code_filename ) == 0 ) {
-            pfile = filename ( src_filenames[ nInputfile - 1 ] ) ;
-            ppath = dirname ( src_filenames[ nInputfile - 1 ] ) ;
-            strcpy ( code_filename, ppath ) ;
-            strcat ( code_filename, "/" ) ;
-            strcat ( code_filename, pfile ) ;
-            strcat ( code_filename, bWantHEX ? ".hex" : ".mem" ) ;
-            free ( ppath ) ;
-            free ( pfile ) ;
-        }
-        if ( strrchr ( code_filename, '.' ) == NULL ) {
-            strcat ( code_filename, bWantHEX ? ".hex" : ".mem" ) ;
-        }
-        if ( bVerbose ) {
-            fprintf ( stdout, "! MEM file: %s\n", code_filename ) ;
-        }
-    }
+	if ( bWantMEM || bWantHEX ) {
+		if ( strlen ( code_filename ) == 0 ) {
+			pfile = filename ( src_filenames[ nInputfile - 1 ] ) ;
+			ppath = dirname ( src_filenames[ nInputfile - 1 ] ) ;
+			strcpy ( code_filename, ppath ) ;
+			strcat ( code_filename, "/" ) ;
+			strcat ( code_filename, pfile ) ;
+			strcat ( code_filename, bWantHEX ? ".hex" : ".mem" ) ;
+			free ( ppath ) ;
+			free ( pfile ) ;
+		}
+		if ( strrchr ( code_filename, '.' ) == NULL ) {
+			strcat ( code_filename, bWantHEX ? ".hex" : ".mem" ) ;
+		}
+		if ( bVerbose ) {
+			fprintf ( stdout, "! MEM file: %s\n", code_filename ) ;
+		}
+	}
 
-    if ( bWantSCR ) {
-        if ( strlen ( data_filename ) == 0 ) {
-            pfile = filename ( src_filenames[ nInputfile - 1 ] ) ;
-            ppath = dirname ( src_filenames[ nInputfile - 1 ] ) ;
-            strcpy ( data_filename, ppath ) ;
-            strcat ( data_filename, "/" ) ;
-            strcat ( data_filename, pfile ) ;
-            strcat ( data_filename, ".scr" ) ;
-            free ( ppath ) ;
-            free ( pfile ) ;
-        }
-        if ( strrchr ( data_filename, '.' ) == NULL ) {
-            strcat ( data_filename, ".scr" ) ;
-        }
-        if ( bVerbose ) {
-            fprintf ( stdout, "! SCR file: %s\n", data_filename ) ;
-        }
-    }
+	if ( bWantSCR ) {
+		if ( strlen ( data_filename ) == 0 ) {
+			pfile = filename ( src_filenames[ nInputfile - 1 ] ) ;
+			ppath = dirname ( src_filenames[ nInputfile - 1 ] ) ;
+			strcpy ( data_filename, ppath ) ;
+			strcat ( data_filename, "/" ) ;
+			strcat ( data_filename, pfile ) ;
+			strcat ( data_filename, ".scr" ) ;
+			free ( ppath ) ;
+			free ( pfile ) ;
+		}
+		if ( strrchr ( data_filename, '.' ) == NULL ) {
+			strcat ( data_filename, ".scr" ) ;
+		}
+		if ( bVerbose ) {
+			fprintf ( stdout, "! SCR file: %s\n", data_filename ) ;
+		}
+	}
 
-    if ( bWantLST ) {
-        if ( strlen ( list_filename ) == 0 ) {
-            pfile = filename ( src_filenames[ nInputfile - 1 ] ) ;
-            ppath = dirname ( src_filenames[ nInputfile - 1 ] ) ;
-            strcpy ( list_filename, ppath ) ;
-            strcat ( list_filename, "/" ) ;
-            strcat ( list_filename, pfile ) ;
-            strcat ( list_filename, ".lst" ) ;
-            free ( ppath ) ;
-            free ( pfile ) ;
-        }
-        if ( strrchr ( list_filename, '.' ) == NULL ) {
-            strcat ( list_filename, ".lst" ) ;
-        }
-        if ( bVerbose ) {
-            fprintf ( stdout, "! LST file: %s\n", list_filename ) ;
-        }
-    }
+	if ( bWantLST ) {
+		if ( strlen ( list_filename ) == 0 ) {
+			pfile = filename ( src_filenames[ nInputfile - 1 ] ) ;
+			ppath = dirname ( src_filenames[ nInputfile - 1 ] ) ;
+			strcpy ( list_filename, ppath ) ;
+			strcat ( list_filename, "/" ) ;
+			strcat ( list_filename, pfile ) ;
+			strcat ( list_filename, ".lst" ) ;
+			free ( ppath ) ;
+			free ( pfile ) ;
+		}
+		if ( strrchr ( list_filename, '.' ) == NULL ) {
+			strcat ( list_filename, ".lst" ) ;
+		}
+		if ( bVerbose ) {
+			fprintf ( stdout, "! LST file: %s\n", list_filename ) ;
+		}
+	}
 
-    if ( assembler ( src_filenames, code_filename, data_filename, list_filename, bKCPSM_mode, bKCPSM6, bList_mode, bWantHEX, bWantZEROs ) ) {
-        result = 0 ;
-    } else {
-        result = -1 ;
-    }
+	if ( assembler ( src_filenames, code_filename, data_filename, list_filename, bKCPSM_mode, bKCPSM6, bList_mode, bWantHEX, bWantZEROs ) ) {
+		result = 0 ;
+	} else {
+		result = -1 ;
+	}
 
 finally: {
-        int i ;
+		int i ;
 
-        for ( i = 0 ; i < nInputfile ; i += 1 ) {
-            free ( src_filenames[ i ] ) ;
-        }
-    }
-    exit ( result ) ;
+		for ( i = 0 ; i < nInputfile ; i += 1 ) {
+			free ( src_filenames[ i ] ) ;
+		}
+	}
+	exit ( result ) ;
 }
