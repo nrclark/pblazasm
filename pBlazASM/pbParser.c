@@ -91,8 +91,7 @@ static error_t expression ( uint32_t * result ) ;
  * @param oper ref to operator to be used
  * @return success
  */
-static bool processOperator ( unsigned int * result, unsigned int term, symbol_t ** oper )
-{
+static bool processOperator ( unsigned int * result, unsigned int term, symbol_t ** oper ) {
 	if ( *oper == NULL ) {
 		*result = term ;
 		return true ;
@@ -140,8 +139,7 @@ static bool processOperator ( unsigned int * result, unsigned int term, symbol_t
  * @param p ref to character sequence
  * @return converted character
  */
-static char convert_char ( char * * p )
-{
+static char convert_char ( char * * p ) {
 	int r = 0 ;
 	char * s = *p ;
 	if ( *s == '\\' ) { // '\r' or '\013'
@@ -217,8 +215,7 @@ static char convert_char ( char * * p )
  * @param s string to be converted
  * @return new string with result (needs to be freeed)
  */
-static char * convert_string ( char * s )
-{
+static char * convert_string ( char * s ) {
 	char * r = calloc ( 1, 256 ), *p ;
 	for ( p = r ; *s != '\0' ; ) {
 		*p++ = convert_char ( &s ) ;
@@ -232,8 +229,7 @@ static char * convert_string ( char * s )
  * @param resulting value of term
  * @result error code
  */
-static error_t term ( uint32_t * result )
-{
+static error_t term ( uint32_t * result ) {
 	symbol_t * oper = NULL ;
 	const char * p = NULL ;
 	symbol_t * h = NULL ;
@@ -326,8 +322,7 @@ static error_t term ( uint32_t * result )
  * @param result resulting value of expression
  * @return error code
  */
-static error_t expression ( uint32_t * result )
-{
+static error_t expression ( uint32_t * result ) {
 	symbol_t * h = NULL ;
 	char * s = NULL ;
 	symbol_t * oper = NULL ;
@@ -420,8 +415,7 @@ static error_t expression ( uint32_t * result )
  * @param result value of destination register, shifted already in position
  * @return success
  */
-static bool destreg ( uint32_t * result )
-{
+static bool destreg ( uint32_t * result ) {
 	symbol_t * h ;
 	if ( result == NULL ) {
 		return false ;
@@ -441,8 +435,7 @@ static bool destreg ( uint32_t * result )
  * @param result value of source register, shifted already in position
  * @return success
  */
-static bool srcreg ( uint32_t * result )
-{
+static bool srcreg ( uint32_t * result ) {
 	symbol_t * h ;
 	bool bpar = false ;
 	bool retval = true ;
@@ -482,8 +475,7 @@ finally: {
  * eat comma in token stream
  * @return success
  */
-static bool comma ( void )
-{
+static bool comma ( void ) {
 	if ( tok_current()->type == tCOMMA ) {
 		tok_next() ;
 		return true ;
@@ -497,8 +489,7 @@ static bool comma ( void )
  * @param result value of condition, already in position
  * @return success
  */
-static bool condition ( uint32_t * result )
-{
+static bool condition ( uint32_t * result ) {
 	symbol_t * h ;
 	if ( result == NULL ) {
 		return false ;
@@ -520,8 +511,7 @@ static bool condition ( uint32_t * result )
  * @param result value of enable, already in position
  * @return success
  */
-static bool enadis ( uint32_t * result )
-{
+static bool enadis ( uint32_t * result ) {
 	symbol_t * h ;
 	if ( result == NULL ) {
 		return false ;
@@ -541,8 +531,7 @@ static bool enadis ( uint32_t * result )
  * @param result value of indexed construct, already in position
  * @return success
  */
-static bool indexed ( uint32_t * result )
-{
+static bool indexed ( uint32_t * result ) {
 	symbol_t * h ;
 	if ( result == NULL ) {
 		return false ;
@@ -566,8 +555,7 @@ static bool indexed ( uint32_t * result )
  * @param core type
  * @return error code
  */
-static error_t build ( bool b6 )
-{
+static error_t build ( bool b6 ) {
 	build_state_e state = bsINIT ;
 	symbol_t * symtok = NULL ;
 	symbol_t * h = NULL ;
@@ -909,36 +897,31 @@ static error_t build ( bool b6 )
 						break ;
 						// .TXT
 					case stTEXT :
-						if ( state != bsINIT && state != bsSYMBOL ) {
+						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
-						}
 						tok_next() ;
 						value.integer = gSCR & 0xFF ;
-						if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value ) ) {
+						if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value ) )
 							return etDOUBLE ;
-						}
 						do {
-							char * dup = convert_string ( tok_current()->text ) ;
 							if ( tok_current()->type == tSTRING ) {
-								if ( bActive ) {
+								char * dup = convert_string ( tok_current()->text ) ;
+								if ( bActive )
 									gSCR += strlen ( dup ) + 1 ;
-								}
+								free ( dup ) ;
 							} else if ( tok_current()->type == tIDENT ) {
+								char * dup = NULL ;
 								h = find_symbol ( tok_current()->text, false ) ;
-								if ( h == NULL || h->type != tVALUE || h->subtype != stSTRING ) {
+								if ( h == NULL || h->type != tVALUE || h->subtype != stSTRING )
 									return etSYNTAX ;
-								}
 								dup = convert_string ( h->value.string ) ;
-								if ( bActive ) {
+								if ( bActive )
 									gSCR += strlen ( dup ) + 1 ;
-								}
-							} else {
+								free ( dup ) ;
+							} else
 								return etEXPR ;
-							}
-							free ( dup ) ;
-							if ( gSCR > gScrSize ) {
+							if ( gSCR > gScrSize )
 								return etSCRRNG ;
-							}
 							tok_next() ;
 						} while ( comma() ) ;
 						state = bsEND ;
@@ -948,9 +931,8 @@ static error_t build ( bool b6 )
 					case stHEX :
 					case stMEM :
 					case stCOE :
-						if ( state != bsINIT ) {
+						if ( state != bsINIT )
 							return etSYNTAX ;
-						}
 						state = bsEND ;
 						break ;
 					default :
@@ -1005,8 +987,7 @@ static error_t build ( bool b6 )
  * @param core type
  * @return error code
  */
-static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, bool b6 )
-{
+static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, bool b6 ) {
 	build_state_e state = bsINIT ;
 	symbol_t * h = NULL ;
 	uint32_t result = 0 ;
@@ -1252,9 +1233,8 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						}
 						break ;
 					case stBANK :
-						if ( !b6 ) {
+						if ( !b6 )
 							return etSYNTAX ;
-						}
 						if ( tok_current()->text != NULL ) {
 							if ( strcmp ( tok_current()->text, "A" ) == 0 ) {
 								tok_next() ;
@@ -1262,49 +1242,39 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 							} else if ( strcmp ( tok_current()->text, "B" ) == 0 ) {
 								tok_next() ;
 								opcode = h->value.integer + 1 ;
-							} else {
+							} else
 								return etSYNTAX ;
-							}
-						} else {
+						} else
 							return etSYNTAX ;
-						}
 						break ;
 					case stOUTK :
-						if ( !b6 ) {
+						if ( !b6 )
 							return etSYNTAX ;
-						}
-						if ( ( e = expression ( &operand1 ) ) != etNONE ) {
+						if ( ( e = expression ( &operand1 ) ) != etNONE )
 							return e ;
-						}
-						if ( !comma() ) {
+						if ( !comma() )
 							return etCOMMA ;
-						}
-						if ( ( e = expression ( &operand2 ) ) != etNONE ) {
+						if ( ( e = expression ( &operand2 ) ) != etNONE )
 							return e ;
-						}
-						if ( operand1 > 0xFF ) {
+						if ( operand1 > 0xFF )
 							return etOVERFLOW ;
-						}
-						if ( operand2 > 0x0F ) {
+						if ( operand2 > 0x0F )
 							return etOVERFLOW ;
-						}
 						opcode = h->value.integer | ( operand1 << 4 ) | operand2 ;
 						break ;
 					default :
 						return etNOTIMPL ;
 					}
-					if ( opcode == 0xFFFFFFFF ) {
+					if ( opcode == 0xFFFFFFFF )
 						return etINTERNAL ;
-					}
 					if ( oPC < gCodeRange ) {
 						if ( bActive ) {
 							gCode[ oPC ] = opcode ;
 							*addr = oPC ;
 							*code = opcode ;
 						}
-					} else {
+					} else
 						return etRANGE ;
-					}
 					state = bsEND ;
 					break ;
 					// directives
@@ -1607,12 +1577,10 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						break ;
 						// .TXT
 					case stTEXT :
-						if ( state != bsINIT && state != bsSYMBOL ) {
+						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
-						}
-						if ( bActive ) {
+						if ( bActive )
 							*addr = gSCR ;
-						}
 						*data = 0xFFFFFFFF ;
 						do {
 							if ( tok_current()->type == tSTRING || tok_current()->type == tIDENT ) {
@@ -1623,25 +1591,20 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 										return etSYNTAX ;
 									}
 									dup = convert_string ( h->value.string ) ;
-								} else {
+								} else
 									dup = convert_string ( tok_current()->text ) ;
-								}
 								int i = 0 ;
 								if ( bActive ) {
-									if ( *data == 0xFFFFFFFF && strlen ( dup ) > 0 ) {
+									if ( *data == 0xFFFFFFFF && strlen ( dup ) > 0 )
 										*data = dup[ 0 ] ;
-									}
-									for ( i = 0 ; i < strlen ( dup ) + 1 ; i += 1 ) {
+									for ( i = 0 ; i < strlen ( dup ) + 1 ; i += 1 )
 										gData[ gSCR++ ] = dup[ i ] ;
-									}
 								}
 								free ( dup ) ;
-								if ( gSCR > gScrSize ) {
+								if ( gSCR > gScrSize )
 									return etSCRRNG ;
-								}
-							} else {
+							} else
 								return etEXPR ;
-							}
 							tok_next();
 						} while ( comma() ) ;
 						break ;
@@ -1744,8 +1707,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 }
 
 // error printer
-static bool error ( const error_t e )
-{
+static bool error ( const error_t e ) {
 	if ( e != etNONE ) {
 		fprintf ( stdout, "%s:%d: %s\n", gSource, gLinenr, s_errors[ e ] ) ;
 		return false ;
@@ -1755,8 +1717,7 @@ static bool error ( const error_t e )
 }
 
 // dump code in mem file format
-static void dump_code ( FILE * f, bool hex, bool zeros )
-{
+static void dump_code ( FILE * f, bool hex, bool zeros ) {
 	int h, l = 0 ;
 	bool b_addr = true ;
 	if ( hex ) {
@@ -1786,8 +1747,7 @@ static void dump_code ( FILE * f, bool hex, bool zeros )
 }
 
 // dump data in mem file format
-static void dump_data ( FILE * f, bool hex )
-{
+static void dump_data ( FILE * f, bool hex ) {
 	int h ;
 	fprintf ( f, "@%08X\n", gScrLoc ) ;
 	for ( h = 0 ; h < gScrSize ; h += 1 ) {
@@ -1796,8 +1756,7 @@ static void dump_data ( FILE * f, bool hex )
 }
 
 // format list file
-static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint32_t data )
-{
+static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint32_t data ) {
 	int n = 0 ;
 	char * s = NULL ;
 	tok_first() ;
@@ -1910,8 +1869,7 @@ static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint
 }
 
 // main entry for the 2-pass assembler
-bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilename, char * listfilename, bool mode, bool b6, bool listcode, bool hex, bool zeros )
-{
+bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilename, char * listfilename, bool mode, bool b6, bool listcode, bool hex, bool zeros ) {
 	FILE * fsrc = NULL ;
 	FILE * fmem = NULL ;
 	FILE * flist = NULL ;
