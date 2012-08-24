@@ -48,4 +48,4 @@ inline static uint32_t Address12 ( const int code )
     return code & 0xFFF ;
 }
 
-bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, int stack_size, int pad_size, int bank_size, bool want_alu ) ;
+bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64_t inst_map, int code_size, int stack_size, int pad_size, int bank_size, bool want_alu ) ;
