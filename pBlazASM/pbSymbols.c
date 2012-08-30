@@ -58,7 +58,7 @@ static uint32_t hash ( const char * text ) {
     int i ;
 
     if ( text != NULL ) {
-        for ( i = 0 ; i < strlen ( text ) ; i += 1 )
+        for ( i = 0 ; i < (int)strlen ( text ) ; i += 1 )
             r ^= 0x9E3779B1 * text[ i ] ;
         return r & ( SIZE - 1 ) ;
     } else
@@ -78,30 +78,30 @@ void init_symbol ( bool b6 ) {
     int h ;
 
     // clear table
-    for ( h = 0 ; h < SIZE ; h += 1 ) {
+    for ( h = 0 ; h < (int)SIZE ; h += 1 ) {
         symbols[ h ].type = tNONE ;
         symbols[ h ].text = NULL ;
         symbols[ h ].value.integer = 0 ;
     }
     // add keywords
     if ( b6 )
-        for ( h = 0 ; h < sizeof ( opcodes6 ) / sizeof ( symbol_t ) ; h += 1 )
+        for ( h = 0 ; h < (int)sizeof ( opcodes6 ) / (int)sizeof ( symbol_t ) ; h += 1 )
             add_keyword ( &opcodes6[ h ] ) ;
     else
-        for ( h = 0 ; h < sizeof ( opcodes3 ) / sizeof ( symbol_t ) ; h += 1 )
+        for ( h = 0 ; h < (int)sizeof ( opcodes3 ) / (int)sizeof ( symbol_t ) ; h += 1 )
             add_keyword ( &opcodes3[ h ] ) ;
 
     if ( b6 )
-        for ( h = 0 ; h < sizeof ( conditions6 ) / sizeof ( symbol_t ) ; h += 1 )
+        for ( h = 0 ; h < (int)sizeof ( conditions6 ) / (int)sizeof ( symbol_t ) ; h += 1 )
             add_keyword ( &conditions6[ h ] ) ;
     else
-        for ( h = 0 ; h < sizeof ( conditions3 ) / sizeof ( symbol_t ) ; h += 1 )
+        for ( h = 0 ; h < (int)sizeof ( conditions3 ) / (int)sizeof ( symbol_t ) ; h += 1 )
             add_keyword ( &conditions3[ h ] ) ;
 
-    for ( h = 0 ; h < sizeof ( directives ) / sizeof ( symbol_t ) ; h += 1 )
+    for ( h = 0 ; h < (int)sizeof ( directives ) / (int)sizeof ( symbol_t ) ; h += 1 )
         add_keyword ( &directives[ h ] ) ;
 
-    for ( h = 0 ; h < sizeof ( registers ) / sizeof ( symbol_t ) ; h += 1 )
+    for ( h = 0 ; h < (int)sizeof ( registers ) / (int)sizeof ( symbol_t ) ; h += 1 )
         add_keyword ( &registers[ h ] ) ;
 
     time ( &timer ) ;
@@ -115,7 +115,7 @@ void init_symbol ( bool b6 ) {
     stamps[ 6 ].value.string = __TIME__ ;
     stamps[ 7 ].value.string = __DATE__ ;
 
-    for ( h = 0 ; h < sizeof ( stamps ) / sizeof ( symbol_t ) ; h += 1 )
+    for ( h = 0 ; h < (int)sizeof ( stamps ) / (int)sizeof ( symbol_t ) ; h += 1 )
         add_keyword ( &stamps[ h ] ) ;
 
     zero.integer = 0 ;
@@ -124,7 +124,8 @@ void init_symbol ( bool b6 ) {
 
 // find a symbol, returns the found symbol, or NULL
 symbol_t * find_symbol ( const char * text, bool bUpper ) {
-    int h, p ;
+    int h ;
+    uint32_t p ;
     char buf[ 256 ], *s ;
 
     if ( !text )
@@ -146,7 +147,7 @@ symbol_t * find_symbol ( const char * text, bool bUpper ) {
     if ( strcmp ( symbols[ p ].text, buf ) == 0 )
         return &symbols[ p ] ;
     // else maybe next entry
-    for ( h = ( p + 1 ) & ( SIZE - 1 ) ; h != p ; h = ( h + 1 ) & ( SIZE - 1 ) ) {
+    for ( h = ( p + 1 ) & ( SIZE - 1 ) ; h != (int)p ; h = ( h + 1 ) & ( SIZE - 1 ) ) {
         if ( symbols[ h ].text == NULL )
             return NULL ;
         if ( strcmp ( symbols[ h ].text, buf ) == 0 )
@@ -158,7 +159,7 @@ symbol_t * find_symbol ( const char * text, bool bUpper ) {
 // add a symbol, rehashing is by linear probing
 // returns false if we want to add an already known symbol
 bool add_symbol ( const type_e type, const subtype_e subtype, const char * text, const value_t value ) {
-    int p = hash ( text ) ;
+    uint32_t p = hash ( text ) ;
     int h = p ;
 
     if ( p == 0xFFFFFFFF )
@@ -175,7 +176,7 @@ bool add_symbol ( const type_e type, const subtype_e subtype, const char * text,
                 return false ; // really same?
         }
         h = ( h + 1 ) & ( SIZE - 1 ) ; // wrap
-    } while ( h != p ) ; // full ?
+    } while ( h != (int)p ) ; // full ?
     return false ;
 }
 
@@ -197,7 +198,7 @@ void dump_map ( void ) {
 void free_symbol ( void ) {
     int h ;
 
-    for ( h = 0 ; h < SIZE ; h += 1 ) {
+    for ( h = 0 ; h < (int)SIZE ; h += 1 ) {
         symbols[ h ].type = tNONE ;
         if ( symbols[ h ].text != NULL )
             free ( symbols[ h ].text ) ;
