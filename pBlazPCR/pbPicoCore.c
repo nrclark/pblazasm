@@ -434,8 +434,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 	          "\t\t\t-- inst_map: %016I64X \n",
 	          inst_map );
 
-	fprintf ( outfile, "\n\t\t\t-- MOVE\ts%X, s%X  \t; \n", DestReg ( 1 ), SrcReg ( 2 ) ) ;
-	fprintf ( outfile, "\t\t\t-- MOVE\ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- MOVE\ts%X, s%X \n", DestReg ( 1 ), SrcReg ( 2 ) ) ;
+	fprintf ( outfile, "\t\t\t-- MOVE\ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x00 ) ) | ( inst_map & ( 1LLU << 0x01 ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"00_0000\" | B\"00_0001\" => \n" ) ;
 		fprintf ( outfile,
@@ -446,12 +446,12 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 	}
 	/*
 	        case 0x16000 ... 0x16FFF :
-	            fprintf ( outfile, "\t\t\t\t-- STAR\ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
+	            fprintf ( outfile, "\t\t\t\t-- STAR\ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
 	            fprintf ( outfile, "\t\t\t\tassert false ; \n" ) ;
 	            break ;
 	*/
-	fprintf ( outfile, "\n\t\t\t-- AND \ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- AND \ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- AND \ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- AND \ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x02 ) ) | ( inst_map & ( 1LLU << 0x03 ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"00_0010\" | B\"00_0011\" => \n" ) ;
 		fprintf ( outfile,
@@ -463,8 +463,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- OR  \ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- OR  \ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- OR  \ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- OR  \ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x04 ) ) | ( inst_map & ( 1LLU << 0x05 ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"00_0100\" | when B\"00_0101\" => \n" ) ;
 		fprintf ( outfile,
@@ -476,8 +476,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- XOR \ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- XOR \ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- XOR \ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- XOR \ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x06 ) ) | ( inst_map & ( 1LLU << 0x07 ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"00_0110\" | B\"00_0111\" => \n" ) ;
 		fprintf ( outfile,
@@ -489,8 +489,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- TEST\ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- TEST\ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- TEST\ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- TEST\ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x0C ) ) | ( inst_map & ( 1LLU << 0x0D ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"00_1100\" | B\"00_1101\" => \n" ) ;
 		fprintf ( outfile,
@@ -501,8 +501,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- TSTC\ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- TSTC\ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- TSTC\ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- TSTC\ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x0E ) ) | ( inst_map & ( 1LLU << 0x0F ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"00_1110\" | B\"00_1111\" => \n" ) ;
 		fprintf ( outfile,
@@ -513,8 +513,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- ADD \ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- ADD \ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- ADD \ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- ADD \ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x10 ) ) | ( inst_map & ( 1LLU << 0x11 ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"01_0000\" | B\"01_0001\" => \n" ) ;
 		fprintf ( outfile,
@@ -527,8 +527,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- ADDC\ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- ADDC\ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- ADDC\ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- ADDC\ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x12 ) ) | ( inst_map & ( 1LLU << 0x13 ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"01_0010\" | B\"01_0011\" => \n" ) ;
 		fprintf ( outfile,
@@ -541,8 +541,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- SUB \ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- SUB \ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- SUB \ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- SUB \ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x18 ) ) | ( inst_map & ( 1LLU << 0x19 ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"01_1000\" |  B\"01_1001\" => \n" ) ;
 		fprintf ( outfile,
@@ -555,8 +555,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- SUBC\ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- SUBC\ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- SUBC\ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- SUBC\ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x1A ) ) | ( inst_map & ( 1LLU << 0x1B ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"01_1010\" | B\"01_1011\" => \n" ) ;
 		fprintf ( outfile,
@@ -569,8 +569,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- COMP\ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- COMP\ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- COMP\ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- COMP\ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x1C ) ) | ( inst_map & ( 1LLU << 0x1D ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"01_1100\" | B\"01_1101\" => \n" ) ;
 		fprintf ( outfile,
@@ -582,8 +582,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- CMPC\ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- CMPC\ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- CMPC\ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- CMPC\ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x1E ) ) | ( inst_map & ( 1LLU << 0x1F ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"01_1110\" | B\"01_1111\" => \n" ) ;
 		fprintf ( outfile,
@@ -600,7 +600,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 
 		fprintf ( outfile, "\t\t\t\tcase inst( 7 ) & inst( 3 downto 0 ) is \n" ) ;
 
-		fprintf ( outfile, "\n\t\t\t\t-- CORE\ts%X   \t; \n", DestReg ( c ) ) ;
+		fprintf ( outfile, "\n\t\t\t-- CORE\ts%X \n", DestReg ( c ) ) ;
 		fprintf ( outfile, "\t\t\twhen B\"1_0000\" => \n" ) ;
 		fprintf ( outfile,
 		          "\t\t\t\tregI <= X\"42\" ; \n"
@@ -609,7 +609,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		          "\t\t\t\tregW <= '1' ; \n"
 		        ) ;
 
-		fprintf ( outfile, "\n\t\t\t\t-- RL  \ts%X      \t; \n", DestReg ( c ) ) ;
+		fprintf ( outfile, "\n\t\t\t-- RL  \ts%X    \n", DestReg ( c ) ) ;
 		fprintf ( outfile, "\t\t\twhen B\"0_0010\" => \n" ) ;
 		fprintf ( outfile,
 		          "\t\t\t\tregI <= dataA( 6 downto 0 ) & dataA( 7 ) ; \n"
@@ -618,7 +618,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		          "\t\t\t\tregW <= '1' ; \n"
 		        ) ;
 
-		fprintf ( outfile, "\n\t\t\t\t-- SL0 \ts%X      \t; \n", DestReg ( c ) ) ;
+		fprintf ( outfile, "\n\t\t\t-- SL0 \ts%X    \n", DestReg ( c ) ) ;
 		fprintf ( outfile, "\t\t\twhen B\"0_0110\" => \n" ) ;
 		fprintf ( outfile,
 		          "\t\t\t\tregI <= dataA( 6 downto 0 ) & '0' ; \n"
@@ -627,7 +627,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		          "\t\t\t\tregW <= '1' ; \n"
 		        ) ;
 
-		fprintf ( outfile, "\n\t\t\t\t-- SL1 \ts%X      \t; \n", DestReg ( c ) ) ;
+		fprintf ( outfile, "\n\t\t\t-- SL1 \ts%X    \n", DestReg ( c ) ) ;
 		fprintf ( outfile, "\t\t\twhen B\"0_0111\" => \n" ) ;
 		fprintf ( outfile,
 		          "\t\t\t\tregI <= dataA( 6 downto 0 ) & '1' ; \n"
@@ -636,7 +636,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		          "\t\t\t\tregW <= '1' ; \n"
 		        ) ;
 
-		fprintf ( outfile, "\n\t\t\t\t-- SLA \ts%X      \t; \n", DestReg ( c ) ) ;
+		fprintf ( outfile, "\n\t\t\t-- SLA \ts%X    \n", DestReg ( c ) ) ;
 		fprintf ( outfile, "\t\t\twhen B\"0_0000\" => \n" ) ;
 		fprintf ( outfile,
 		          "\t\t\t\tregI <= dataA( 6 downto 0 ) & c ; \n"
@@ -645,7 +645,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		          "\t\t\t\tregW <= '1' ; \n"
 		        ) ;
 
-		fprintf ( outfile, "\n\t\t\t\t-- SLX \ts%X      \t; \n", DestReg ( c ) ) ;
+		fprintf ( outfile, "\n\t\t\t-- SLX \ts%X    \n", DestReg ( c ) ) ;
 		fprintf ( outfile, "\t\t\twhen B\"0_0100\" => \n" ) ;
 		fprintf ( outfile,
 		          "\t\t\t\tregI <= dataA( 6 downto 0 ) & dataA( 0 ) ; \n"
@@ -654,7 +654,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		          "\t\t\t\tregW <= '1' ; \n"
 		        ) ;
 
-		fprintf ( outfile, "\n\t\t\t\t-- RR  \ts%X      \t; \n", DestReg ( c ) ) ;
+		fprintf ( outfile, "\n\t\t\t-- RR  \ts%X    \n", DestReg ( c ) ) ;
 		fprintf ( outfile, "\t\t\twhen B\"0_1100\" => \n" ) ;
 		fprintf ( outfile,
 		          "\t\t\t\tregI <= dataA( 0 ) & dataA( 7 downto 1 ) ; \n"
@@ -663,7 +663,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		          "\t\t\t\tregW <= '1' ; \n"
 		        ) ;
 
-		fprintf ( outfile, "\n\t\t\t\t-- SR0 \ts%X      \t; \n", DestReg ( c ) ) ;
+		fprintf ( outfile, "\n\t\t\t-- SR0 \ts%X    \n", DestReg ( c ) ) ;
 		fprintf ( outfile, "\t\t\twhen B\"0_1110\" => \n" ) ;
 		fprintf ( outfile,
 		          "\t\t\t\tregI <= '0' & dataA( 7 downto 1 ) ; \n"
@@ -672,7 +672,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		          "\t\t\t\tregW <= '1' ; \n"
 		        ) ;
 
-		fprintf ( outfile, "\n\t\t\t\t-- SR1 \ts%X      \t; \n", DestReg ( c ) ) ;
+		fprintf ( outfile, "\n\t\t\t-- SR1 \ts%X    \n", DestReg ( c ) ) ;
 		fprintf ( outfile, "\t\t\twhen B\"0_1111\" => \n" ) ;
 		fprintf ( outfile,
 		          "\t\t\t\tregI <= '1' & dataA( 7 downto 1 ) ; \n"
@@ -681,7 +681,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		          "\t\t\t\tregW <= '1' ; \n"
 		        ) ;
 
-		fprintf ( outfile, "\n\t\t\t\t-- SRA \ts%X      \t; \n", DestReg ( c ) ) ;
+		fprintf ( outfile, "\n\t\t\t-- SRA \ts%X    \n", DestReg ( c ) ) ;
 		fprintf ( outfile, "\t\t\twhen B\"0_1000\" => \n" ) ;
 		fprintf ( outfile,
 		          "\t\t\t\tregI <= c & dataA( 7 downto 1 ) ; \n"
@@ -690,7 +690,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		          "\t\t\t\tregW <= '1' ; \n"
 		        ) ;
 
-		fprintf ( outfile, "\n\t\t\t\t-- SRX \ts%X      \t; \n", DestReg ( c ) ) ;
+		fprintf ( outfile, "\n\t\t\t-- SRX \ts%X    \n", DestReg ( c ) ) ;
 		fprintf ( outfile, "\t\t\twhen B\"0_1010\" => \n" ) ;
 		fprintf ( outfile,
 		          "\t\t\t\tregI <= dataA( 7 ) & dataA( 7 downto 1 ) ; \n"
@@ -706,14 +706,14 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		fprintf ( outfile, "\t\t\t\tend case ; \n" ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- JUMP\t0x%03X    \t; \n", Address12 ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- JUMP\t0x%03X  \n", Address12 ( c ) ) ;
 	if ( inst_map & ( 1LLU << 0x22 ) ) {
 		fprintf ( outfile, "\t\twhen B\"10_0010\" => \n" ) ;
 		fprintf ( outfile,
 		          "\t\t\tnpc <= addrN ; \n" ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- JUMP\tZ, 0x%03X \t; \n", Address12 ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- JUMP\tZ, 0x%03X  \n", Address12 ( c ) ) ;
 	if ( inst_map & ( 1LLU << 0x32 ) ) {
 		fprintf ( outfile, "\t\twhen B\"11_0010\" => \n" ) ;
 		fprintf ( outfile,
@@ -723,7 +723,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- JUMP\tNZ, 0x%03X\t; \n", Address12 ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- JUMP\tNZ, 0x%03X \n", Address12 ( c ) ) ;
 	if ( inst_map & ( 1LLU << 0x36 ) ) {
 		fprintf ( outfile, "\t\twhen B\"11_0110\" => \n" ) ;
 		fprintf ( outfile,
@@ -733,7 +733,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- JUMP\tC, 0x%03X \t; \n", Address12 ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- JUMP\tC, 0x%03X  \n", Address12 ( c ) ) ;
 	if ( inst_map & ( 1LLU << 0x3A ) ) {
 		fprintf ( outfile, "\t\twhen B\"11_1010\" => \n" ) ;
 		fprintf ( outfile,
@@ -743,7 +743,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- JUMP\tNC, 0x%03X\t; \n", Address12 ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- JUMP\tNC, 0x%03X \n", Address12 ( c ) ) ;
 	if ( inst_map & ( 1LLU << 0x3E ) ) {
 		fprintf ( outfile, "\t\twhen B\"11_1110\" => \n" ) ;
 		fprintf ( outfile,
@@ -753,7 +753,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- JUMP\ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- JUMP\ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
 	if ( inst_map & ( 1LLU << 0x26 ) ) {
 		fprintf ( outfile, "\t\twhen B\"10_0110\" => \n" ) ;
 		fprintf ( outfile,
@@ -762,7 +762,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- CALL\t0x%03X    \t; \n", Address12 ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- CALL\t0x%03X \n", Address12 ( c ) ) ;
 	if ( inst_map & ( 1LLU << 0x20 ) ) {
 		fprintf ( outfile, "\t\twhen B\"10_0000\" => \n" ) ;
 		fprintf ( outfile,
@@ -774,7 +774,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- CALL\tZ, 0x%03X \t; \n", Address12 ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- CALL\tZ, 0x%03X  \n", Address12 ( c ) ) ;
 	if ( inst_map & ( 1LLU << 0x30 ) ) {
 		fprintf ( outfile, "\t\twhen B\"11_0000\" => \n" ) ;
 		fprintf ( outfile,
@@ -788,7 +788,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- CALL\tNZ, 0x%03X\t; \n", Address12 ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- CALL\tNZ, 0x%03X \n", Address12 ( c ) ) ;
 	if ( inst_map & ( 1LLU << 0x34 ) ) {
 		fprintf ( outfile, "\t\twhen B\"11_0100\" => \n" ) ;
 		fprintf ( outfile,
@@ -802,7 +802,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- CALL\tC, 0x%03X \t; \n", Address12 ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- CALL\tC, 0x%03X  \n", Address12 ( c ) ) ;
 	if ( inst_map & ( 1LLU << 0x38 ) ) {
 		fprintf ( outfile, "\t\twhen B\"11_1000\" => \n" ) ;
 		fprintf ( outfile,
@@ -816,7 +816,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- CALL\tNC, 0x%03X\t; \n", Address12 ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- CALL\tNC, 0x%03X \n", Address12 ( c ) ) ;
 	if ( inst_map & ( 1LLU << 0x3C ) ) {
 		fprintf ( outfile, "\t\twhen B\"11_1100\" => \n" ) ;
 		fprintf ( outfile,
@@ -830,7 +830,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- CALL\ts%X, s%X  \t;  \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- CALL\ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
 	if ( inst_map & ( 1LLU << 0x24 ) ) {
 		fprintf ( outfile, "\t\twhen B\"10_0100\" => \n" ) ;
 		fprintf ( outfile,
@@ -843,7 +843,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- RET \t         \t; \n" ) ;
+	fprintf ( outfile, "\n\t\t-- RET \t       \n" ) ;
 	if ( inst_map & ( 1LLU << 0x25 ) ) {
 		fprintf ( outfile, "\t\twhen B\"10_0101\" => \n" ) ;
 		fprintf ( outfile,
@@ -854,7 +854,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- RET \t Z        \t; \n" ) ;
+	fprintf ( outfile, "\n\t\t-- RET \t Z      \n" ) ;
 	if ( inst_map & ( 1LLU << 0x31 ) ) {
 		fprintf ( outfile, "\t\twhen B\"11_0001\" => \n" ) ;
 		fprintf ( outfile,
@@ -867,7 +867,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- RET \t NZ       \t; \n" ) ;
+	fprintf ( outfile, "\n\t\t-- RET \t NZ     \n" ) ;
 	if ( inst_map & ( 1LLU << 0x35 ) ) {
 		fprintf ( outfile, "\t\twhen B\"11_0101\" => \n" ) ;
 		fprintf ( outfile,
@@ -880,7 +880,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- RET \t C        \t; \n" ) ;
+	fprintf ( outfile, "\n\t\t-- RET \t C      \n" ) ;
 	if ( inst_map & ( 1LLU << 0x39 ) ) {
 		fprintf ( outfile, "\t\twhen B\"11_1001\" => \n" ) ;
 		fprintf ( outfile,
@@ -893,7 +893,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- RET \t NC       \t; \n" ) ;
+	fprintf ( outfile, "\n\t\t-- RET \t NC     \n" ) ;
 	if ( inst_map & ( 1LLU << 0x3D ) ) {
 		fprintf ( outfile, "\t\twhen B\"11_1101\" => \n" ) ;
 		fprintf ( outfile,
@@ -906,7 +906,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- RET \ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- RET \ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( inst_map & ( 1LLU << 0x21 ) ) {
 		fprintf ( outfile, "\t\twhen B\"10_0001\" => \n" ) ;
 		fprintf ( outfile,
@@ -918,8 +918,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- ST  \ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- ST  \ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- ST  \ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- ST  \ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x2E ) ) | ( inst_map & ( 1LLU << 0x2F ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"10_1110\" | B\"10_1111\" => \n" ) ;
 		fprintf ( outfile,
@@ -927,8 +927,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- LD  \ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- LD  \ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- LD  \ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- LD  \ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x0A ) ) | ( inst_map & ( 1LLU << 0x0B ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"00_1010\" | B\"00_1011\" => \n" ) ;
 		fprintf ( outfile,
@@ -937,8 +937,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- OUT \ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- OUT \ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- OUT \ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- OUT \ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x2C ) ) | ( inst_map & ( 1LLU << 0x2D ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"10_1100\" | B\"10_1101\" => \n" ) ;
 		fprintf ( outfile,
@@ -948,14 +948,14 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 
 	/*
 	        case 0x2B000 ... 0x2BFFF :
-	            fprintf ( outfile, "\t\t\t\t-- OUTK\t0x%02X, 0x%X\t; \n", ( c >> 4 ) & 0xFF, c & 0xF ) ;
+	            fprintf ( outfile, "\t\t\t\t-- OUTK\t0x%02X, 0x%X \n", ( c >> 4 ) & 0xFF, c & 0xF ) ;
 	            fprintf ( outfile,
 	                      "\t\t\t\nwr <= '1' ; \n" ) ;
 	            break ;
 	*/
 
-	fprintf ( outfile, "\n\t\t\t-- IN  \ts%X, s%X  \t; \n", DestReg ( c ), SrcReg ( c ) ) ;
-	fprintf ( outfile, "\t\t\t-- IN  \ts%X, 0x%02X\t; \n", DestReg ( c ), Constant ( c ) ) ;
+	fprintf ( outfile, "\n\t\t-- IN  \ts%X, s%X \n", DestReg ( c ), SrcReg ( c ) ) ;
+	fprintf ( outfile, "\t\t\t-- IN  \ts%X, 0x%02X \n", DestReg ( c ), Constant ( c ) ) ;
 	if ( ( inst_map & ( 1LLU << 0x08 ) ) | ( inst_map & ( 1LLU << 0x09 ) ) ) {
 		fprintf ( outfile, "\t\twhen B\"00_1000\" | B\"00_1001\" => \n" ) ;
 		fprintf ( outfile,
@@ -965,8 +965,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- DINT\t \t; \n" ) ;
-	fprintf ( outfile, "\t\t\t-- EINT\t \t; \n" ) ;
+	fprintf ( outfile, "\n\t\t-- DINT\t  \n" ) ;
+	fprintf ( outfile, "\t\t\t-- EINT\t  \n" ) ;
 	if ( inst_map & ( 1LLU << 0x28 ) ) {
 		fprintf ( outfile, "\t\twhen B\"10_1000\" => \n" ) ;
 		fprintf ( outfile,
@@ -974,8 +974,8 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 		        ) ;
 	}
 
-	fprintf ( outfile, "\n\t\t\t-- RETI\t DISABLE\t; \n" ) ;
-	fprintf ( outfile, "\t\t\t-- RETI\t ENABLE\t; \n" ) ;
+	fprintf ( outfile, "\n\t\t-- RETI\t DISABLE \n" ) ;
+	fprintf ( outfile, "\t\t\t-- RETI\t ENABLE \n" ) ;
 	if ( inst_map & ( 1LLU << 0x29 ) ) {
 		fprintf ( outfile, "\t\twhen B\"10_1001\" => \n" ) ;
 		fprintf ( outfile,
@@ -991,11 +991,11 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 	}
 	/*
 	        case 0x37000 :
-	            fprintf ( outfile, "\t\t\t\t-- BANK\tA\t; \n" ) ;
+	            fprintf ( outfile, "\t\t\t\t-- BANK\tA \n" ) ;
 	            fprintf ( outfile, "\t\t\t\tassert false ; \n" ) ;
 	            break ;
 	        case 0x37001 :
-	            fprintf ( outfile, "\t\t\t\t-- BANK\tB\t; \n" ) ;
+	            fprintf ( outfile, "\t\t\t\t-- BANK\tB \n" ) ;
 	            fprintf ( outfile, "\t\t\t\tassert false ; \n" ) ;
 	            break ;
 	*/
