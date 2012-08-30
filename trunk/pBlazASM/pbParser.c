@@ -555,7 +555,7 @@ static bool indexed ( uint32_t * result ) {
  * @param core type
  * @return error code
  */
-static error_t build ( bool b6 ) {
+static error_t build ( void ) {
 	build_state_e state = bsINIT ;
 	symbol_t * symtok = NULL ;
 	symbol_t * h = NULL ;
@@ -706,7 +706,7 @@ static error_t build ( bool b6 ) {
 										return etSCRSIZE ;
 									}
 									gScrSize = result ;
-									if ( gSCR > gScrSize ) {  // after the fact
+									if ( (int)gSCR > gScrSize ) {  // after the fact
 										return etSCRRNG ;
 									}
 								}
@@ -867,7 +867,7 @@ static error_t build ( bool b6 ) {
 									gSCR += 1 ;
 								}
 							}
-							if ( gSCR > gScrSize ) {
+							if ( (int)gSCR > gScrSize ) {
 								return etSCRRNG ;
 							}
 						} while ( comma() ) ;
@@ -886,7 +886,7 @@ static error_t build ( bool b6 ) {
 						if ( ( e = expression ( &result ) ) == etNONE ) {
 							if ( bActive ) {
 								gSCR += result ;
-								if ( gSCR > gScrSize ) {
+								if ( (int)gSCR > gScrSize ) {
 									return etSCRRNG ;
 								}
 							}
@@ -920,7 +920,7 @@ static error_t build ( bool b6 ) {
 								free ( dup ) ;
 							} else
 								return etEXPR ;
-							if ( gSCR > gScrSize )
+							if ( (int)gSCR > gScrSize )
 								return etSCRRNG ;
 							tok_next() ;
 						} while ( comma() ) ;
@@ -1307,9 +1307,6 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						}
 						if ( ( e = expression ( &result ) ) == etNONE ) {
 							*addr = result ;
-							if ( result < 0 ) {
-								return etRANGE ;
-							}
 							if ( result >= gCodeRange ) { // within code range
 								return etRANGE ;
 							}
@@ -1388,7 +1385,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 										return etSCRSIZE ;
 									}
 									gScrSize = result ;
-									if ( gSCR > gScrSize ) {
+									if ( (int)gSCR > gScrSize ) {
 										return etSCRRNG ;
 									}
 								}
@@ -1462,7 +1459,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 									*data = result ;
 								}
 							}
-							if ( gSCR > gScrSize ) {
+							if ( (int)gSCR > gScrSize ) {
 								return etSCRRNG ;
 							}
 						} while ( comma() ) ;
@@ -1498,7 +1495,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 											*data = ( result >> 0 ) & 0xFF  ;
 										}
 									}
-									if ( gSCR > gScrSize ) {
+									if ( (int)gSCR > gScrSize ) {
 										return etSCRRNG ;
 									}
 								}
@@ -1551,7 +1548,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 							if ( *data == 0xFFFFFFFF ) {
 								*data = result ;
 							}
-							if ( gSCR > gScrSize ) {
+							if ( (int)gSCR > gScrSize ) {
 								return etSCRRNG ;
 							}
 						} while ( comma() ) ;
@@ -1567,7 +1564,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 								*addr = gSCR ;
 								gSCR += result ;
 								*data = result ;
-								if ( gSCR > gScrSize ) {
+								if ( (int)gSCR > gScrSize ) {
 									return etSCRRNG ;
 								}
 							}
@@ -1597,11 +1594,11 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 								if ( bActive ) {
 									if ( *data == 0xFFFFFFFF && strlen ( dup ) > 0 )
 										*data = dup[ 0 ] ;
-									for ( i = 0 ; i < strlen ( dup ) + 1 ; i += 1 )
+									for ( i = 0 ; i < (int)strlen ( dup ) + 1 ; i += 1 )
 										gData[ gSCR++ ] = dup[ i ] ;
 								}
 								free ( dup ) ;
-								if ( gSCR > gScrSize )
+								if ( (int)gSCR > gScrSize )
 									return etSCRRNG ;
 							} else
 								return etEXPR ;
@@ -1655,7 +1652,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 					if ( state != bsINIT ) {
 						return etSYNTAX ;
 					}
-					if ( h->value.integer != oPC && h->subtype != stDOT ) {
+					if ( h->value.integer != (int)oPC && h->subtype != stDOT ) {
 						return etPHASING ;
 					}
 					tok_next()->type = tLABEL ; // just for formatting
@@ -1722,7 +1719,7 @@ static void dump_code ( FILE * f, bool hex, bool zeros ) {
 	bool b_addr = true ;
 	if ( hex ) {
 		// find last used entry
-		for ( h = 0 ; h < gCodeRange && ! zeros ; h += 1 )
+		for ( h = 0 ; h < (int)gCodeRange && ! zeros ; h += 1 )
 			if ( gCode[ h ] != 0xFFFC0000 ) {
 				l = h ;
 			}
@@ -1732,7 +1729,7 @@ static void dump_code ( FILE * f, bool hex, bool zeros ) {
 		}
 	} else {
 		// list used entries, prepend an origin
-		for ( h = 0 ; h < gCodeRange  ; h += 1 ) {
+		for ( h = 0 ; h < (int)gCodeRange  ; h += 1 ) {
 			if ( gCode[ h ] == 0xFFFC0000 && ! zeros ) {
 				b_addr = true ;
 			} else {
@@ -1749,8 +1746,9 @@ static void dump_code ( FILE * f, bool hex, bool zeros ) {
 // dump data in mem file format
 static void dump_data ( FILE * f, bool hex ) {
 	int h ;
-	fprintf ( f, "@%08X\n", gScrLoc ) ;
-	for ( h = 0 ; h < gScrSize ; h += 1 ) {
+	if ( ! hex )
+        fprintf ( f, "@%08X\n", gScrLoc ) ;
+	for ( h = 0 ; h < (int)gScrSize ; h += 1 ) {
 		fprintf ( f, "%02X\n", gData[ h ] ) ;
 	}
 }
@@ -1908,7 +1906,7 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 		// pass 1, add symbols from source
 		for ( gLinenr = 1 ; fgets ( line, sizeof ( line ), fsrc ) != NULL ; gLinenr += 1 ) {
 			if ( lex ( line, mode ) ) {
-				result &= error ( build ( b6 ) ) ;
+				result &= error ( build () ) ;
 				tok_free() ;
 			} else {
 				result &= error ( etLEX ) ;
