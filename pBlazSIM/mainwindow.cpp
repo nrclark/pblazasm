@@ -46,8 +46,8 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setWindowIcon(QIcon(":/files/bug_red.ico"));
 
     // font used for all views
-//    QFont fixedFont( "Consolas [Monaco]", 9 ) ;
-    QFont fixedFont( "Inconsolata", 10 ) ;
+    QFont fixedFont( "Consolas [Monaco]", 9 ) ;
+//    QFont fixedFont( "Inconsolata", 10 ) ;
 
 
     // script engine
@@ -484,23 +484,24 @@ void MainWindow::loadLSTfile( QString filename ) {
     file.setFileName( fp ) ;
 
     // read scratchpad data (.scr) assciated with .lst
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-         return;
-    for ( int addr = -1 ; addr < MAXMEM && !file.atEnd() ; ) {
-        bool error ;
-        QByteArray line = file.readLine();
-        QString str = line ;
-        str.remove(QChar('\n'));
+    pBlaze->clearScratchpad();
+    if ( file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        for ( int addr = -1 ; addr < MAXMEM && !file.atEnd() ; ) {
+            bool error ;
+            QByteArray line = file.readLine();
+            QString str = line ;
+            str.remove(QChar('\n'));
 
-        if ( str[ 0 ] == '@' ) {
-            addr = str.mid(1).toInt( &error, 16 ) & 0xFF ;
-        } else {
-            int value = str.toInt(&error, 16) ;
-            pBlaze->setScratchpadData( addr, value ) ;
-            addr += 1 ;
+            if ( str[ 0 ] == '@' ) {
+                addr = str.mid(1).toInt( &error, 16 ) & 0xFF ;
+            } else {
+                int value = str.toInt(&error, 16) ;
+                pBlaze->setScratchpadData( addr, value ) ;
+                addr += 1 ;
+            }
         }
+        file.close();
     }
-    file.close();
 
     on_actionReset_triggered();
     pBlaze->initPB6() ;
