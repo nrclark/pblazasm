@@ -55,6 +55,11 @@ void Picoblaze::clearCode() {
     }
 }
 
+void Picoblaze::clearScratchpad( void ) {
+    for ( int scr = 0 ; scr < MAXSCR ; scr += 1 )
+        scratchpad[ scr ].value = 0 ;
+}
+
 void Picoblaze::updateScratchPad( void ) {
     for ( int scr = 0 ; scr < MAXSCR ; scr += 1 ) {
         int n = scratchpad[ scr ].value ;

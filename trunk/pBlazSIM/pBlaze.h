@@ -134,6 +134,7 @@ public:
     ~Picoblaze();
 
     void clearCode( void ) ;
+    void clearScratchpad( void ) ;
     void updateData( void ) ;
     void updateState( void ) ;
     void updateIO( void ) ;
@@ -179,7 +180,10 @@ public:
     }
 
     QStandardItem * getCurrentCodeItem( void ) {
-        return Code[ pc ].item ;
+        if ( pc < MAXMEM )
+            return Code[ pc ].item ;
+        else
+            return NULL ;
     }
 
     uint64_t getCodeCount( uint32_t address ) {
