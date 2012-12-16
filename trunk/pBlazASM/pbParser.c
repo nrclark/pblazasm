@@ -101,10 +101,14 @@ static bool processOperator ( unsigned int * result, unsigned int term, symbol_t
 		*result *= term ;
 		break ;
 	case stDIV :
-		*result /= term ;
+        if ( term != 0 )
+            *result /= term ;
+        else if ( *result == 0 )
+            *result = 1 ;               // by definition
 		break ;
 	case stMOD :
-		*result %= term ;
+        if ( term > 0 )                 // only defined for positive term
+            *result %= term ;
 		break ;
 	case stADD :
 		*result += term ;
@@ -574,7 +578,7 @@ static error_t build ( void ) {
 			}
 			state = bsEND ;
 			break ;
-			// opcode or symbol definition
+        // opcode or symbol definition
 		case tIDENT :
 			// opcode or directive?
 			h = find_symbol ( tok_current()->text, false ) ;
@@ -665,7 +669,7 @@ static error_t build ( void ) {
 						}
 						state = bsEND ;
 						break ;
-						// .END
+                    // .END
 					case stEND :
 						if ( state != bsINIT ) {
 							return etSYNTAX ;
@@ -683,7 +687,7 @@ static error_t build ( void ) {
 						}
 						state = bsEND ;
 						break ;
-						// .SCR
+                    // .SCR
 					case stSCRATCHPAD :
 						if ( state != bsINIT ) {
 							return etSYNTAX ;
@@ -718,40 +722,56 @@ static error_t build ( void ) {
 						}
 						state = bsEND ;
 						break ;
-						// .EQU
+                    // .EQU
 					case stEQU :
-						if ( state != bsSYMBOL ) {
+						if ( state != bsSYMBOL )
 							return etSYNTAX ;
-						}
 						tok_next() ;
 						if ( symtok != NULL ) {
 							if ( tok_current()->type == tSTRING ) {
 								// string value?
 								value.string = strdup ( tok_current()->text ) ;
-								if ( !add_symbol ( tVALUE, stSTRING, symtok->text, value ) ) {
+								if ( !add_symbol ( tVALUE, stSTRING, symtok->text, value ) )
 									return etDOUBLE ;
-								}
 							} else {
 								r = find_symbol ( tok_current()->text, false ) ;
 								if ( r != NULL && r->type == tREGISTER ) {
 									// register clone?
 									value = r->value ;
-									if ( !add_symbol ( tREGISTER, stCLONE, symtok->text, value ) ) {
+									if ( !add_symbol ( tREGISTER, stCLONE, symtok->text, value ) )
 										return etDOUBLE ;
-									}
 								} else if ( ( e = expression ( &result ) ) == etNONE ) {
 									// normal expression?
 									value.integer = result ;
-									if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) ) {
-										return etDOUBLE ;
+                                    if ( h->subtype == stSET ) {
+                                        if ( !add_symbol ( tVALUE, stSET, symtok->text, value ) )
+                                            return etSYNTAX ;
+                                    } else {
+                                        if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) )
+                                            return etDOUBLE ;
 									}
-								} else {
+								} else
 									return e ;
-								}
 							}
-						} else {
+						} else
 							return etMISSING ;
-						}
+						state = bsEND ;
+						break ;
+                    // .SET
+					case stSET :
+						if ( state != bsSYMBOL )
+							return etSYNTAX ;
+						tok_next() ;
+						if ( symtok != NULL ) {
+                            if ( ( e = expression ( &result ) ) == etNONE ) {
+                                // normal expression?
+                                value.integer = result ;
+                                if ( !add_symbol ( tVALUE, stSET, symtok->text, value ) )
+                                    return etSYNTAX ;
+                            } else
+                                return e ;
+						} else
+							return etMISSING ;
 						state = bsEND ;
 						break ;
 					case stCONSTANT :
@@ -940,7 +960,12 @@ static error_t build ( void ) {
 					}
 					break ;
 				default :
-					return etDOUBLE ;
+                    if ( h->subtype != stSET )
+                        return etDOUBLE ;
+                    else {
+                        symtok = tok_current() ;
+                        state = bsSYMBOL ;
+                    }
 				}
 			} else if ( state == bsINIT ) {
 				// not known yet, label or symbol definition?
@@ -990,6 +1015,7 @@ static error_t build ( void ) {
 static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, bool b6 ) {
 	build_state_e state = bsINIT ;
 	symbol_t * h = NULL ;
+	symbol_t * symtok = NULL ;
 	uint32_t result = 0 ;
 	uint32_t operand1 = 0 ;
 	uint32_t operand2 = 0 ;
@@ -1393,14 +1419,13 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 							} else {
 								return e ;
 							}
-						} else                            if ( bActive ) {
+						} else if ( bActive ) {
 							gScrSize = 256 ;
 						}
 						break ;
 					case stEQU :
-						if ( state != bsSYMBOL ) {
+						if ( state != bsSYMBOL )
 							return etSYNTAX ;
-						}
 						// NO-OP, just eat tokens in an orderly way
 						e = etSYNTAX ;
 						if ( tok_current()->type == tSTRING ) {
@@ -1410,9 +1435,23 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 							*data = result ;
 						} else if ( ( e = expression ( &result ) ) == etNONE ) {
 							*data = result ;
-						} else {
+						} else
 							return e ;
-						}
+						break ;
+					case stSET :
+						if ( state != bsSYMBOL )
+							return etSYNTAX ;
+						e = etSYNTAX ;
+                        if ( ( e = expression ( &result ) ) == etNONE ) {
+                            // normal expression?
+                            if ( symtok != NULL && symtok->subtype == stSET ) {
+                                symtok->value.integer = result ;
+                                *data = result ;
+                            } else
+                                return etSYNTAX ;
+                        } else
+                            return e ;
+						state = bsEND ;
 						break ;
 					case stSFR :
 					case stDS :
@@ -1668,8 +1707,8 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 					if ( state != bsINIT ) {
 						return etSYNTAX ;
 					}
+					symtok = h ;
 					tok_next()->subtype = stEQU ; // just for formatting
-//                   if ( bActive )
 					*data = h->value.integer & 0xFFFF ;
 					state = bsSYMBOL ;
 					break ;

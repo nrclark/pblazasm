@@ -33,6 +33,7 @@ const symbol_t directives[] = {
 	{ tDIRECTIVE, stSFR,        ".SFR",    { 0 }},
 
 	{ tDIRECTIVE, stEQU,        ".EQU",    { 0 }},
+	{ tDIRECTIVE, stSET,        ".SET",    { 0 }},
 	{ tDIRECTIVE, stBYTE,       ".BYT",    { 0 }},
 	{ tDIRECTIVE, stWORD_BE,    ".WBE",    { 0 }},
 	{ tDIRECTIVE, stWORD_LE,    ".WLE",    { 0 }},
