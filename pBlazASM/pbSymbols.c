@@ -172,7 +172,9 @@ bool add_symbol ( const type_e type, const subtype_e subtype, const char * text,
             symbols[ h ].value = value ;
             return true ;
         } else if ( strcmp ( symbols[ h ].text, text ) == 0 ) { // if text is equal, already there?
-            if ( symbols[ h ].type == type && symbols[ h ].subtype == subtype && symbols[ h ].value.integer == value.integer )
+            if ( symbols[ h ].type == type && symbols[ h ].subtype == stSET )
+                symbols[ h ].value = value ;
+            else if ( symbols[ h ].type == type && symbols[ h ].subtype == subtype && symbols[ h ].value.integer == value.integer )
                 return false ; // really same?
         }
         h = ( h + 1 ) & ( SIZE - 1 ) ; // wrap

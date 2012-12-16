@@ -46,7 +46,8 @@ typedef enum _TYPE {
 	tBIN,
 	tDEC,
 	tSTAMP,
-	tPC
+	tPC,
+	tSET
 } type_e ;
 
 // token subtypes
@@ -112,6 +113,7 @@ typedef enum _SUBTYPE {
 	stEND,
 
 	stEQU,
+	stSET,
 	stBYTE,
 	stWORD_BE,
 	stWORD_LE,

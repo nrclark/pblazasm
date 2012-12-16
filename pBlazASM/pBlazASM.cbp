@@ -31,10 +31,6 @@
 				<Linker>
 					<Add option="-s" />
 				</Linker>
-				<ExtraCommands>
-					<Add after="./bin/Debug/pBlzASM6.exe -l -m../pBlazMRG/test.mem -s../pBlazMRG/test_data.mem test.psm" />
-					<Mode after="always" />
-				</ExtraCommands>
 			</Target>
 		</Build>
 		<Compiler>
