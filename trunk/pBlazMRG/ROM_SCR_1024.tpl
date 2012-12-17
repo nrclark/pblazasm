@@ -2,26 +2,24 @@
 --
 --  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
 --
---  This file is part of pBlazBIT.
+--  This file is part of pBlazASM.
 --
 --  pBlazBIT is free software: you can redistribute it and/or modify
 --  it under the terms of the GNU General Public License as published by
 --  the Free Software Foundation, either version 3 of the License, or
 --  (at your option) any later version.
 --
---  pBlazBIT is distributed in the hope that it will be useful,
+--  pBlazASM is distributed in the hope that it will be useful,
 --  but WITHOUT ANY WARRANTY; without even the implied warranty of
 --  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 --  GNU General Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License
---  along with pBlazBIT. If not, see <http://www.gnu.org/licenses/>.
+--  along with pBlazASM. If not, see <http://www.gnu.org/licenses/>.
 --
 
 -- example blank 1024 word code rom and 256 byte scratchpad
 --
--- ROM is preinitialized by a 128 bit digest, depending on the ROM_NBR (range 0 to 3).
--- pBlazBIT finds the digest and places the contents of a MEM file there directly in the bit file.
 -- HVK 120320
 -- {begin template}
 
