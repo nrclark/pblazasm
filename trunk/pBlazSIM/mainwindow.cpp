@@ -42,7 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi( this ) ;
 
-    this->setWindowTitle( "pBlazSIM V1.3 - http://www.mediatronix.com" ) ;
+    this->setWindowTitle( "pBlazSIM V1.4 (Qt4.8.4) - http://www.mediatronix.com" ) ;
     this->setWindowIcon(QIcon(":/files/bug_red.ico"));
 
     // font used for all views
@@ -325,6 +325,9 @@ MainWindow::~MainWindow() {
     settings.endGroup();
 
     settings.sync() ;
+
+    delete( debugger ) ;
+    delete( engine ) ;
 
     delete ui ;
 }

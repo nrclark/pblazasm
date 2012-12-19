@@ -24,6 +24,8 @@ HEADERS  += \
     pBlaze.h \
     hexspinbox.h
 
-FORMS    += mainwindow.ui
+FORMS    += \
+    mainwindow.ui
 
-RESOURCES += resources.qrc
+RESOURCES += \
+    resources.qrc
