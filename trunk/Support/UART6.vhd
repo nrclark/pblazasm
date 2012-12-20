@@ -12,21 +12,21 @@ entity UART6 is
         constant BAUD : integer := 0
     ) ;
     port ( 
-		  PB2I : in t_PB2I ;
-		  PB2O : out t_PB2O ;
-        
+        PB2I : in t_PB2I ;
+        PB2O : out t_PB2O ;
+
         tx : out std_logic ;
         rx : in std_logic
     ) ;
 end UART6 ;
 
 architecture mix of UART6 is
-	constant UART_CS : std_logic_vector( 3 downto 0 ) := X"C" ;
-	constant UART_DA : std_logic_vector( 3 downto 0 ) := X"D" ;
-	
-	signal rds, rdd, wr, baudclk : std_logic ;
-	signal status : std_logic_vector( 7 downto 0 ) := ( others => '0' ) ;
-	signal rxdata : std_logic_vector( 7 downto 0 ) ;
+    constant UART_CS : std_logic_vector( 3 downto 0 ) := X"C" ;
+    constant UART_DA : std_logic_vector( 3 downto 0 ) := X"D" ;
+    
+    signal rds, rdd, wr, baudclk : std_logic ;
+    signal status : std_logic_vector( 7 downto 0 ) := ( others => '0' ) ;
+    signal rxdata : std_logic_vector( 7 downto 0 ) ;
 begin
     rds <= PB2I.rd when PB2I.ad( 7 downto 4 ) = LOC( 7 downto 4 ) and PB2I.AD( 3 downto 0 ) = UART_CS else '0' ;
     rdd <= PB2I.rd when PB2I.ad( 7 downto 4 ) = LOC( 7 downto 4 ) and PB2I.AD( 3 downto 0 ) = UART_DA else '0' ;
@@ -57,27 +57,27 @@ begin
                 ncount := count + CLOCK - BAUD * 16 ;
             end if ;
             count := ncount ;
-			end if ;
+            end if ;
     end process ;
         
     recv : entity work.uart_rx6( low_level_definition )
         port map (
-            serial_in => rx,												
+            serial_in => rx,                                                
             data_out => rxdata,                                
             buffer_read => rdd,                                
             buffer_reset => PB2I.rs,                               
             en_16_x_baud => baudclk,                           
  
-				buffer_data_present => status( 5 ),                
+                buffer_data_present => status( 5 ),                
             buffer_full => status( 4 ),                        
             buffer_half_full => status( 3 ), 
-				
+                
             clk => PB2I.ck                                         
         ) ;
 
     xmit : entity work.uart_tx6( low_level_definition )
         port map (
-            data_in => PB2I.da,							
+            data_in => PB2I.da,                         
             buffer_write => wr,                    
             buffer_reset => PB2I.rs,                   
             en_16_x_baud => baudclk,               
@@ -86,7 +86,7 @@ begin
             buffer_data_present => status( 2 ),    
             buffer_full => status( 0 ),            
             buffer_half_full => status( 1 ), 
-				
+                
             clk => PB2I.ck                             
         ) ;                                        
                 

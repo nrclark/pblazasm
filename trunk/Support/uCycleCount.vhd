@@ -15,24 +15,24 @@ entity CycleCount is
         constant LOC : std_logic_vector ( 7 downto 0 ) := X"00"
     ) ;
     port ( 
-		  PB2I : in t_PB2I ;
-		  PB2O : out t_PB2O
+        PB2I : in t_PB2I ;
+        PB2O : out t_PB2O
     ) ;
 end CycleCount ;
 
 architecture mix of CycleCount is
-	signal rd, wr : std_logic ;
-	signal counter : unsigned( 63 downto 0 ) ;
-	signal t1, t2, delta : unsigned( 63 downto 0 ) ;
-	signal slv_t1, slv_t2 : std_logic_vector( 63 downto 0 ) ;
+    signal rd, wr : std_logic ;
+    signal counter : unsigned( 63 downto 0 ) ;
+    signal t1, t2, delta : unsigned( 63 downto 0 ) ;
+    signal slv_t1, slv_t2 : std_logic_vector( 63 downto 0 ) ;
 begin
     rd <= PB2I.rd when PB2I.ad( 7 downto 4 ) = LOC( 7 downto 4 ) else '0' ;
     wr  <= PB2I.wr when PB2I.ad( 7 downto 4 ) = LOC( 7 downto 4 ) else '0' ;
                         
     PB2O.oe <= rd ;
     
-	 slv_t1 <= std_logic_vector( t1 ) ;
-	 slv_t2 <= std_logic_vector( delta ) ;
+    slv_t1 <= std_logic_vector( t1 ) ;
+    slv_t2 <= std_logic_vector( delta ) ;
     PB2O.da <= 
         slv_t2( 63 downto 56 ) when rd = '1' and PB2I.ad( 3 downto 0 ) = B"1111" else
         slv_t2( 55 downto 48 ) when rd = '1' and PB2I.ad( 3 downto 0 ) = B"1110" else
@@ -57,13 +57,13 @@ begin
         if PB2I.rs = '1' then
             counter <= ( others => '0' ) ;
         elsif rising_edge( PB2I.ck ) then
-				counter <= counter + 1 ;
-				if wr = '1' then
-					t2 <= counter ;
-					t1 <= t2 ;
-				else
-					delta <= t2 - t1 ;
-				end if ;
+                counter <= counter + 1 ;
+                if wr = '1' then
+                    t2 <= counter ;
+                    t1 <= t2 ;
+                else
+                    delta <= t2 - t1 ;
+                end if ;
         end if ;
     end process ;
 end mix ;

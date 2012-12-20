@@ -34,8 +34,8 @@ entity SBOX is
         constant LOC : std_logic_vector ( 7 downto 0 ) := X"00"
     ) ;
     port ( 
-          PB2I : in t_PB2I ;
-          PB2O : out t_PB2O
+        PB2I : in t_PB2I ;
+        PB2O : out t_PB2O
     ) ;
 end SBOX ;
 
