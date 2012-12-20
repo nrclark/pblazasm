@@ -289,6 +289,7 @@ private:
 
     typedef struct _register {
         uint32_t value ;
+        bool defined ;
         QStandardItem * item ;
     } REG_t ;
 
