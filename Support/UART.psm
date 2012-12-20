@@ -22,7 +22,8 @@
 ; UART routines
 ; -------------------------------------------------------------------------------
 
-_UART		.EQU	0xE0				// uCycleCounter.VHD is instatiated at this port address
+		.IF	_UART_
+
 _UART_CS	.EQU    _UART + 12			// UART status register
 _UART_DA	.EQU    _UART + 13			// UART data in.out registers
 
@@ -110,5 +111,7 @@ getc :							// wait for a character from the UART and return in s0
 
 		RET
 
+		.FI
+		
 ; -----------UART Subroutines end-------------------------------------------------
 
