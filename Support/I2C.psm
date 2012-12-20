@@ -284,6 +284,7 @@ ReadN_s1:
 		CALL	I2C_Recv		// Read 8 bits of data and send ack
 		CALL	I2C_MNAck
 		MOVE	s1, sC
+		RET
 		
 // -------------------------------------------------------------------------------
 // read s2
@@ -292,6 +293,7 @@ ReadN_s2:
 		CALL	I2C_Recv		// Read 8 bits of data and send ack
 		CALL	I2C_MNAck
 		MOVE	s2, sC
+		RET
 		
 // -------------------------------------------------------------------------------
 // read s3
@@ -300,6 +302,7 @@ ReadN_s3:
 		CALL	I2C_Recv		// Read 8 bits of data and send ack
 		CALL	I2C_MNAck
 		MOVE	s3, sC
+		RET
 		
 // -------------------------------------------------------------------------------
 // START, RCONTROL
@@ -426,8 +429,7 @@ I2C_SAck:
 		CALL    Delay
 		CALL    Delay
 		OUT	sF, bSCL_0		// SCL = 0
-		CALL	Delay
-		RET
+		JUMP	Delay
 
 // -------------------------------------------------------------------------------
 // Set up start condition for I2C
@@ -437,25 +439,25 @@ I2C_SAck:
 
 I2C_RepStart:
 		CALL	Delay
-		OUT	sF, bSCL_Z		// SCL = Z
+		OUT	sF, bSCL_Z		// SCL = Z due to pull-up
 I2C_Start:
 		CALL	Delay
 		OUT	sF, bSDA_0		// SDA = 0
 		CALL	Delay
 		OUT	sF, bSCL_0		// SCL = 0
-		CALL	Delay
-		RET
+		JUMP	Delay
 
 // -------------------------------------------------------------------------------
 // Send I2C stop command
 // -------------------------------------------------------------------------------
 I2C_Stop:
 		CALL	Delay
+		OUT	sF, bSDA_0		// SDA = 0
+		CALL	Delay
 		OUT	sF, bSCL_Z		// SCL = 1 due to pull-up
 		CALL	Delay
 		OUT	sF, bSDA_Z		// SDA = 1 due to pull-up
-		CALL	Delay
-		RET
+		JUMP	Delay
 		
 		.FI
 
