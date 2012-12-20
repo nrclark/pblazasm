@@ -345,15 +345,17 @@ I2C_TX:
 		JUMP    C, I2C_TX1		// Jump if bit high
 I2C_TX0:
 		OUT     sF, bSDA_0		// SDA = 0
-		CALL    Delay
 		JUMP    I2C_TX2			// Jump over next instructions
 I2C_TX1:
 		OUT     sF, bSDA_Z		// SDA = 1 due to pull-up
-		CALL    Delay
 I2C_TX2:
+		CALL    Delay
 
 		OUT     sF, bSCL_Z		// SCL = 1 due to pull-up
-		CALL    Delay
+.loop:		CALL    Delay
+		IN	sF, bSDA_In		// wait for SCL to go high
+		TEST	sF, 0b0000_0010
+		JUMP	Z, .loop
 		CALL    Delay
 		CALL    Delay
 		OUT     sF, bSCL_0		// SCL = 0
@@ -373,7 +375,10 @@ I2C_Recv:
 I2C_RX:
 		CALL	Delay	
 		OUT	sF, bSCL_Z		// SCL = 1 due to pull-up
-		CALL	Delay
+.loop:		CALL	Delay
+		IN	sF, bSDA_In		// wait for SCL to go high
+		TEST	sF, 0b0000_0010
+		JUMP	Z, .loop
 		CALL	Delay
 		IN	sF, bSDA_In
 		CALL	Delay
@@ -393,7 +398,10 @@ I2C_MAck:
 		OUT     sF, bSDA_0		// SDA = 0
 		CALL    Delay
 		OUT	sF, bSCL_Z		// SCL = 1 due to pull-up
-		CALL	Delay
+.loop:		CALL	Delay
+		IN	sF, bSDA_In		// wait for SCL to go high
+		TEST	sF, 0b0000_0010
+		JUMP	Z, .loop
 		CALL    Delay
 		CALL    Delay
 		OUT	sF, bSCL_0		// SCL = 0
@@ -409,7 +417,10 @@ I2C_MNAck:
 		OUT     sF, bSDA_Z		// SDA = 1 due to pull-up
 		CALL    Delay
 		OUT	sF, bSCL_Z		// SCL = 1 due to pull-up
-		CALL	Delay
+.loop:		CALL	Delay
+		IN	sF, bSDA_In		// wait for SCL to go high
+		TEST	sF, 0b0000_0010
+		JUMP	Z, .loop
 		CALL    Delay
 		CALL    Delay
 		OUT	sF, bSCL_0		// SCL = 0
@@ -425,7 +436,10 @@ I2C_SAck:
 		OUT     sF, bSDA_Z		// SDA = 1 due to pull-up
 		CALL    Delay
 		OUT	sF, bSCL_Z		// SCL = 1 due to pull-up
-		CALL	Delay
+.loop:		CALL	Delay
+		IN	sF, bSDA_In		// wait for SCL to go high
+		TEST	sF, 0b0000_0010
+		JUMP	Z, .loop
 		CALL    Delay
 		CALL    Delay
 		OUT	sF, bSCL_0		// SCL = 0
@@ -455,7 +469,10 @@ I2C_Stop:
 		OUT	sF, bSDA_0		// SDA = 0
 		CALL	Delay
 		OUT	sF, bSCL_Z		// SCL = 1 due to pull-up
-		CALL	Delay
+.loop:		CALL	Delay
+		IN	sF, bSDA_In		// wait for SCL to go high
+		TEST	sF, 0b0000_0010
+		JUMP	Z, .loop
 		OUT	sF, bSDA_Z		// SDA = 1 due to pull-up
 		JUMP	Delay
 		
