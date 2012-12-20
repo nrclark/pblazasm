@@ -42,13 +42,11 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi( this ) ;
 
-    this->setWindowTitle( "pBlazSIM V1.4 (Qt4.8.4) - http://www.mediatronix.com" ) ;
+    this->setWindowTitle( "pBlazSIM V1.5 (Qt4.8.4) - http://www.mediatronix.com" ) ;
     this->setWindowIcon(QIcon(":/files/bug_red.ico"));
 
     // font used for all views
     QFont fixedFont( "Consolas [Monaco]", 9 ) ;
-//    QFont fixedFont( "Inconsolata", 10 ) ;
-
 
     // script engine
     engine = new QScriptEngine() ;
@@ -133,7 +131,9 @@ MainWindow::MainWindow(QWidget *parent) :
     stateModel->setItem( 5, 0, item);
 
     for ( int row = 0 ; row < 6 ; row += 1 ) {
-        item = new QStandardItem(QString(""));
+        item = new QStandardItem(QString("") ) ;
+        item->setTextAlignment( Qt::AlignHCenter ) ;
+
         stateModel->setItem( row, 1, item);
         pBlaze->setStateItem( row, item ) ;
     }
@@ -155,7 +155,8 @@ MainWindow::MainWindow(QWidget *parent) :
         QStandardItem * item = new QStandardItem(" s"+QString("%1").arg(reg,1,16).toUpper());
         registerModel->setItem( reg, 0, item);
 
-        item = new QStandardItem(QString("%1").arg(0,4,16).toUpper()) ;
+        item = new QStandardItem( "" ) ;
+        item->setTextAlignment( Qt::AlignHCenter ) ;
         pBlaze->setRegisterItem( reg, item ) ;
         registerModel->setItem( reg, 1, item );
     }
@@ -170,22 +171,22 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // setup stackmodel for stackview
     stackModel = new QStandardItemModel ;
-    stackModel->insertColumns(0,4);
+    stackModel->insertColumns( 0, 4 ) ;
     stackModel->setHorizontalHeaderLabels((QStringList() << "stack" << "pc" << "zero" << "carry"));
     for ( int sp = 0 ; sp < 32 ; sp += 1 ) {
-        QStandardItem * item = new QStandardItem(QString("%1").arg(sp,2,10));
-        stackModel->setItem( sp, 0, item);
-
-        item = new QStandardItem(QString("%1").arg(0, 5, 16));
+        QStandardItem * item = new QStandardItem( QString("%1").arg( sp, 2, 10 ) ) ;
+        stackModel->setItem( sp, 0, item ) ;
+        item = new QStandardItem( "" ) ;
+        item->setTextAlignment( Qt::AlignHCenter ) ;
         pBlaze->setStackItem( sp, item ) ;
-        stackModel->setItem( sp, 1, item );
+        stackModel->setItem( sp, 1, item ) ;
     }
     ui->tvStack->setModel( stackModel ) ;
     ui->tvStack->setFont(fixedFont);
     for ( int row = 0 ; row < 32 ; row += 1 )
-        ui->tvStack->setRowHeight(row, 16 );
+        ui->tvStack->setRowHeight( row, 16 ) ;
     for ( int col = 0 ; col < 4 ; col += 1 )
-        ui->tvStack->setColumnWidth(col, 50);
+        ui->tvStack->setColumnWidth( col, 50 ) ;
     ui->tvStack->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
 
