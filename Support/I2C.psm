@@ -299,7 +299,7 @@ ReadN_s2:
 ReadN_s3:
 		CALL	I2C_Recv		// Read 8 bits of data and send ack
 		CALL	I2C_MNAck
-		MOVE	s1, sC
+		MOVE	s3, sC
 		
 // -------------------------------------------------------------------------------
 // START, RCONTROL
