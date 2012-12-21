@@ -18,7 +18,10 @@
 //
 
 // -------------------------------------------------------------------------------
-// piggy board I2C routines
+// picoblaze soft I2C routines
+// implements clock stretching
+// 	CALL I2C_Delay	// defines the clockspeed
+//	should be ~1.6us for 100kHz => @100MHz, 50 instructions per us => 80 instructions!
 // -------------------------------------------------------------------------------
 
 bSDA_In		.EQU	_I2C + _I2C0		// gets SDA level in Bit0
@@ -27,7 +30,6 @@ bSDA_Z		.EQU	_I2C + _I2C1		// Relases SDA to float to 1
 bSCL_0		.EQU    _I2C + _I2C2		// Pulls CSCL to 0
 bSCL_Z		.EQU    _I2C + _I2C3		// Releases SCL to float to 1
 
-		.IF	_I2C_
 
 // ---\              /--------\                                            /-- 
 //     \  SDA       /          \                                          /
@@ -37,9 +39,11 @@ bSCL_Z		.EQU    _I2C + _I2C3		// Releases SCL to float to 1
 //          \--------/        \-------------------------------------/
 // | Start    |      Data bit     |                             |  Stop     |
 
+		.IF	_I2C_
+		
 Init_I2C:	OUT	sF, bSDA_Z		// SDA = Z
 		OUT	sF, bSCL_Z		// SCL = Z
-		JUMP	Delay
+		JUMP	I2C_Delay
 		
 // -------------------------------------------------------------------------------
 // Routine to set up and read a buffer from I2C device
@@ -47,7 +51,6 @@ Init_I2C:	OUT	sF, bSDA_Z		// SDA = Z
 // s4: buffer pointer
 // s5: byte count
 // -------------------------------------------------------------------------------
-
 ReadX_I2C:
 		CALL	ReadCtrlByte
 
@@ -75,7 +78,6 @@ ReadX_last:
 // s4: buffer pointer
 // s5: byte count
 // -------------------------------------------------------------------------------
-
 Write1ReadX_I2C:
 		CALL	WriteCtrlByte
 		CALL	Write_s1		
@@ -91,7 +93,6 @@ Write1ReadX_I2C:
 // s4: buffer pointer
 // s5: byte count
 // -------------------------------------------------------------------------------
-
 Write2ReadX_I2C:
 		CALL	WriteCtrlByte
 		CALL	Write_s1		
@@ -107,7 +108,6 @@ Write2ReadX_I2C:
 // s4: buffer pointer
 // s5: byte count
 // -------------------------------------------------------------------------------
-
 WriteX_I2C:
 		CALL	WriteCtrlByte
 		
@@ -130,7 +130,6 @@ WriteX_I2C:
 // s3: 3rd read data byte
 // s4: 4th read data byte
 // -------------------------------------------------------------------------------
-
 Write1Read4_I2C:
 		CALL	WriteCtrlByte
 		CALL	Write_s1		
@@ -340,7 +339,7 @@ WriteCtrlByte:
 I2C_Xmit:
 		MOVE    sD, 8			// Load I2C bit counter
 I2C_TX:
-		CALL    Delay
+		CALL    I2C_Delay
 		SL0     sC			// Move data bit -> carry
 		JUMP    C, I2C_TX1		// Jump if bit high
 I2C_TX0:
@@ -349,37 +348,37 @@ I2C_TX0:
 I2C_TX1:
 		OUT     sF, bSDA_Z		// SDA = 1 due to pull-up
 I2C_TX2:
-		CALL    Delay
+		CALL    I2C_Delay
 
 		OUT     sF, bSCL_Z		// SCL = 1 due to pull-up
 		CALL	I2C_Stretch
-		CALL    Delay
-		CALL    Delay
+		CALL    I2C_Delay
+		CALL    I2C_Delay
 		OUT     sF, bSCL_0		// SCL = 0
 
 		SUB     sD, 1			// Decrement I2C bit counter
 		JUMP    NZ, I2C_TX		// Loop until 8 bits are sent
-		JUMP    Delay
+		JUMP    I2C_Delay
 
 // -------------------------------------------------------------------------------
 // Read 8 bits of I2C data
 // -------------------------------------------------------------------------------
 I2C_Recv:	
 		MOVE	sD, 8			// Load I2C bit counter
-		CALL	Delay	
+		CALL	I2C_Delay	
 		OUT     sF, bSDA_Z		// SDA = 1 due to pull-up
 		
 I2C_RX:
-		CALL	Delay	
+		CALL	I2C_Delay	
 		OUT	sF, bSCL_Z		// SCL = 1 due to pull-up
 		CALL	I2C_Stretch
-		CALL	Delay
+		CALL	I2C_Delay
 		IN	sF, bSDA_In
-		CALL	Delay
+		CALL	I2C_Delay
 		OUT	sF, bSCL_0		// SCL = 0
 		SR0	sF			// LSBit -> carry bit
 		SLA	sC			// Carry shifted into LSBit
-		CALL	Delay
+		CALL	I2C_Delay
 		SUB	sD, 1			// Decrement I2C bit counter
 		JUMP	NZ, I2C_RX		// Loop until 8 bits are read
 		RET
@@ -388,15 +387,15 @@ I2C_RX:
 // Ack by master, keep data 0
 // -------------------------------------------------------------------------------
 I2C_MAck:	
-		CALL    Delay
+		CALL    I2C_Delay
 		OUT     sF, bSDA_0		// SDA = 0
-		CALL    Delay
+		CALL    I2C_Delay
 		OUT	sF, bSCL_Z		// SCL = 1 due to pull-up
 		CALL	I2C_Stretch
-		CALL    Delay
-		CALL    Delay
+		CALL    I2C_Delay
+		CALL    I2C_Delay
 		OUT	sF, bSCL_0		// SCL = 0
-		CALL	Delay
+		CALL	I2C_Delay
 		OUT     sF, bSDA_0		// SDA = 0
 		RET
 
@@ -404,15 +403,15 @@ I2C_MAck:
 // NAck by master, release data 
 // -------------------------------------------------------------------------------
 I2C_MNAck:	
-		CALL    Delay
+		CALL    I2C_Delay
 		OUT     sF, bSDA_Z		// SDA = 1 due to pull-up
-		CALL    Delay
+		CALL    I2C_Delay
 		OUT	sF, bSCL_Z		// SCL = 1 due to pull-up
 		CALL	I2C_Stretch
-		CALL    Delay
-		CALL    Delay
+		CALL    I2C_Delay
+		CALL    I2C_Delay
 		OUT	sF, bSCL_0		// SCL = 0
-		CALL	Delay
+		CALL	I2C_Delay
 		OUT     sF, bSDA_0		// SDA = 0
 		RET
 
@@ -420,20 +419,20 @@ I2C_MNAck:
 // Ack by slave, release data
 // -------------------------------------------------------------------------------
 I2C_SAck:
-		CALL    Delay
+		CALL    I2C_Delay
 		OUT     sF, bSDA_Z		// SDA = 1 due to pull-up
-		CALL    Delay
+		CALL    I2C_Delay
 		OUT	sF, bSCL_Z		// SCL = 1 due to pull-up
 		CALL	I2C_Stretch
-		CALL    Delay
-		CALL    Delay
+		CALL    I2C_Delay
+		CALL    I2C_Delay
 		OUT	sF, bSCL_0		// SCL = 0
-		JUMP	Delay
+		JUMP	I2C_Delay
 // -------------------------------------------------------------------------------
 // Set up start condition for I2C
 // -------------------------------------------------------------------------------
 I2C_Stretch:
-		CALL    Delay
+		CALL    I2C_Delay
 		IN	sF, bSDA_In		// wait for SCL to go high
 		TEST	sF, 0b0000_0010
 		JUMP	Z, I2C_Stretch
@@ -446,27 +445,35 @@ I2C_Stretch:
 // SCL and SDA set to inputs, signals go high due to pull-up resistors
 
 I2C_RepStart:
-		CALL	Delay
+		CALL	I2C_Delay
 		OUT	sF, bSCL_Z		// SCL = Z due to pull-up
 I2C_Start:
-		CALL	Delay
+		CALL	I2C_Delay
 		OUT	sF, bSDA_0		// SDA = 0
-		CALL	Delay
+		CALL	I2C_Delay
 		OUT	sF, bSCL_0		// SCL = 0
-		JUMP	Delay
+		JUMP	I2C_Delay
 
 // -------------------------------------------------------------------------------
 // Send I2C stop command
 // -------------------------------------------------------------------------------
 I2C_Stop:
-		CALL	Delay
+		CALL	I2C_Delay
 		OUT	sF, bSDA_0		// SDA = 0
-		CALL	Delay
+		CALL	I2C_Delay
 		OUT	sF, bSCL_Z		// SCL = 1 due to pull-up
 		CALL	I2C_Stretch
 		OUT	sF, bSDA_Z		// SDA = 1 due to pull-up
-		JUMP	Delay
+		JUMP	I2C_Delay
 		
+		
+// -------------------------------------------------------------------------------
+// Delay needed for I2C
+// -------------------------------------------------------------------------------
+I2C_Delay:	
+		CALL	Delay6			// 1 + 2^6 + 2^4 - 1 => 80 instructions
+		JUMP	Delay4
+
 		.FI
 
 // -----------I2C Subroutines end-------------------------------------------------
