@@ -34,8 +34,9 @@
 #include "pbDirectives.h"
 
 // our symbol table
-#define SIZE 4096UL
+#define SIZE (4096UL * 4)
 static symbol_t symbols[ SIZE ] ;
+static int clash = 0 ;
 
 symbol_t stamps[] = {
     { tVALUE, stHOURS,   "__hours__",   {0} },
@@ -49,24 +50,31 @@ symbol_t stamps[] = {
     { tVALUE, stSTRING,   "__date__",   {0} }
 } ;
 
+// fast bytewide crc16 (ITU)
+inline void crc16( uint8_t data, uint16_t * crc ) {
+  uint16_t c = ( ( *crc >> 8 ) ^ data ) & 0xff ;
+  c ^= c >> 4 ;
+  *crc = ( *crc << 8 ) ^ ( c << 12 ) ^ ( c <<5 ) ^ c ;
+}
 
 //! \fn static uint32_t hash( const char * text )
-//  \brief hash function, free after Donald Knuth
 //  \param text string to hash
 static uint32_t hash ( const char * text ) {
-    uint64_t r = 0 ;
+ //   uint64_t r = 0 ;
+    uint16_t crc = 0xFFFF ;
     int i ;
 
     if ( text != NULL ) {
         for ( i = 0 ; i < (int)strlen ( text ) ; i += 1 )
-            r ^= 0x9E3779B1 * text[ i ] ;
-        return r & ( SIZE - 1 ) ;
+            crc16( text[ i ], &crc ) ;
+//          r ^= 0x9E3779B1 * text[ i ] ;
+//          return r & ( SIZE - 1 ) ;
+        return crc & ( SIZE - 1 ) ;
     } else
         return 0xFFFFFFFF ;
 }
 
 // add all known words, our keywords
-
 static void add_keyword ( const symbol_t * sym ) {
     add_symbol ( sym->type, sym->subtype, sym->text, sym->value ) ;
 }
@@ -83,6 +91,7 @@ void init_symbol ( bool b6 ) {
         symbols[ h ].text = NULL ;
         symbols[ h ].value.integer = 0 ;
     }
+    clash = 0 ;
     // add keywords
     if ( b6 )
         for ( h = 0 ; h < (int)sizeof ( opcodes6 ) / (int)sizeof ( symbol_t ) ; h += 1 )
@@ -178,6 +187,7 @@ bool add_symbol ( const type_e type, const subtype_e subtype, const char * text,
                 return false ; // really same?
         }
         h = ( h + 1 ) & ( SIZE - 1 ) ; // wrap
+        clash += 1 ;
     } while ( h != (int)p ) ; // full ?
     return false ;
 }
@@ -198,14 +208,28 @@ void dump_map ( void ) {
 
 // free any allocated storage
 void free_symbol ( void ) {
-    int h ;
+    int h, i, c = 0 ;
 
     for ( h = 0 ; h < (int)SIZE ; h += 1 ) {
-        symbols[ h ].type = tNONE ;
+        if ( symbols[ h ].type != tNONE )
+            c += 1 ;
+
         if ( symbols[ h ].text != NULL )
             free ( symbols[ h ].text ) ;
+        if ( symbols[ h ].subtype == stSTRING && symbols[ h ].value.string != NULL )
+            free ( symbols[ h ].value.string ) ;
+        else if ( symbols[ h ].subtype == stTOKENS && symbols[ h ].value.tokens != NULL ) {
+            symbol_t * s = symbols[ h ].value.tokens ;
+            for ( i = 0 ; s[ i ].text != NULL ; i += 1 )
+                free ( s[ i ].text ) ;
+            free ( s ) ;
+        }
+        symbols[ h ].type = tNONE ;
         symbols[ h ].text = NULL ;
         symbols[ h ].value.integer = 0 ;
     }
+#ifdef _DEBUG_
+    printf( "pBlazASM: %d symbols used, %d clashes\n", c, clash ) ;
+#endif
 }
 

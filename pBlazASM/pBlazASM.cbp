@@ -11,10 +11,11 @@
 				<Option object_output="obj\Debug\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="-6 -l test" />
+				<Option parameters="-3 -q -l -s test" />
 				<Compiler>
 					<Add option="-Wall" />
 					<Add option="-g" />
+					<Add option="-D_DEBUG_" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -37,50 +38,56 @@
 			<Add option="-Wall" />
 		</Compiler>
 		<Unit filename="getopt.h">
-			<Option target="Release" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="pBlazASM.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="pbDirectives.h">
-			<Option target="Release" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="pbErrors.h">
-			<Option target="Release" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="pbLexer.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="pbLexer.h">
-			<Option target="Release" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="pbLibgen.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="pbLibgen.h">
-			<Option target="Release" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="pbOpcodes.h">
-			<Option target="Release" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="pbParser.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="pbParser.h">
-			<Option target="Release" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="pbSymbols.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="pbSymbols.h">
-			<Option target="Release" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="pbTypes.h">
-			<Option target="Release" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
-		<Unit filename="test.lst" />
-		<Unit filename="test.psm" />
-		<Unit filename="version.h" />
+		<Unit filename="test.lst">
+			<Option target="Debug" />
+		</Unit>
+		<Unit filename="test.psm">
+			<Option target="Debug" />
+		</Unit>
+		<Unit filename="version.h">
+			<Option target="Debug" />
+		</Unit>
 		<Extensions>
 			<code_completion />
 			<debugger />

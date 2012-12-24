@@ -78,9 +78,10 @@ static const char * s_errors[] = {
 	"<none>", "unexpected tokens", "doubly defined", "undefined", "phasing error", "missing symbol",
 	"syntax error", "syntax error in expression", "syntax error in operand", "syntax error in value", "value out of range",
 	"syntax error in operator", "syntax error, register expected", "comma expected", "unexpected characters",
-	"expression expected", "out of code space", "wrong scratchpad size", "out of scratchpad range", "<not-implemented>", "<internal error>"
+	"expression expected", "out of code space", "wrong scratchpad size", "out of scratchpad range", "<not-implemented>", "<internal error>", "syntax error in macro parameter"
 } ;
 
+static error_t expr ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*next)() ) ;
 static error_t expression ( uint32_t * result ) ;
 
 /**
@@ -228,39 +229,64 @@ static char * convert_string ( char * s ) {
 	return r ;
 }
 
+
+/**
+ * macro string evaluator
+ */
+
+static symbol_t * eval_ptok = 0 ; // pointer to current token, index in 'tokens[]'
+
+symbol_t * eval_current( void ) {
+//    printf( "%s\n", eval_ptok->text ) ;
+    return eval_ptok ;
+}
+
+symbol_t * eval_next( void ) {
+    return eval_ptok++ ;
+}
+
+/**
+ * macro string evaluator
+ * @param symbol with string value
+ * @result evaluated value
+ */
+static uint32_t eval( uint32_t * result, symbol_t * h ) {
+    eval_ptok = h->value.tokens ;
+	return expr ( result, eval_current, eval_next ) ;
+}
+
+
 /**
  * term processing
  * @param resulting value of term
  * @result error code
  */
-static error_t term ( uint32_t * result ) {
+
+static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*next)() ) {
 	symbol_t * oper = NULL ;
 	const char * p = NULL ;
 	symbol_t * h = NULL ;
 	error_t e = etNONE ;
 	char * s = NULL ;
 	uint32_t val ;
+
 	// full expression handling
-	if ( tok_current()->type == tNONE ) {
+	if ( current()->type == tNONE )
 		return etEXPR ;
-	}
-	if ( tok_current()->type == tOPERATOR ) {
-		oper = tok_next() ;
-	}
-	s = tok_current()->text ;
-	switch ( tok_current()->type ) {
+	if ( current()->type == tOPERATOR )
+		oper = next() ;
+	s = current()->text ;
+	switch ( current()->type ) {
 	case tDEC :
-		if ( sscanf ( s, "%d", &val ) != 1 ) {
+		if ( sscanf ( s, "%d", &val ) != 1 )
 			return etEXPR ;
-		}
 		break ;
 	case tCHAR :
 		val = convert_char ( &s ) ;
 		break ;
 	case tHEX :
-		if ( sscanf ( s, "%X", &val ) != 1 ) {
+		if ( sscanf ( s, "%X", &val ) != 1 )
 			return etEXPR ;
-		}
 		break ;
 	case tBIN :
 		// parse a binary value
@@ -268,41 +294,52 @@ static error_t term ( uint32_t * result ) {
 		for ( p = s ; *p != 0 ; p++ ) {
 			if ( *p != '_' ) {
 				val <<= 1 ;
-				if ( *p == '1' ) {
+				if ( *p == '1' )
 					val |= 1 ;
-				}
 			}
 		}
 		break ;
 	case tIDENT :
 		h = find_symbol ( s, false ) ;
-		if ( h == NULL ) {
+		if ( h == NULL )
 			return etUNDEF ;
-		}
-		// label as a moving target
-		if ( h->subtype == stDOT && strlen ( h->text ) == 1 ) {
-			val = oPC ;
-		} else {
-			val = h->value.integer ;
-		}
-		if ( h->type != tVALUE && h->type != tLABEL ) {
+		if ( h->type != tVALUE && h->type != tLABEL )
 			return etVALUE ;
-		}
+		// label as a moving target
+		if ( h->subtype == stDOT && strlen ( h->text ) == 1 )
+			val = oPC ;
+		else if ( h->subtype == stTOKENS ) {
+		    next() ;
+            e = eval( &val, h ) ;
+            if ( e != etNONE )
+                return e ;
+		} else
+			val = h->value.integer ;
 		break ;
+    case tAT :
+        // evaluate expression in the calling line
+        if ( tok_current()->type == tLPAREN ) {
+            tok_next() ;
+            e = expr( &val, tok_current, tok_next ) ;
+            if ( e != etNONE )
+                return e ;
+            if ( tok_current()->type != tRPAREN )
+                return etEXPR ;
+        } else
+            return etPARAM ;
+        break ;
 	case tLPAREN :
-		tok_next() ;
-		e = expression ( &val ) ;
-		if ( e != etNONE ) {
+		next() ;
+		e = expr ( &val, current, next ) ;
+		if ( e != etNONE )
 			return e ;
-		}
-		if ( tok_current()->type != tRPAREN ) {
+		if ( current()->type != tRPAREN )
 			return etEXPR ;
-		}
 		break ;
 	default :
 		return etEXPR ;
 	}
-	tok_next() ;
+    next() ;
 	if ( oper != NULL ) {
 		switch ( oper->subtype ) {
 		case stSUB :
@@ -314,8 +351,92 @@ static error_t term ( uint32_t * result ) {
 		default :
 			return etOPERATOR ;
 		}
-	} else {
+	} else
 		*result = val ;
+	return etNONE ;
+}
+
+/**
+ * expression processing
+ * depending of current bMode
+ * @param result resulting value of expression
+ * @return error code
+ */
+static error_t expr ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*next)() ) {
+	symbol_t * h = NULL ;
+	char * s = NULL ;
+	symbol_t * oper = NULL ;
+	error_t e = etNONE ;
+	uint32_t val ;
+	*result = 0 ;
+	// crippled expression handling
+	while ( bMode && current()->type != tNONE ) {
+		switch ( current()->type ) {
+		case tLPAREN :
+			next() ;
+			e = expr( &val, current, next ) ;
+			if ( e != etNONE )
+				return e ;
+			if ( ! processOperator ( result, val, &oper ) )
+				return etOPERATOR ;
+		case tRPAREN :
+			next() ;
+			return etNONE ;
+		case tCOMMA :
+			return etNONE ;
+		case tIDENT :
+			s = current()->text ;
+			h = find_symbol ( s, false ) ;
+			if ( h != NULL )
+				val = h->value.integer ;
+			else if ( sscanf ( s, "%X", &val ) != 1 )
+				return etEXPR ;
+			next() ;
+			*result = val ;
+			return etNONE ;
+		default :
+			return etEXPR ;
+		}
+	}
+	if ( current()->type == tNONE )
+		return etEMPTY ;
+	// full expression handling
+	while ( current()->type != tNONE ) {
+		switch ( current()->type ) {
+		case tLPAREN :
+			next() ;
+			e = expr( &val, current, next ) ;
+			if ( e != etNONE )
+				return e ;
+			if ( current()->type == tRPAREN )
+				next() ;
+			else
+				return etEXPR ;
+			break ;
+		case tOPERATOR :
+		case tDEC :
+		case tCHAR :
+		case tHEX :
+		case tBIN :
+		case tIDENT :
+        case tAT :
+			e = term( &val, current, next ) ;
+			if ( e != etNONE )
+				return e ;
+			break ;
+		default :
+			return etNONE ;
+		}
+		if ( oper != NULL ) {
+			if ( ! processOperator( result, val, &oper ) )
+				return etOPERATOR ;
+			oper = NULL ;
+		} else
+			*result = val ;
+		if ( current()->type == tOPERATOR )
+			oper = next() ;
+		else
+			break ;
 	}
 	return etNONE ;
 }
@@ -327,91 +448,7 @@ static error_t term ( uint32_t * result ) {
  * @return error code
  */
 static error_t expression ( uint32_t * result ) {
-	symbol_t * h = NULL ;
-	char * s = NULL ;
-	symbol_t * oper = NULL ;
-	error_t e = etNONE ;
-	uint32_t val ;
-	*result = 0 ;
-	// crippled expression handling
-	while ( bMode && tok_current()->type != tNONE ) {
-		switch ( tok_current()->type ) {
-		case tLPAREN :
-			tok_next() ;
-			e = expression ( &val ) ;
-			if ( e != etNONE ) {
-				return e ;
-			}
-			if ( !processOperator ( result, val, &oper ) ) {
-				return etOPERATOR ;
-			}
-		case tRPAREN :
-			tok_next() ;
-			return etNONE ;
-		case tCOMMA :
-			return etNONE ;
-		case tIDENT :
-			s = tok_current()->text ;
-			h = find_symbol ( s, false ) ;
-			if ( h != NULL ) {
-				val = h->value.integer ;
-			} else if ( sscanf ( s, "%X", &val ) != 1 ) {
-				return etEXPR ;
-			}
-			tok_next() ;
-			*result = val ;
-			return etNONE ;
-		default :
-			return etEXPR ;
-		}
-	}
-	if ( tok_current()->type == tNONE ) {
-		return etEMPTY ;
-	}
-	// full expression handling
-	while ( tok_current()->type != tNONE ) {
-		switch ( tok_current()->type ) {
-		case tLPAREN :
-			tok_next() ;
-			e = expression ( &val ) ;
-			if ( e != etNONE ) {
-				return e ;
-			}
-			if ( tok_current()->type == tRPAREN ) {
-				tok_next() ;
-			} else {
-				return etEXPR ;
-			}
-			break ;
-		case tOPERATOR :
-		case tDEC :
-		case tCHAR :
-		case tHEX :
-		case tBIN :
-		case tIDENT :
-			e = term ( &val ) ;
-			if ( e != etNONE ) {
-				return e ;
-			}
-			break ;
-		default :
-			return etNONE ;
-		}
-		if ( oper != NULL ) {
-			if ( !processOperator ( result, val, &oper ) ) {
-				return etOPERATOR ;
-			}
-			oper = NULL ;
-		} else {
-			*result = val ;
-		}
-		if ( tok_current()->type == tOPERATOR ) {
-			oper = tok_next() ;
-		} else {
-			break ;
-		}
-	}
-	return etNONE ;
+    return expr( result, tok_current, tok_next ) ;
 }
 
 /**
@@ -722,6 +759,33 @@ static error_t build ( void ) {
 						}
 						state = bsEND ;
 						break ;
+
+                    case stDEF :
+						if ( state != bsSYMBOL )
+							return etSYNTAX ;
+						tok_next() ;
+						if ( symtok != NULL ) {
+                            symbol_t * tok = tok_current() ;
+                            int c = 2 ;
+                            int i ;
+
+                            while ( tok_current()->type != tNONE ) {
+                                tok_next() ;
+                                c += 1 ;
+                            }
+                            value.tokens = (symbol_t *) malloc( c * sizeof( symbol_t ) ) ;
+                            for ( i = 0 ; i < c ; i += 1 ) {
+                                value.tokens[ i ] = tok[ i ] ;
+                                value.tokens[ i ].text = strdup( tok[ i ].text ) ;
+                            }
+
+                            if ( !add_symbol ( tVALUE, stTOKENS, symtok->text, value ) )
+                                return etDOUBLE ;
+						} else
+							return etMISSING ;
+						state = bsEND ;
+						break ;
+
                     // .EQU
 					case stEQU :
 						if ( state != bsSYMBOL )
@@ -862,16 +926,15 @@ static error_t build ( void ) {
 						}
 						tok_next() ;
 						value.integer = gSCR ;
-						if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value ) ) {
+						if ( symtok != NULL && !add_symbol ( tVALUE, stINT, symtok->text, value ) ) {
 							return etDOUBLE ;
 						}
 						do {
 							if ( ( e = expression ( &result ) ) != etNONE ) {
 								if ( e == etEMPTY ) {
 									break ;    // allow an empty expression list for generating a symbol only
-								} else {
+								} else
 									return e ;
-								}
 							}
 							if ( bActive ) {
 								switch ( h->subtype ) {
@@ -1314,9 +1377,8 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 					case stIF:
 						if ( ( e = expression ( &result ) ) == etNONE ) {
 							bActive = result != 0 ;
-						} else {
+						} else
 							return e ;
-						}
 						*data = result ;
 						state = bsEND ;
 						break ;
@@ -1364,9 +1426,8 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						state = bsEND ;
 						break ;
 					case stEND :
-						if ( state != bsINIT ) {
+						if ( state != bsINIT )
 							return etSYNTAX ;
-						}
 						if ( ( e = expression ( &result ) ) == etNONE ) {
 							if ( result >= CODESIZE ) {
 								return etRANGE ;
@@ -1422,6 +1483,13 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						} else if ( bActive ) {
 							gScrSize = 256 ;
 						}
+						break ;
+					case stDEF :
+						if ( state != bsSYMBOL )
+							return etSYNTAX ;
+                        while ( tok_current() -> type != tNONE )
+							tok_next() ;
+                        *data = 0xFFFFFFFF ;
 						break ;
 					case stEQU :
 						if ( state != bsSYMBOL )
@@ -1511,7 +1579,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						if ( bActive ) {
 							*addr = gSCR ;
 						}
-						*data = 0xFFFFFFFF;
+						*data = 0xFFFFFFFF ;
 						do {
 							if ( ( e = expression ( &result ) ) == etNONE ) {
 								if ( result > 0xFFFF ) {
@@ -1523,7 +1591,8 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 										gData[ gSCR++ ] = ( result >> 8 ) & 0x00FF ;
 										gData[ gSCR++ ] = ( result >> 0 ) & 0x00FF ;
 										if ( *data == 0xFFFFFFFF ) {
-											*data = ( result >> 8 ) & 0xFF  ;
+											*data = ( result >> 8 ) & 0x00FF  ;
+											*data |= ( result << 8 ) & 0xFF00  ;
 										}
 									}
 								} else {
@@ -1531,7 +1600,8 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 										gData[ gSCR++ ] = ( result >> 0 ) & 0x00FF ;
 										gData[ gSCR++ ] = ( result >> 8 ) & 0x00FF ;
 										if ( *data == 0xFFFFFFFF ) {
-											*data = ( result >> 0 ) & 0xFF  ;
+											*data = ( result >> 0 ) & 0x00FF  ;
+											*data |= ( result << 0 ) & 0xFF00  ;
 										}
 									}
 									if ( (int)gSCR > gScrSize ) {
@@ -1704,9 +1774,8 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 					// equated values
 				case tVALUE :
 				case tREGISTER :
-					if ( state != bsINIT ) {
+					if ( state != bsINIT )
 						return etSYNTAX ;
-					}
 					symtok = h ;
 					tok_next()->subtype = stEQU ; // just for formatting
 					*data = h->value.integer & 0xFFFF ;
@@ -1735,8 +1804,8 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 			return etSYNTAX ;
 		}
 	}
-// only comment may follow
-	if ( state != bsDIS &&  tok_current()->type != tNONE ) {
+    // only comment may follow
+	if ( state != bsDIS && tok_current()->type != tNONE ) {
 		return etEND ;
 	}
 	return etNONE ;
@@ -1808,6 +1877,8 @@ static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint
 		if ( data != 0xFFFFFFFF ) {
 			if ( data > 0xFFFF ) {
 				n += fprintf ( f, " %08X  ", data ) ;
+			} else if ( data > 0xFF ) {
+				n += fprintf ( f, "     %04X  ", data ) ;
 			} else {
 				if ( addr != 0xFFFFFFFF ) {
 					if ( addr >= 0x100 ) {
