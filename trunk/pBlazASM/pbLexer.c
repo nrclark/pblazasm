@@ -43,7 +43,8 @@ typedef enum _LEX_STATE {
     lsDoubleOp,
     lsPunct,
     lsIndex,
-    lsString
+    lsString,
+    lsParam
 } LexState_e ;
 
 // global token list
@@ -56,6 +57,7 @@ symbol_t * tok_first( void ) {
 }
 
 symbol_t * tok_current( void ) {
+//    printf( "%s\n", ptok->text ) ;
     return ptok ;
 }
 
@@ -150,9 +152,13 @@ bool lex( char * line, const bool mode ) {
                 start = s++ ;
                 state = lsIndex ;
             } else if ( *s == ':' || *s == ',' || *s == '(' || *s == ')' ) {
-                // punctuation ',', ':', '(', ')', '~'
+                // punctuation ',', ':', '(', ')', '[', ']'
                 start = s++ ;
                 state = lsPunct ;
+            } else if ( *s == '@' ) {
+                // params '@'
+                start = s++ ;
+                state = lsParam ;
             } else if ( *s == '*' || *s == '/' || *s == '%' || *s == '+' || *s == '-' ||
                         *s == '|' || *s == '&' || *s == '^' || *s == '~' ) {
                 // operators
@@ -277,6 +283,16 @@ bool lex( char * line, const bool mode ) {
             }
             break ;
 
+        case lsParam :
+            if ( isdigit( *s ) )
+                s++ ;
+            else {
+                end = s ;
+                ptok->type = tAT ;
+                state = lsCopy ;
+            }
+            break ;
+
         case lsOperator :
             ptok->type = tOPERATOR ;
             switch ( *start ) {
@@ -336,14 +352,14 @@ bool lex( char * line, const bool mode ) {
             case ':' :
                 ptok->type = tCOLON ;
                 break ;
+            case ',' :
+                ptok->type = tCOMMA ;
+                break ;
             case '(' :
                 ptok->type = tLPAREN ;
                 break ;
             case ')' :
                 ptok->type = tRPAREN ;
-                break ;
-            case ',' :
-                ptok->type = tCOMMA ;
                 break ;
             default :
                 state = lsError ;
@@ -363,6 +379,7 @@ bool lex( char * line, const bool mode ) {
 
             // final token collector
         case lsCopy :
+            pterm = term ;
             while ( start < end )
                 *pterm++ = *start++ ;
             *pterm = '\0' ;

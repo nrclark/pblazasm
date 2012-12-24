@@ -39,5 +39,6 @@ typedef enum _ERROR {
 	etSCRSIZE,
 	etSCRRNG,
 	etNOTIMPL,
-	etINTERNAL
+	etINTERNAL,
+	etPARAM
 } error_t ;

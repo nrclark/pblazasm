@@ -26,6 +26,7 @@ typedef unsigned char bool ;
 typedef enum _TYPE {
 	tNONE = 0,
 	tERROR,
+	tAT,
 	tLPAREN,
 	tRPAREN,
 	tCOMMA,
@@ -103,6 +104,7 @@ typedef enum _SUBTYPE {
 	stDAY,
 
 	stSTRING,
+	stTOKENS,
 
 	// directives
 	stORG,
@@ -112,6 +114,7 @@ typedef enum _SUBTYPE {
 	stSCRATCHPAD,
 	stEND,
 
+	stDEF,
 	stEQU,
 	stSET,
 	stBYTE,
@@ -149,15 +152,18 @@ typedef enum _SUBTYPE {
 	stDOT
 } subtype_e ;
 
+struct _SYMBOL ;
+
 // token and symbol type
 typedef	union _VALUE {
 	int integer ;
 	char * string ;
+	struct _SYMBOL * tokens ;
 } value_t ;
 
 typedef struct _SYMBOL {
 	type_e type ;
 	subtype_e subtype ;
 	char * text ;
-	value_t value ;
+	union _VALUE value ;
 } symbol_t ;
