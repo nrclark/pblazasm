@@ -42,7 +42,12 @@
  * @param text application name
  */
 static void usage ( char * text ) {
-	printf ( "\n%s - Picoblaze Assembler V%ld.%ld.%ld (%s)\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
+	printf ( "\n%s - Picoblaze Assembler V%ld.%ld.%ld (%s) (c) 2012 Henk van Kampen\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
+
+    printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n"  ) ;
+    printf ( "This is free software, and you are welcome to redistribute it\n"  ) ;
+    printf ( "under certain conditions. See <http://www.gnu.org/licenses/>\n"  ) ;
+
 	printf ( "\nUsage:\n" ) ;
 	printf ( "   pBlazASM -3|-6 [-k] [-v] [-f] [-c[<MEMfile>]] [-s[<MEMfile>]] [-l[<LSTfile>]] <input file> <input file> <input file> ...\n"
 	         "   where:\n"
@@ -206,6 +211,7 @@ int main ( int argc, char ** argv ) {
 	}
 
 	if ( bVerbose ) {
+        printf ( "\n%s - Picoblaze Assembler V%ld.%ld.%ld (%s)\n", basename ( argv[ 0 ] ), MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
 		if ( bKCPSM6 ) {
 			printf ( "! PB6 option chosen\n" ) ;
 		} else {

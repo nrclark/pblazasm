@@ -68,6 +68,7 @@ static uint32_t oPC = 0 ;
 
 // data
 static uint32_t gSCR = 0 ; // current scratchpad counter
+static uint32_t gESG = 0 ; // current scratchpad counter backup
 static int32_t gScrLoc = -1 ; // place where scratchpad is in ROM
 static int32_t gScrSize = 0 ; // size of scratchpad
 
@@ -261,7 +262,6 @@ static uint32_t eval( uint32_t * result, symbol_t * h ) {
  * @param resulting value of term
  * @result error code
  */
-
 static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*next)() ) {
 	symbol_t * oper = NULL ;
 	const char * p = NULL ;
@@ -277,16 +277,8 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 		oper = next() ;
 	s = current()->text ;
 	switch ( current()->type ) {
-	case tDEC :
-		if ( sscanf ( s, "%d", &val ) != 1 )
-			return etEXPR ;
-		break ;
 	case tCHAR :
 		val = convert_char ( &s ) ;
-		break ;
-	case tHEX :
-		if ( sscanf ( s, "%X", &val ) != 1 )
-			return etEXPR ;
 		break ;
 	case tBIN :
 		// parse a binary value
@@ -297,6 +289,57 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 				if ( *p == '1' )
 					val |= 1 ;
 			}
+		}
+		break ;
+	case tOCT :
+		// parse an octal value
+		val = 0 ;
+		for ( p = s ; *p != 0 ; p++ ) {
+            switch ( *p ) {
+            case '0' ... '7' :
+                val = ( val << 3 ) + *p -'0' ;
+                break ;
+            case '_' :
+                break ;
+            default :
+                return etEXPR ;
+			}
+		}
+		break ;
+	case tDEC :
+		// parse a decimal value
+		val = 0 ;
+		for ( p = s ; *p != 0 ; p++ ) {
+            switch ( *p ) {
+            case '0' ... '9' :
+                val = ( val * 10 ) + *p -'0' ;
+                break ;
+            case '_' :
+                break ;
+            default :
+                return etEXPR ;
+			}
+		}
+		break ;
+	case tHEX :
+		// parse a hexadecimal value
+		val = 0 ;
+		for ( p = s ; *p != 0 ; p++ ) {
+            switch ( *p ) {
+            case '0' ... '9' :
+                val = ( val << 4 ) + *p -'0' ;
+                break ;
+            case 'A' ... 'F' :
+                val = ( val << 4 ) + *p -'A' + 10 ;
+                break ;
+            case 'a' ... 'f' :
+                val = ( val << 4 ) + *p -'a' + 10 ;
+                break ;
+            case '_' :
+                break ;
+            default :
+                return etEXPR ;
+            }
 		}
 		break ;
 	case tIDENT :
@@ -414,10 +457,11 @@ static error_t expr ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 				return etEXPR ;
 			break ;
 		case tOPERATOR :
-		case tDEC :
 		case tCHAR :
-		case tHEX :
 		case tBIN :
+		case tOCT :
+		case tDEC :
+		case tHEX :
 		case tIDENT :
         case tAT :
 			e = term( &val, current, next ) ;
@@ -667,25 +711,45 @@ static error_t build ( void ) {
 					case stPAGE :
 						state = bsEND ;
 						break ;
-						// .ORG
+                    // .ORG
 					case stADDRESS :
 					case stORG :
-						if ( state != bsINIT ) {
+						if ( state != bsINIT )
 							return etSYNTAX ;
-						}
 						tok_next() ;
 						if ( ( e = expression ( &result ) ) == etNONE ) {
-							if ( result >= gCodeRange ) {   // within code range
+							if ( result >= gCodeRange )   // within code range
 								return etRANGE ;
-							}
-							if ( bActive ) {
+							if ( bActive )
 								gPC = result ;
-							}
-						} else {
+						} else
 							return e ;
-						}
 						state = bsEND ;
 						break ;
+                    // .ESG
+					case stESG :
+                        if ( state != bsINIT )
+							return etSYNTAX ;
+						tok_next() ;
+                        if ( bActive )
+                            gSCR = gESG ;
+                        break ;
+                    // .DSG
+					case stDSG :
+                        if ( state != bsINIT )
+							return etSYNTAX ;
+						tok_next() ;
+						if ( ( e = expression ( &result ) ) == etNONE ) {
+							if ( result >= gScrSize ) // within data range
+								return etRANGE ;
+							if ( bActive ) {
+								gESG = gSCR ; // backup
+								gSCR = result ;
+							}
+						} else
+							return e ;
+                        break ;
+
 					case stALIGN :
 						if ( state != bsINIT ) {
 							return etSYNTAX ;
@@ -887,8 +951,7 @@ static error_t build ( void ) {
 						}
 						state = bsEND ;
 						break ;
-					case stSFR :
-						// DS, pBlazIDE support
+                    // DS, pBlazIDE support
 					case stDS :
 					case stDSIN :
 					case stDSOUT :
@@ -1386,25 +1449,43 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						state = bsEND ;
 						break ;
 					case stADDRESS :
-						if ( !bMode ) {
+						if ( !bMode )
 							return etNOTIMPL ;
-						}
 					case stORG :
-						if ( state != bsINIT ) {
+						if ( state != bsINIT )
 							return etSYNTAX ;
-						}
 						if ( ( e = expression ( &result ) ) == etNONE ) {
 							*addr = result ;
-							if ( result >= gCodeRange ) { // within code range
+							if ( result >= gCodeRange ) // within code range
 								return etRANGE ;
-							}
-							if ( bActive ) {
+							if ( bActive )
 								gPC = result ;
-							}
-						} else {
+						} else
 							return e ;
-						}
 						break ;
+                    // .ESG
+					case stESG :
+                        if ( state != bsINIT )
+							return etSYNTAX ;
+                        if ( bActive ) {
+                            gSCR = gESG ;
+							*addr = gSCR ;
+                        }
+                        break ;
+                    case stDSG :
+						if ( state != bsINIT )
+							return etSYNTAX ;
+						if ( ( e = expression ( &result ) ) == etNONE ) {
+							*addr = result ;
+							if ( result >= gScrSize )// within data range
+								return etRANGE ;
+							if ( bActive ) {
+							    gESG = gSCR ; // backup
+								gSCR = result ;
+							}
+						} else
+							return e ;
+                        break ;
 					case stALIGN :
 						if ( state != bsINIT ) {
 							return etSYNTAX ;
@@ -1521,7 +1602,6 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                             return e ;
 						state = bsEND ;
 						break ;
-					case stSFR :
 					case stDS :
 					case stDSIN :
 					case stDSOUT :
@@ -1939,6 +2019,9 @@ static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint
 			switch ( tok_current()->type ) {
 			case tHEX :
 				n += fprintf ( f, "0x%s", tok_current()->text ) ;
+				break ;
+			case tOCT :
+				n += fprintf ( f, "0o%s", tok_current()->text ) ;
 				break ;
 			case tBIN :
 				n += fprintf ( f, "0b%s", tok_current()->text ) ;
