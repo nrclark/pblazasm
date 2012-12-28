@@ -35,6 +35,7 @@ typedef enum _LEX_STATE {
     lsCopy,
     lsError,
     lsHex,
+    lsOct,
     lsHexBin,
     lsIdent,
     lsIdle,
@@ -132,7 +133,7 @@ bool lex( char * line, const bool mode ) {
                 start = s++ ;
                 state = lsCStyleComment ;
             } else if ( *s == '0' ) {
-                // maybe hex or bin
+                // maybe hex, oct or bin
                 start = s++ ;
                 state = lsHexBin ;
             } else if ( isdigit( *s ) ) {
@@ -245,6 +246,9 @@ bool lex( char * line, const bool mode ) {
             if ( *s == 'x' ) {
                 start = ++s ;
                 state = lsHex ;
+            } else if ( *s == 'o' ) {
+                start = ++s ;
+                state = lsOct ;
             } else if ( *s == 'b' ) {
                 start = ++s ;
                 state = lsBin ;
@@ -254,7 +258,7 @@ bool lex( char * line, const bool mode ) {
             break ;
 
         case lsHex :
-            if ( isxdigit( *s ) /* || *s == '_' */ )
+            if ( isxdigit( *s ) || *s == '_'  )
                 s++ ;
             else {
                 end = s ;
@@ -273,8 +277,18 @@ bool lex( char * line, const bool mode ) {
             }
             break ;
 
+        case lsOct :
+            if ( ( *s >= '0' && *s <= '7' ) || *s == '_' )
+                s++ ;
+            else {
+                end = s ;
+                ptok->type = tOCT ;
+                state = lsCopy ;
+            }
+            break ;
+
         case lsDec :
-            if ( isdigit( *s ) )
+            if ( isdigit( *s ) || *s == '_' )
                 s++ ;
             else {
                 end = s ;

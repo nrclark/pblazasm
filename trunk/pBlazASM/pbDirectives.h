@@ -30,7 +30,9 @@ const symbol_t directives[] = {
 	{ tDIRECTIVE, stPAGE,       ".PAG",    { 0 }},
 
 	{ tDIRECTIVE, stSCRATCHPAD, ".SCR",    { 0 }},
-	{ tDIRECTIVE, stSFR,        ".SFR",    { 0 }},
+	{ tDIRECTIVE, stORG,        ".ORG",    { 0 }},
+	{ tDIRECTIVE, stDSG,        ".DSG",    { 0 }},
+	{ tDIRECTIVE, stESG,        ".ESG",    { 0 }},
 
 	{ tDIRECTIVE, stDEF,        ".DEF",    { 0 }},
 	{ tDIRECTIVE, stEQU,        ".EQU",    { 0 }},

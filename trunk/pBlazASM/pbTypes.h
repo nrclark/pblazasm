@@ -46,6 +46,7 @@ typedef enum _TYPE {
 	tHEX,
 	tBIN,
 	tDEC,
+	tOCT,
 	tSTAMP,
 	tPC,
 	tSET
@@ -124,7 +125,8 @@ typedef enum _SUBTYPE {
 	stLONG_LE,
 	stTEXT,
 	stBUFFER,
-	stSFR,
+	stDSG,
+	stESG,
 
 	stIF,
 	stFI,
