@@ -56,6 +56,11 @@ static bool bCode = true ; // list code
 // source
 static char * gSource ; // source filename for error printer
 static int gLinenr = 0 ; // current line number
+static int label_field = 20 ;
+static int opcode_field = 6 ;
+static int comment_column = 60 ;
+static int last_column = 120 ;
+static int indent = 4 ;
 
 // generated code and data
 static uint32_t gCode[ CODESIZE ] ; // code space and scratchpad space (in words)
@@ -68,7 +73,8 @@ static uint32_t oPC = 0 ;
 
 // data
 static uint32_t gSCR = 0 ; // current scratchpad counter
-static uint32_t gESG = 0 ; // current scratchpad counter backup
+static uint32_t gESG[ 256 ] ; // current scratchpad counter backup
+static int pESG = 0 ; // index in backups
 static int32_t gScrLoc = -1 ; // place where scratchpad is in ROM
 static int32_t gScrSize = 0 ; // size of scratchpad
 
@@ -523,36 +529,37 @@ static bool destreg ( uint32_t * result ) {
 static bool srcreg ( uint32_t * result ) {
 	symbol_t * h ;
 	bool bpar = false ;
-	bool retval = true ;
 	symbol_t * back = tok_current() ;
-	if ( result == NULL ) {
+
+	if ( result == NULL )
 		return false ;
-	}
+
+    // allow registers to be embedded in parens, for some obscure reason
 	*result = 0 ;
 	if ( tok_current()->type == tLPAREN ) {
 		bpar = true ;
 		tok_next() ;
 	}
+
 	h = find_symbol ( tok_current()->text, false ) ;
-	if ( h == NULL || h->type != tREGISTER ) {
-		retval = false ;
+	if ( h == NULL || h->type != tREGISTER )
 		goto finally ;
-	}
+
 	*result = h->value.integer << 4 ;
 	tok_next() ;
+
 	if ( bpar ) {
 		if ( tok_current()->type == tRPAREN ) {
 			tok_next() ;
-		} else {
-			retval = false ;
+		} else
 			goto finally ;
-		}
 	}
+	return true ;
+
+    // probably some other constant expression
 finally: {
-		if ( !retval ) {
-			tok_back ( back ) ;
-		}
-		return retval ;
+        tok_back ( back ) ;
+		return false ;
 	}
 }
 
@@ -728,11 +735,20 @@ static error_t build ( void ) {
 						break ;
                     // .ESG
 					case stESG :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
 						tok_next() ;
-                        if ( bActive )
-                            gSCR = gESG ;
+                        if ( symtok != NULL ) {
+                            value.integer = gSCR ;
+                            if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) )
+                                return etDOUBLE ;
+                        }
+                        if ( bActive ) {
+                            if ( pESG == 0 )
+								return etSCRRNG ;
+                            gSCR = gESG[ --pESG ] ;
+                        }
+                        state = bsEND ;
                         break ;
                     // .DSG
 					case stDSG :
@@ -740,10 +756,12 @@ static error_t build ( void ) {
 							return etSYNTAX ;
 						tok_next() ;
 						if ( ( e = expression ( &result ) ) == etNONE ) {
-							if ( result >= gScrSize ) // within data range
-								return etRANGE ;
+							if ( (int)result >= gScrSize ) // within data range
+								return etSCRRNG ;
 							if ( bActive ) {
-								gESG = gSCR ; // backup
+                                if ( pESG == 255 )
+                                    return etSCRRNG ;
+								gESG[ pESG++ ] = gSCR ; // backup
 								gSCR = result ;
 							}
 						} else
@@ -1465,10 +1483,13 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						break ;
                     // .ESG
 					case stESG :
-                        if ( state != bsINIT )
+                        if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
                         if ( bActive ) {
-                            gSCR = gESG ;
+                            if ( pESG == 0 )
+								return etSCRRNG ;
+							*data = gSCR ;
+                            gSCR = gESG[ --pESG ] ;
 							*addr = gSCR ;
                         }
                         break ;
@@ -1477,10 +1498,12 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 							return etSYNTAX ;
 						if ( ( e = expression ( &result ) ) == etNONE ) {
 							*addr = result ;
-							if ( result >= gScrSize )// within data range
+							if ( (int)result >= gScrSize )// within data range
 								return etRANGE ;
 							if ( bActive ) {
-							    gESG = gSCR ; // backup
+                                if ( pESG == 255 )
+                                    return etSCRRNG ;
+                                gESG[ pESG++ ] = gSCR ; // backup
 								gSCR = result ;
 							}
 						} else
@@ -1993,29 +2016,28 @@ static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint
 	}
 	if ( tok_current()->type == tLABEL ) {
 		// labels in the margin
-		n += fprintf ( f, "%*s", -16, tok_next()->text ) ;
+		n += fprintf ( f, "%*s", -label_field, tok_next()->text ) ;
 		n += fprintf ( f, "%s", tok_next()->text ) ;
 	} else if ( tok_current()->subtype == stEQU ) {
 		// print EQUates in the label margin
-		n += fprintf ( f, "%*s", - ( 16 + 1 ), tok_next()->text ) ;
+		n += fprintf ( f, "%*s", - ( label_field + 1 ), tok_next()->text ) ;
 	} else if ( tok_current()->type != tNONE )
 		// else print a blank margin
 	{
-		n += fprintf ( f, "%*s", 16 + 1, "" ) ;
+		n += fprintf ( f, "%*s", label_field + 1, "" ) ;
 	}
 	// opcode
 	if ( tok_current()->type != tNONE && tok_current()->text != NULL ) {
 		for ( s = tok_current()->text ; s != NULL && isalpha ( *s ) ; s++ ) {
 			*s = toupper ( *s ) ;
 		}
-		n += fprintf ( f, " %*s", -6, tok_next()->text ) ;
+		n += fprintf ( f, " %*s", -opcode_field, tok_next()->text ) ;
 	}
 	// operand
 	for ( ; tok_current()->type != tNONE ; tok_next() ) {
 		if ( tok_current()->text != NULL ) {
-			if ( tok_current()->type != tCOMMA ) {
+			if ( tok_current()->type != tCOMMA )
 				n += fprintf ( f, " " ) ;
-			}
 			switch ( tok_current()->type ) {
 			case tHEX :
 				n += fprintf ( f, "0x%s", tok_current()->text ) ;
@@ -2037,17 +2059,19 @@ static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint
 				break ;
 			}
 		}
+		if ( n > last_column )
+            n = fprintf ( f, "\n%*s", 12 + label_field + 1 + opcode_field + indent, "" ) ;
 	}
 	// comment
 	if ( tok_current()->type == tNONE && tok_current()->subtype == stCOMMENT ) {
 		if ( tok_current()->text != NULL ) {
-			if ( n <= 11 )
+			if ( n < 12 )
 				// at the start
 			{
 				fprintf ( f, "%s", tok_current()->text ) ;
-			} else if ( n < 60 ) {
+			} else if ( n < comment_column ) {
 				// at column 60
-				fprintf ( f, "%*s", 60 - n, "" ) ;
+				fprintf ( f, "%*s", comment_column - n, "" ) ;
 				fprintf ( f, "%s", tok_current()->text ) ;
 			} else
 				// after the rest
@@ -2059,27 +2083,43 @@ static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint
 	fprintf ( f, "\n" ) ;
 }
 
+char * file_gets( char * s, int n, FILE * stream ) {
+    char * l = s ;
+
+    do {
+        l = fgets( l, n, stream ) ;
+        if ( l == NULL )
+            return l ;
+        gLinenr += 1 ;
+        // maybe a '\' at the end? if so concatenate
+        while ( *l++ != '\000' )
+            ;
+        l -= 3 ;
+    } while ( *l == '\\' ) ;
+    return s ;
+}
+
 // main entry for the 2-pass assembler
 bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilename, char * listfilename, bool mode, bool b6, bool listcode, bool hex, bool zeros ) {
 	FILE * fsrc = NULL ;
 	FILE * fmem = NULL ;
 	FILE * flist = NULL ;
 	char ** Sources = NULL ;
-	char line[ 256 ] ;
+	char line[ 4096 ] ;
 	error_t e = etNONE ;
 	int h = 0 ;
 	bool result = true ;
 	uint32_t addr, code, data ;
+
 	// set up symbol table with keywords
 	init_symbol ( b6 ) ;
 	// clear code
-	for ( h = 0 ; h < CODESIZE ; h += 1 ) {
+	for ( h = 0 ; h < CODESIZE ; h += 1 )
 		gCode[ h ] = 0xFFFC0000 ;
-	}
 	// clear data
-	for ( h = 0 ; h < DATASIZE ; h += 1 ) {
+	for ( h = 0 ; h < DATASIZE ; h += 1 )
 		gData[ h ] = 0x00 ;
-	}
+
 	Sources = sourcefilenames ;
 	gCodeRange = 1024 ;
 	gPC = 0 ;
@@ -2097,7 +2137,7 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 			goto finally ;
 		}
 		// pass 1, add symbols from source
-		for ( gLinenr = 1 ; fgets ( line, sizeof ( line ), fsrc ) != NULL ; gLinenr += 1 ) {
+		for ( gLinenr = 1 ; file_gets ( line, sizeof ( line ), fsrc ) != NULL ; ) {
 			if ( lex ( line, mode ) ) {
 				result &= error ( build () ) ;
 				tok_free() ;
@@ -2108,9 +2148,8 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 		fclose ( fsrc ) ;
 	}
 	// give up if errors in pass 1
-	if ( !result ) {
+	if ( !result )
 		goto finally ;
-	}
 	if ( strlen ( listfilename ) > 0 ) {
 		flist = fopen ( listfilename, "w" ) ;
 		if ( flist == NULL ) {
@@ -2118,6 +2157,7 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 			result = false ;
 		}
 	}
+
 	bCode = listcode ;
 	Sources = sourcefilenames ;
 	gCodeRange = 1024 ;
@@ -2127,12 +2167,12 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 	gScrSize = 0x100 ;
 	bMode = mode ;
 	bActive = true ;
+
 	if ( bCode ) {
-		if ( b6 ) {
+		if ( b6 )
 			fprintf ( flist, "PB6\n" ) ;
-		} else {
+		else
 			fprintf ( flist, "PB3\n" ) ;
-		}
 	}
 	for ( gSource = *Sources++ ; gSource != NULL ; gSource = *Sources++ ) {
 		fsrc = fopen ( gSource, "r" ) ;
@@ -2143,22 +2183,21 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 		}
 		fprintf ( flist, "---------- source file: %-75s\n", gSource ) ;
 		// pass 2, build code and scratchpad
-		for ( gLinenr = 1 ; fgets ( line, sizeof ( line ), fsrc ) != NULL ; gLinenr += 1 ) {
+		for ( gLinenr = 1 ; file_gets ( line, sizeof ( line ), fsrc ) != NULL ; ) {
 			if ( lex ( line, mode ) ) {
 				result &= error ( e = assemble ( &addr, &code, &data, b6 ) ) ;
-				if ( flist != NULL ) {
+				if ( flist != NULL )
 					print_line ( flist, e, addr, code, data ) ;
-				}
 			} else {
 				result &= error ( etLEX ) ;
-				if ( flist != NULL ) {
+				if ( flist != NULL )
 					print_line ( flist, etLEX, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF ) ;
-				}
 			}
 			tok_free() ;
 		}
 		fclose ( fsrc ) ;
 	}
+
 	// dump scratch pad
 	if ( strlen ( datafilename ) > 0 ) { // We want a separate data file?
 		fmem = fopen ( datafilename, "w" ) ;
@@ -2178,9 +2217,9 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 				fprintf ( stderr, "? data and code overlap at: 0x%03x\n", ( gScrLoc + h ) / 2 ) ;
 			}
 		}
-	} else if ( gSCR > 0 ) {
+	} else if ( gSCR > 0 )
 		fprintf ( stderr, "? data section discarded, no .SCR given\n" ) ;
-	}
+
 	// dump code (and optionally, scratch pad)
 	if ( strlen ( codefilename ) > 0 ) { // We want a code file?
 		fmem = fopen ( codefilename, "w" ) ;
@@ -2193,9 +2232,8 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 		}
 	}
 finally: {
-		if ( flist != NULL ) {
+		if ( flist != NULL )
 			fclose ( flist ) ;
-		}
 		free_symbol() ;
 	}
 	return result ;

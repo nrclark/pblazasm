@@ -50,14 +50,14 @@ typedef enum _LEX_STATE {
 
 // global token list
 static symbol_t tokens[ 256 ] ; // global token list
-static symbol_t * ptok = 0 ; // pointer to current token, index in 'tokens[]'
+static symbol_t * ptok = NULL ; // pointer to current token, index in 'tokens[]'
 
 symbol_t * tok_first( void ) {
     ptok = tokens ;
     return ptok ;
 }
 
-symbol_t * tok_current( void ) {
+inline symbol_t * tok_current( void ) {
 //    printf( "%s\n", ptok->text ) ;
     return ptok ;
 }
@@ -89,8 +89,8 @@ void tok_free( void ) {
 // state machine based lexer
 // tokens are recorded in 'tokens', ended by a NONE token
 bool lex( char * line, const bool mode ) {
-    char * start = NULL, *end = NULL, *s = line ;
-    char term[ 256 ], *pterm = NULL ;
+    static char term[ 4096 ] ;
+    char * start = NULL, * end = NULL, * s = line, * pterm = NULL ;
     LexState_e state = lsInit ;
 
     // state machine

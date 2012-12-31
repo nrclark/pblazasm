@@ -51,24 +51,21 @@ symbol_t stamps[] = {
 } ;
 
 // fast bytewide crc16 (ITU)
-inline void crc16( uint8_t data, uint16_t * crc ) {
+static inline void crc16( uint8_t data, uint16_t * crc ) {
   uint16_t c = ( ( *crc >> 8 ) ^ data ) & 0xff ;
   c ^= c >> 4 ;
-  *crc = ( *crc << 8 ) ^ ( c << 12 ) ^ ( c <<5 ) ^ c ;
+  *crc = ( *crc << 8 ) ^ ( c << 12 ) ^ ( c << 5 ) ^ c ;
 }
 
 //! \fn static uint32_t hash( const char * text )
 //  \param text string to hash
 static uint32_t hash ( const char * text ) {
- //   uint64_t r = 0 ;
     uint16_t crc = 0xFFFF ;
-    int i ;
+    char * p = (char *)text ;
 
-    if ( text != NULL ) {
-        for ( i = 0 ; i < (int)strlen ( text ) ; i += 1 )
-            crc16( text[ i ], &crc ) ;
-//          r ^= 0x9E3779B1 * text[ i ] ;
-//          return r & ( SIZE - 1 ) ;
+    if ( p != NULL ) {
+        while ( *p != 0 )
+            crc16( *p++, &crc ) ;
         return crc & ( SIZE - 1 ) ;
     } else
         return 0xFFFFFFFF ;
@@ -146,7 +143,7 @@ symbol_t * find_symbol ( const char * text, bool bUpper ) {
         *s = toupper ( *s ) ;
 
     // compute 1st entry
-    p = hash ( buf ) ;
+    p = hash( buf ) ;
     if ( p == 0xFFFFFFFF )
         return NULL ;
     // if empty spot, not found
@@ -168,7 +165,7 @@ symbol_t * find_symbol ( const char * text, bool bUpper ) {
 // add a symbol, rehashing is by linear probing
 // returns false if we want to add an already known symbol
 bool add_symbol ( const type_e type, const subtype_e subtype, const char * text, const value_t value ) {
-    uint32_t p = hash ( text ) ;
+    uint32_t p = hash( text ) ;
     int h = p ;
 
     if ( p == 0xFFFFFFFF )
@@ -193,16 +190,15 @@ bool add_symbol ( const type_e type, const subtype_e subtype, const char * text,
 }
 
 // dump the recorded symbols
-#ifdef DEBUG
+#ifdef _DEBUG_
 void dump_map ( void ) {
-    int h = 0 ;
+    unsigned int h = 0 ;
     int count = 0 ;
 
     for ( h = 0 ; h < SIZE ; h += 1 )
         if ( symbols[ h ].type != tNONE && symbols[ h ].text != NULL )
             printf (
-                "%d-%d: %s, v:%d, tp:%d, sb:%d\n", h, count += 1, symbols[ h ].text, symbols[ h ].value.integer, symbols[ h ].type,
-                symbols[ h ].subtype ) ;
+                "%4d-%5d: %-64s, v:0x%08x, tp:%2d, sb:%2d\n", count += 1, h, symbols[ h ].text, symbols[ h ].value.integer, symbols[ h ].type, symbols[ h ].subtype ) ;
 }
 #endif
 
@@ -210,6 +206,9 @@ void dump_map ( void ) {
 void free_symbol ( void ) {
     int h, i, c = 0 ;
 
+#ifdef _DEBUG_MAP_
+    dump_map();
+#endif
     for ( h = 0 ; h < (int)SIZE ; h += 1 ) {
         if ( symbols[ h ].type != tNONE )
             c += 1 ;
