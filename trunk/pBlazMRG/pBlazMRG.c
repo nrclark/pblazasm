@@ -31,13 +31,21 @@
 #include "getopt.h"
 #endif
 
+#include "version.h"
+
 #define MAXMEM	4096
 #define MAXFILES 16
 
 uint32_t Code[ MAXMEM ] ;
 
 static void usage( char * text ) {
-	printf( "\n%s - %s\n", text, "Picoblaze Assembler merge utility V2.2" ) ;
+	printf ( "\n%s - Picoblaze Assembler merge utility V%ld.%ld.%ld (%s) (c) 2012 Henk van Kampen\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
+
+    printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n"  ) ;
+    printf ( "This is free software, and you are welcome to redistribute it\n"  ) ;
+    printf ( "under certain conditions. See <http://www.gnu.org/licenses/>\n"  ) ;
+
+
 	printf( "\nUSAGE:\n" ) ;
 	printf( "   pBlazMRG [-v] [-s<MEM data inputfile>[+offset]]* [-c<MEM code inputfile>[+offset]]* -e<entity_name> -t<TPL inputfile> <ROM outputfile>\n"
              "   where:\n"

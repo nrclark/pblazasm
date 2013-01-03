@@ -11,7 +11,7 @@
 				<Option object_output="obj\Debug\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="-etest C:\SVN\pBlzASM6\pBlzASM6_Syntax.mem ROM_form_S6_2K_16Sept10.vhd S6_2k.vhd  " />
+				<Option parameters="-q -etest C:\SVN\pBlzASM6\pBlzASM6_Syntax.mem ROM_form_S6_2K_16Sept10.vhd S6_2k.vhd  " />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
@@ -32,20 +32,33 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="S6_2k.vhd" />
+		<Unit filename="S6_2k.vhd">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="getopt.c">
 			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
-		<Unit filename="getopt.h" />
+		<Unit filename="getopt.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="pBlazMRG.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="pbLibgen.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="version.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />
+			<AutoVersioning>
+				<Scheme minor_max="10" build_max="0" rev_max="0" rev_rand_max="10" build_times_to_increment_minor="100" />
+				<Settings autoincrement="1" date_declarations="1" do_auto_increment="0" ask_to_increment="0" language="C" svn="0" svn_directory="" header_path="version.h" />
+				<Changes_Log show_changes_editor="0" app_title="released version %M.%m.%b of %p" changeslog_path="ChangesLog.txt" />
+				<Code header_guard="VERSION_H" namespace="AutoVersion" prefix="" />
+			</AutoVersioning>
+			<envvars />
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>
