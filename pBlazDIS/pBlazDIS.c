@@ -31,6 +31,8 @@
 #include "getopt.h"
 #endif
 
+#include "version.h"
+
 #define MAXMEM 4096
 #define MAXSCR 256
 
@@ -46,7 +48,12 @@ INST_t Code[ MAXMEM ] ;
 uint32_t Data[ MAXSCR ] ;
 
 static void usage ( char * text ) {
-    printf ( "\n%s - %s\n", text, "Picoblaze Disassembler utility V2.3" ) ;
+	printf ( "\n%s - Picoblaze Disassembler V%ld.%ld.%ld (%s) (c) 2012 Henk van Kampen\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
+
+    printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n"  ) ;
+    printf ( "This is free software, and you are welcome to redistribute it\n"  ) ;
+    printf ( "under certain conditions. See <http://www.gnu.org/licenses/>\n"  ) ;
+
     printf ( "\nUSAGE:\n" ) ;
     printf ( "   pBlazDIS [-3|-6]  [-p] [-v] [-x] [-n] -c<MEM code inputfile> -s<MEM data inputfile> <PSM/VHD outputfile>\n" ) ;
     printf ( "   where:\n"
