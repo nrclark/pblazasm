@@ -1,17 +1,18 @@
 
 ## defines
 
-RM = "C:/MinGW/msys/1.0/bin/rm"
-MP = "C:/MinGW/include"
-CC = "C:/MinGW/bin/gcc"
+RM = "rm"
+MP = "C:/MinGW32/include"
+CC = "gcc"
 
 C_SRCS += \
 ./pBlazASM.c \
 ./pbLexer.c \
 ./pbLibgen.c \
 ./pbParser.c \
-./pbSymbols.c \
-./getopt.c
+./pbSymbols.c
+
+#./getopt.c
 
 EXE = "./pBlazASM.exe"
 OBJS = $(C_SRCS:.c=.o)

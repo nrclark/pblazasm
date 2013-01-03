@@ -11,7 +11,7 @@
 				<Option object_output="obj\Debug\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="-3 -l -s test" />
+				<Option parameters="-h" />
 				<Compiler>
 					<Add option="-Wextra" />
 					<Add option="-Wall" />
@@ -28,7 +28,7 @@
 				<Option object_output="obj\Release\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="-6 -l test" />
+				<Option parameters="-h" />
 				<Compiler>
 					<Add option="-Wextra" />
 					<Add option="-Wall" />
