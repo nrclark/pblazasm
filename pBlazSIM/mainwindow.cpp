@@ -42,7 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi( this ) ;
 
-    this->setWindowTitle( "pBlazSIM V1.5 (Qt4.8.4) - http://www.mediatronix.com" ) ;
+    this->setWindowTitle( "pBlazSIM V1.6 (Qt4.8.4) - http://www.mediatronix.com" ) ;
     this->setWindowIcon(QIcon(":/files/bug_red.ico"));
 
     // font used for all views
@@ -835,7 +835,10 @@ void MainWindow::setScriptValue(uint32_t address, uint32_t value) {
 }
 
 void MainWindow::on_actionAbout_triggered() {
-    QMessageBox::about( this, "pBlazSIM", windowTitle() ) ;
+    QMessageBox::about( this, "pBlazSIM", windowTitle() +
+                        "\n\nThis program comes with ABSOLUTELY NO WARRANTY." +
+                        "\nThis is free software, and you are welcome to redistribute it" +
+                        "\nunder certain conditions. See <http://www.gnu.org/licenses/>" ) ;
 }
 
 void MainWindow::on_actionAbout_Qt_triggered() {
