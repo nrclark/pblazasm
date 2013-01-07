@@ -131,7 +131,7 @@ bool loadSCR ( const char * strDatafile, const int offset ) {
 			addr += 1 ;
 		}
 	}
-	pad_size = addr ;
+	pad_size = 256 ;
 
 	fclose ( infile ) ;
 	return true ;
@@ -192,7 +192,7 @@ void checkPB6 ( int pc ) {
 		case 0x2B000 ... 0x2BFFF :
 		case 0x08000 ... 0x08FFF :
 		case 0x09000 ... 0x09FFF :
-			if ( bank_size <= DestReg ( code ) )
+			if ( bank_size <= (int)DestReg ( code ) )
 				bank_size = DestReg ( code ) + 1 ;
 
 			Code[ pc ].breadcrum = true ;
@@ -221,7 +221,7 @@ void checkPB6 ( int pc ) {
 			case 0x0F :
 			case 0x08 :
 			case 0x0A :
-				if ( bank_size <= DestReg ( code ) )
+				if ( bank_size <= (int)DestReg ( code ) )
 					bank_size = DestReg ( code ) + 1 ;
 
 				Code[ pc ].breadcrum = true ;
@@ -266,7 +266,7 @@ void checkPB6 ( int pc ) {
 
 // RET sX, KK
 		case 0x25000 ... 0x25FFF :
-			if ( bank_size <= DestReg ( code ) )
+			if ( bank_size <= (int)DestReg ( code ) )
 				bank_size = DestReg ( code ) + 1 ;
 // RET, RETI
 		case 0x29000 ... 0x29001 :
