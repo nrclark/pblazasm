@@ -1,0 +1,247 @@
+# depslib dependency file v1.0
+1345190418 source:/home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/pBlazASM.c
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<malloc.h>
+	<unistd.h>
+	"pbTypes.h"
+	"pbParser.h"
+	"pbLibgen.h"
+	"getopt.h"
+	"version.h"
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<malloc.h>
+	<unistd.h>
+	"pbTypes.h"
+	"pbParser.h"
+	"pbLibgen.h"
+	"getopt.h"
+	"version.h"
+
+1345190418 "
+
+1344860232 /home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/pbTypes.h
+
+1344860232 /home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/pbParser.h
+
+1344860232 /home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/pbLibgen.h
+
+1344860232 /home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/getopt.h
+
+1345189833 /home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/version.h
+
+1344860232 source:/home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/pbLexer.c
+	<ctype.h>
+	<string.h>
+	<stdint.h>
+	<stdlib.h>
+	"pbTypes.h"
+	"pbErrors.h"
+	<ctype.h>
+	<string.h>
+	<stdint.h>
+	<stdlib.h>
+	"pbTypes.h"
+	"pbErrors.h"
+
+1345190310 h"
+
+1344860232 /home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/pbErrors.h
+
+1344860232 source:/home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/pbLibgen.c
+	<stdlib.h>
+	<string.h>
+	<stdlib.h>
+	<string.h>
+
+1344860232 
+
+1344860232 source:/home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/pbSymbols.c
+	<malloc.h>
+	<stdio.h>
+	<ctype.h>
+	<stdint.h>
+	<string.h>
+	<time.h>
+	"pbTypes.h"
+	"pbSymbols.h"
+	"pbOpcodes.h"
+	"pbDirectives.h"
+	<malloc.h>
+	<stdio.h>
+	<ctype.h>
+	<stdint.h>
+	<string.h>
+	<time.h>
+	"pbTypes.h"
+	"pbSymbols.h"
+	"pbOpcodes.h"
+	"pbDirectives.h"
+
+1344860232 ves.h"
+
+1344860232 /home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/pbSymbols.h
+
+1345196458 /home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/pbOpcodes.h
+
+1344860232 /home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/pbDirectives.h
+
+1345190310 source:/home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/pbParser.c
+	<stdlib.h>
+	<stdio.h>
+	<ctype.h>
+	<stdint.h>
+	<string.h>
+	"pbTypes.h"
+	"pbSymbols.h"
+	"pbLexer.h"
+	"pbErrors.h"
+	<stdlib.h>
+	<stdio.h>
+	<ctype.h>
+	<stdint.h>
+	<string.h>
+	"pbTypes.h"
+	"pbSymbols.h"
+	"pbLexer.h"
+	"pbErrors.h"
+
+1344860232 /home/henk/Insync/mediatronix@gmail.com/SVN/pBlazASM/pbLexer.h
+
+1344860232 source:c:\users\henk\google drive\svn\pblazasm\pblexer.c
+	<ctype.h>
+	<string.h>
+	<stdint.h>
+	<stdlib.h>
+	"pbTypes.h"
+	"pbErrors.h"
+
+1344860232 c:\users\henk\google drive\svn\pblazasm\pbtypes.h
+
+1344860232 c:\users\henk\google drive\svn\pblazasm\pberrors.h
+
+1344860232 source:c:\users\henk\google drive\svn\pblazasm\pblibgen.c
+	<stdlib.h>
+	<string.h>
+
+1344860232 source:c:\users\henk\google drive\svn\pblazasm\pbsymbols.c
+	<malloc.h>
+	<stdio.h>
+	<ctype.h>
+	<stdint.h>
+	<string.h>
+	<time.h>
+	"pbTypes.h"
+	"pbSymbols.h"
+	"pbOpcodes.h"
+	"pbDirectives.h"
+
+1344860232 c:\users\henk\google drive\svn\pblazasm\pbsymbols.h
+
+1345196458 c:\users\henk\google drive\svn\pblazasm\pbopcodes.h
+
+1344860232 c:\users\henk\google drive\svn\pblazasm\pbdirectives.h
+
+1345190418 source:c:\users\henk\google drive\svn\pblazasm\pblazasm.c
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<malloc.h>
+	<unistd.h>
+	"pbTypes.h"
+	"pbParser.h"
+	"pbLibgen.h"
+	"getopt.h"
+	"version.h"
+
+1344860232 c:\users\henk\google drive\svn\pblazasm\pbparser.h
+
+1344860232 c:\users\henk\google drive\svn\pblazasm\pblibgen.h
+
+1344860232 c:\users\henk\google drive\svn\pblazasm\getopt.h
+
+1345189833 c:\users\henk\google drive\svn\pblazasm\version.h
+
+1345190310 source:c:\users\henk\google drive\svn\pblazasm\pbparser.c
+	<stdlib.h>
+	<stdio.h>
+	<ctype.h>
+	<stdint.h>
+	<string.h>
+	"pbTypes.h"
+	"pbSymbols.h"
+	"pbLexer.h"
+	"pbErrors.h"
+
+1344860232 c:\users\henk\google drive\svn\pblazasm\pblexer.h
+
+1357312157 source:c:\users\henk\google_drive\svn\pblazasm\pblexer.c
+	<ctype.h>
+	<string.h>
+	<stdint.h>
+	<stdlib.h>
+	"pbTypes.h"
+	"pbErrors.h"
+
+1357312157 c:\users\henk\google_drive\svn\pblazasm\pbtypes.h
+
+1357312208 c:\users\henk\google_drive\svn\pblazasm\pberrors.h
+
+1357312208 source:c:\users\henk\google_drive\svn\pblazasm\pblibgen.c
+	<stdlib.h>
+	<string.h>
+
+1357312157 source:c:\users\henk\google_drive\svn\pblazasm\pbparser.c
+	<stdlib.h>
+	<stdio.h>
+	<ctype.h>
+	<stdint.h>
+	<string.h>
+	"pbTypes.h"
+	"pbSymbols.h"
+	"pbLexer.h"
+	"pbErrors.h"
+
+1357312208 c:\users\henk\google_drive\svn\pblazasm\pbsymbols.h
+
+1357312157 c:\users\henk\google_drive\svn\pblazasm\pblexer.h
+
+1357312834 source:c:\users\henk\google_drive\svn\pblazasm\pbsymbols.c
+	<malloc.h>
+	<stdio.h>
+	<ctype.h>
+	<stdint.h>
+	<string.h>
+	<time.h>
+	"pbTypes.h"
+	"pbSymbols.h"
+	"pbOpcodes.h"
+	"pbDirectives.h"
+
+1357312157 c:\users\henk\google_drive\svn\pblazasm\pbopcodes.h
+
+1357312157 c:\users\henk\google_drive\svn\pblazasm\pbdirectives.h
+
+1357312157 source:c:\users\henk\google_drive\svn\pblazasm\pblazasm.c
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<malloc.h>
+	<unistd.h>
+	"pbTypes.h"
+	"pbParser.h"
+	"pbLibgen.h"
+	"getopt.h"
+	"version.h"
+
+1357312208 c:\users\henk\google_drive\svn\pblazasm\pbparser.h
+
+1357312208 c:\users\henk\google_drive\svn\pblazasm\pblibgen.h
+
+1344856632 c:\users\henk\google_drive\svn\pblazasm\getopt.h
+
+1357311268 c:\users\henk\google_drive\svn\pblazasm\version.h
+

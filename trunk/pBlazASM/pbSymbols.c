@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2003..2013 : Henk van Kampen <henk@mediatronix.com>
  *
  *  This file is part of pBlazASM.
  *
@@ -46,8 +46,8 @@ symbol_t stamps[] = {
     { tVALUE, stMONTH,   "__month__",   {4} },
     { tVALUE, stDAY,     "__day__",     {5} },
 
-    { tVALUE, stSTRING,   "__time__",   {0} },
-    { tVALUE, stSTRING,   "__date__",   {0} }
+    { tVALUE, stSTRING,  "__time__",    {0} },
+    { tVALUE, stSTRING,  "__date__",    {0} }
 } ;
 
 // fast bytewide crc16 (ITU)
@@ -56,6 +56,8 @@ static inline void crc16( uint8_t data, uint16_t * crc ) {
   c ^= c >> 4 ;
   *crc = ( *crc << 8 ) ^ ( c << 12 ) ^ ( c << 5 ) ^ c ;
 }
+
+
 
 //! \fn static uint32_t hash( const char * text )
 //  \param text string to hash

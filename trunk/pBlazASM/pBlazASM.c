@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2003..2013 : Henk van Kampen <henk@mediatronix.com>
  *
  *  This file is part of pBlazASM.
  *
@@ -37,12 +37,18 @@
 #endif
 
 #include "version.h"
+
+static void print_version( char * text ) {
+	printf ( "\n%s - Picoblaze Assembler V%ld.%ld.%ld (%s) (c) 2003-2013 Henk van Kampen\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
+}
+
+
 /**
  * usage prints usage text
  * @param text application name
  */
 static void usage ( char * text ) {
-	printf ( "\n%s - Picoblaze Assembler V%ld.%ld.%ld (%s) (c) 2012 Henk van Kampen\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
+    print_version( text ) ;
 
     printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n"  ) ;
     printf ( "This is free software, and you are welcome to redistribute it\n"  ) ;
@@ -211,7 +217,7 @@ int main ( int argc, char ** argv ) {
 	}
 
 	if ( bVerbose ) {
-        printf ( "\n%s - Picoblaze Assembler V%ld.%ld.%ld (%s)\n", basename ( argv[ 0 ] ), MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
+        print_version( basename ( argv[ 0 ] ) ) ;
 		if ( bKCPSM6 ) {
 			printf ( "! PB6 option chosen\n" ) ;
 		} else {
