@@ -254,7 +254,7 @@ bool Picoblaze::stepPB6 ( void ) {
         break ;
     case 0x0E000 ... 0x0EFFF : // TSTC sX, sY
         t = registers[ bank ][ DestReg ( c ) ].value & registers[ bank ][ SrcReg ( c ) ].value ;
-        zero = ( t & 0xFF ) == 0 && zero ;
+        zero = ( ( t & 0xFF ) == 0 ) & zero ;
         t ^= t >> 4 ;
         t ^= t >> 2 ;
         t ^= t >> 1;
@@ -262,7 +262,7 @@ bool Picoblaze::stepPB6 ( void ) {
         break ;
     case 0x0F000 ... 0x0FFFF : // TSTC sX, K
         t = registers[ bank ][ DestReg ( c ) ].value & Constant ( c ) ;
-        zero = ( t & 0xFF ) == 0 && zero ;
+        zero = ( ( t & 0xFF ) == 0 ) & zero ;
         t ^= t >> 4 ;
         t ^= t >> 2 ;
         t ^= t >> 1 ;
@@ -291,7 +291,10 @@ bool Picoblaze::stepPB6 ( void ) {
         t = registers[ bank ][ DestReg ( c ) ].value + registers[ bank ][ SrcReg ( c ) ].value + ( carry ? 1 : 0 ) ;
         registers[ bank ][ DestReg ( c ) ].value = t & 0xFF ;
         registers[ bank ][ DestReg ( c ) ].defined = true ;
-        zero = ( t & 0xFF ) == 0 ;
+        if ( c & 0x100000 )
+            zero = ( t & 0xFF ) == 0 ;
+        else
+            zero = ( ( t & 0xFF ) == 0 ) & zero ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
     case 0x13000 ... 0x13FFF : // ADDC sX, K
@@ -299,7 +302,10 @@ bool Picoblaze::stepPB6 ( void ) {
         t = registers[ bank ][ DestReg ( c ) ].value + Constant ( c ) + ( carry ? 1 : 0 ) ;
         registers[ bank ][ DestReg ( c ) ].value = t & 0xFF ;
         registers[ bank ][ DestReg ( c ) ].defined = true ;
-        zero = ( t & 0xFF ) == 0 ;
+        if ( c & 0x100000 )
+            zero = ( t & 0xFF ) == 0 ;
+        else
+            zero = ( ( t & 0xFF ) == 0 ) & zero ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
 
@@ -325,7 +331,10 @@ bool Picoblaze::stepPB6 ( void ) {
         t = registers[ bank ][ DestReg ( c ) ].value - registers[ bank ][ SrcReg ( c ) ].value - ( carry ? 1 : 0 )  ;
         registers[ bank ][ DestReg ( c ) ].value = t & 0xFF ;
         registers[ bank ][ DestReg ( c ) ].defined = true ;
-        zero = ( t & 0xFF ) == 0 ;
+        if ( c & 0x100000 )
+            zero = ( t & 0xFF ) == 0 ;
+        else
+            zero = ( ( t & 0xFF ) == 0 ) & zero ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
     case 0x1B000 ... 0x1BFFF : // SUBC sX, K
@@ -333,7 +342,10 @@ bool Picoblaze::stepPB6 ( void ) {
         t = registers[ bank ][ DestReg ( c ) ].value - Constant ( c ) - ( carry ? 1 : 0 ) ;
         registers[ bank ][ DestReg ( c ) ].value = t & 0xFF ;
         registers[ bank ][ DestReg ( c ) ].defined = true ;
-        zero = ( t & 0xFF ) == 0 ;
+        if ( c & 0x100000 )
+            zero = ( t & 0xFF ) == 0 ;
+        else
+            zero = ( ( t & 0xFF ) == 0 ) & zero ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
 
@@ -351,12 +363,18 @@ bool Picoblaze::stepPB6 ( void ) {
         break ;
     case 0x1E000 ... 0x1EFFF : // CMPC sX, sY
         t = registers[ bank ][ DestReg ( c ) ].value - registers[ bank ][ SrcReg ( c ) ].value - ( carry ? 1 : 0 )  ;
-        zero = ( t & 0xFF ) == 0 ;
+        if ( c & 0x100000 )
+            zero = ( t & 0xFF ) == 0 ;
+        else
+            zero = ( ( t & 0xFF ) == 0 ) & zero ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
     case 0x1F000 ... 0x1FFFF : // CMPC sX, K
         t = registers[ bank ][ DestReg ( c ) ].value - Constant ( c ) - ( carry ? 1 : 0 ) ;
-        zero = ( t & 0xFF ) == 0 ;
+        if ( c & 0x100000 )
+            zero = ( t & 0xFF ) == 0 ;
+        else
+            zero = ( ( t & 0xFF ) == 0 ) & zero ;
         carry = ( ( t >> 8 ) & 1 ) == 1 ;
         break ;
 
