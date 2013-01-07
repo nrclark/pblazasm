@@ -13,6 +13,8 @@
 				<Option compiler="gcc" />
 				<Option parameters="-v -cpblazbit -spblazbit test.vhd" />
 				<Compiler>
+					<Add option="-Wextra" />
+					<Add option="-Wall" />
 					<Add option="-g" />
 				</Compiler>
 			</Target>
@@ -34,21 +36,32 @@
 		</Compiler>
 		<Unit filename="getopt.c">
 			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
-		<Unit filename="getopt.h" />
+		<Unit filename="getopt.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="pBlazPCR.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="pbLibgen.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="pbLibgen.h" />
+		<Unit filename="pbLibgen.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="pbPicoCore.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="pbPicoCore.h" />
-		<Unit filename="pbTypes.h" />
-		<Unit filename="version.h" />
+		<Unit filename="pbPicoCore.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="pbTypes.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="version.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Extensions>
 			<AutoVersioning>
 				<Scheme minor_max="10" build_max="0" rev_max="0" rev_rand_max="10" build_times_to_increment_minor="100" />
