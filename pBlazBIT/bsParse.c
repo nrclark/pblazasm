@@ -533,6 +533,7 @@ bool parse_packets6 ( void ) {
     return result ;
 }
 
+#ifdef _DEBUG_
 void show_file ( void ) {
     int i, j, k ;
     FILE * outfile ;
@@ -690,8 +691,9 @@ void show_file ( void ) {
     }
     fclose ( outfile ) ;
 }
+#endif
 
-bool merge_code ( uint16_t * code, int len, int nr, bool bVerbose ) {
+bool merge_code ( uint16_t * code, int len, int nr, int bVerbose ) {
     int i, j, n, s ;
     uint16_t data, * packet, * p ;
     int state ;
@@ -701,7 +703,7 @@ bool merge_code ( uint16_t * code, int len, int nr, bool bVerbose ) {
     n = 0 ;
     for ( i = 0 ; i < bit_file.count ; i += 1 ) {
         if ( bit_file.packets6[ i ].header == 0x5060 ) {
-            if ( bVerbose ) {
+            if ( bVerbose > 0 ) {
                 printf ( "! using bulk packet# %d\n", i ) ;
             }
             state = -1 ;
@@ -1070,7 +1072,7 @@ void build_packets ( void ) {
     }
 }
 
-bool parse_file ( const char * strBitfile, BitStreamType_e bsType, bool bVerbose ) {
+bool parse_file ( const char * strBitfile, BitStreamType_e bsType, int bVerbose ) {
     bool result = true ;
     size_t nSize ;
     uint32_t sync ;
@@ -1162,10 +1164,11 @@ bool parse_file ( const char * strBitfile, BitStreamType_e bsType, bool bVerbose
         break;
     }
 
+#ifdef _DEBUG_
 // report
-    if ( result && bVerbose ) {
+    if ( result && ( bVerbose > 1 ) )
         show_file() ;
-    }
+#endif
 
     free ( pRaw ) ;
     fclose ( infile ) ;

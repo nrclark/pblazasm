@@ -439,8 +439,8 @@ typedef struct _SpartanBitfile {
     } ;
 } SpartanBitfile_t ;
 
-bool parse_file ( const char * strBitfile, BitStreamType_e bsType, bool bVerbose ) ;
-bool merge_code ( uint16_t * code, int len, int nr, bool bVerbose ) ;
+bool parse_file ( const char * strBitfile, BitStreamType_e bsType, int bVerbose ) ;
+bool merge_code ( uint16_t * code, int len, int nr, int bVerbose ) ;
 bool write_file ( const char * strBitfile ) ;
 bool get_code ( uint16_t * code, uint32_t * p, int len ) ;
 

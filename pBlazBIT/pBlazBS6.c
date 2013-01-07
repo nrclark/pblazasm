@@ -34,6 +34,7 @@
 #endif
 
 #include "bsParse.h"
+#include "version.h"
 
 #define MAXMEM  1024
 
@@ -41,7 +42,12 @@ uint16_t Data[ MAXMEM * 18 / 16 ] ;
 
 
 static void usage ( char * text ) {
-    printf ( "\n%s - %s\n", text, "Picoblaze Assembler bitstream update utility V0.2" ) ;
+	printf ( "\n%s - Picoblaze Assembler bitstream update utility V%ld.%ld.%ld (%s) (c) 2012 Henk van Kampen\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
+
+    printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n"  ) ;
+    printf ( "This is free software, and you are welcome to redistribute it\n"  ) ;
+    printf ( "under certain conditions. See <http://www.gnu.org/licenses/>\n"  ) ;
+
     printf ( "\nUSAGE:\n" ) ;
     printf ( "   pBlazBIT -3|-3a|-3e|-6 [-v] -b<nr_blockram> -c<MEM code inputfile> [-s<MEM data inputfile] -o<BIT outputfile> <BIT inputfile>\\n" ) ;
 }
@@ -138,7 +144,7 @@ int main ( int argc, char * argv[] ) {
     char dest_filename[ 256 ] = { '\0' } ;
 
     bool bOptErr = false ;
-    bool bVerbose = false ;
+    int bVerbose = 0 ;
     BitStreamType_e bsType = bstSpartan6 ;
 
     extern char * optarg ;
@@ -176,7 +182,7 @@ int main ( int argc, char * argv[] ) {
             bOptErr = true ;
             break ;
         case 'v' :
-            bVerbose = true ;
+            bVerbose += 1 ;
             break ;
         case '3' :
             bsType = bstSpartan3 ;
@@ -184,12 +190,12 @@ int main ( int argc, char * argv[] ) {
                 switch ( optarg[ 0 ] ) {
                 case 'a' :
                     bsType = bstSpartan3a ;
-                    if ( bVerbose )
+                    if ( bVerbose > 0 )
                         printf ( "! Spartan-3a selected\n" ) ;
                     break ;
                 case 'e' :
                     bsType = bstSpartan3e ;
-                    if ( bVerbose )
+                    if ( bVerbose > 0 )
                         printf ( "! Spartan-3e selected\n" ) ;
                     break ;
                 default :
@@ -202,7 +208,7 @@ int main ( int argc, char * argv[] ) {
             break ;
         case '6' :
             bsType = bstSpartan6 ;
-            if ( bVerbose )
+            if ( bVerbose > 0 )
                 printf ( "! Spartan-6 selected\n" ) ;
             break ;
         case ':' :
@@ -221,7 +227,7 @@ int main ( int argc, char * argv[] ) {
         exit ( -1 ) ;
     }
 
-// bitstream filename
+    // bitstream filename
     if ( argv[ optind ] == NULL ) {
         fprintf ( stderr, "? bitstream file missing\n" ) ;
         usage ( basename ( argv[ 0 ] ) ) ;
@@ -232,28 +238,28 @@ int main ( int argc, char * argv[] ) {
     if ( strlen ( source_filename ) > 0 ) {
         if ( strrchr ( source_filename, '.' ) == NULL )
             strcat ( source_filename, ".bit" ) ;
-        if ( bVerbose )
+        if ( bVerbose > 0 )
             printf ( "! source bitstream file: %s\n", source_filename ) ;
     }
 
     if ( strlen ( dest_filename ) > 0 ) {
         if ( strrchr ( dest_filename, '.' ) == NULL )
             strcat ( dest_filename, ".bit" ) ;
-        if ( bVerbose )
+        if ( bVerbose > 0 )
             printf ( "! destination bitstream file: %s\n", dest_filename ) ;
     }
 
     if ( strlen ( code_filename ) > 0 ) {
         if ( strrchr ( code_filename, '.' ) == NULL )
             strcat ( code_filename, ".mem" ) ;
-        if ( bVerbose )
+        if ( bVerbose > 0 )
             printf ( "! code MEM file: %s\n", code_filename ) ;
     }
 
     if ( strlen ( data_filename ) > 0 ) {
         if ( strrchr ( data_filename, '.' ) == NULL )
             strcat ( data_filename, ".scr" ) ;
-        if ( bVerbose )
+        if ( bVerbose > 0 )
             printf ( "! data MEM file: %s\n", data_filename ) ;
     }
 
