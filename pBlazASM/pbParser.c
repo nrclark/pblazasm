@@ -1,6 +1,6 @@
 
 /*
- *  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2003..2013 : Henk van Kampen <henk@mediatronix.com>
  *
  *  This file is part of pBlazASM.
  *
@@ -229,9 +229,8 @@ static char convert_char ( char * * p ) {
  */
 static char * convert_string ( char * s ) {
 	char * r = calloc ( 1, 256 ), *p ;
-	for ( p = r ; *s != '\0' ; ) {
+	for ( p = r ; *s != '\0' ; )
 		*p++ = convert_char ( &s ) ;
-	}
 	*p++ = '\0' ;
 	return r ;
 }
@@ -1369,23 +1368,27 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						}
 						break ;
 					case stIO6 :
-						if ( !destreg ( &operand1 ) ) {
+						if ( !destreg ( &operand1 ) )
 							return etREGISTER ;
-						}
-						if ( !comma() ) {
+						if ( !comma() )
 							return etCOMMA ;
-						}
 						if ( !srcreg ( &operand2 ) ) {
 							if ( !indexed ( &operand2 ) ) {
-								if ( ( e = expression ( &operand2 ) ) != etNONE ) {
+								if ( ( e = expression ( &operand2 ) ) != etNONE )
 									return e ;
-								}
 								opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) | 0x01000 ;
-							} else {
+							} else
 								opcode = h->value.integer | operand1 | operand2 ;
-							}
 						} else {
 							opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) ;
+                            if ( comma() ) {
+								if ( ( e = expression ( &operand2 ) ) != etNONE )
+									return e ;
+                                if ( 0 < operand2 && operand2 < 15 )
+                                    opcode |= operand2 ;
+                                else
+                                    return etOVERFLOW ;
+                            }
 						}
 						break ;
 					case stSHIFT :
@@ -2137,7 +2140,7 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 			goto finally ;
 		}
 		// pass 1, add symbols from source
-		for ( gLinenr = 1 ; file_gets ( line, sizeof ( line ), fsrc ) != NULL ; ) {
+		for ( gLinenr = 0 ; file_gets ( line, sizeof ( line ), fsrc ) != NULL ; ) {
 			if ( lex ( line, mode ) ) {
 				result &= error ( build () ) ;
 				tok_free() ;
@@ -2183,7 +2186,7 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 		}
 		fprintf ( flist, "---------- source file: %-75s\n", gSource ) ;
 		// pass 2, build code and scratchpad
-		for ( gLinenr = 1 ; file_gets ( line, sizeof ( line ), fsrc ) != NULL ; ) {
+		for ( gLinenr = 0 ; file_gets ( line, sizeof ( line ), fsrc ) != NULL ; ) {
 			if ( lex ( line, mode ) ) {
 				result &= error ( e = assemble ( &addr, &code, &data, b6 ) ) ;
 				if ( flist != NULL )
