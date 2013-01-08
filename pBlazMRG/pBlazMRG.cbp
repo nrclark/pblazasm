@@ -4,23 +4,27 @@
 	<Project>
 		<Option title="pBlazMRG" />
 		<Option pch_mode="2" />
-		<Option compiler="gcc" />
+		<Option compiler="clang_compiler" />
 		<Build>
 			<Target title="Debug">
 				<Option output="bin\Debug\pBlazMRG" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj\Debug\" />
 				<Option type="1" />
-				<Option compiler="gcc" />
+				<Option compiler="clang_compiler" />
 				<Option parameters="-q -etest C:\SVN\pBlzASM6\pBlzASM6_Syntax.mem ROM_form_S6_2K_16Sept10.vhd S6_2k.vhd  " />
 				<Compiler>
+					<Add option="-pg" />
 					<Add option="-g" />
 				</Compiler>
+				<Linker>
+					<Add option="-pg -lgmon" />
+				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="bin\Release\pBlazMRG" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj\Release\" />
 				<Option type="1" />
-				<Option compiler="gcc" />
+				<Option compiler="clang_compiler" />
 				<Compiler>
 					<Add option="-O2" />
 				</Compiler>
@@ -30,6 +34,7 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-Wextra" />
 			<Add option="-Wall" />
 		</Compiler>
 		<Unit filename="S6_2k.vhd">
