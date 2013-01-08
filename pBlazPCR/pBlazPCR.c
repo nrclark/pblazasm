@@ -46,6 +46,11 @@ static bool want_alu = false ;
 
 static void usage ( char * text ) {
 	printf ( "\n%s - PicoCore Builder V%ld.%ld.%ld (%s)\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
+
+    printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n"  ) ;
+    printf ( "This is free software, and you are welcome to redistribute it\n"  ) ;
+    printf ( "under certain conditions. See <http://www.gnu.org/licenses/>\n"  ) ;
+
 	printf ( "\nUsage:\n" ) ;
 	printf ( "   pBlazPCR [-v] -c<MEM code inputfile> -s<MEM data inputfile> <VHD outputfile>\n" ) ;
 	printf ( "   where:\n"
@@ -105,9 +110,8 @@ bool loadSCR ( const char * strDatafile, const int offset ) {
 	char line[ 256 ], *p ;
 	FILE * infile = NULL ;
 
-	if ( strDatafile == NULL || * strDatafile == 0 ) {
+	if ( strDatafile == NULL || * strDatafile == 0 )
 		return true ;
-	}
 
 	infile = fopen ( strDatafile, "r" ) ;
 	if ( infile == NULL ) {
