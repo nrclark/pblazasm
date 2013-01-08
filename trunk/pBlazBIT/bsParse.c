@@ -115,131 +115,131 @@ const char * sOpcodeNames[] = {
 
 static const INFO_t FPGAInfo[ tyLast ] = {
 // Spartan-3
-    idXC3S50    , flXC3S50    , 0, 0,
-    idXC3S200   , flXC3S200   , 0, 0,
-    idXC3S400   , flXC3S400   , 0, 0,
-    idXC3S1000  , flXC3S1000  , 0, 0,
-    idXC3S1500  , flXC3S1500  , 0, 0,
-    idXC3S2000  , flXC3S2000  , 0, 0,
-    idXC3S4000  , flXC3S4000  , 0, 0,
-    idXC3S5000  , flXC3S5000  , 0, 0,
+    { idXC3S50    , flXC3S50    , 0, 0 },
+    { idXC3S200   , flXC3S200   , 0, 0 },
+    { idXC3S400   , flXC3S400   , 0, 0 },
+    { idXC3S1000  , flXC3S1000  , 0, 0 },
+    { idXC3S1500  , flXC3S1500  , 0, 0 },
+    { idXC3S2000  , flXC3S2000  , 0, 0 },
+    { idXC3S4000  , flXC3S4000  , 0, 0 },
+    { idXC3S5000  , flXC3S5000  , 0, 0 },
 
 // S
-    idXC3S100E  , flXC3S100E  ,  8, 40,
-    idXC3S250E  , flXC3S250E  , 20, 52,
-    idXC3S500E  , flXC3S500E  , 24, 88,
-    idXC3S1200E , flXC3S1200E , 0, flXC3S1200E,
-    idXC3S1600E , flXC3S1600E , 0, flXC3S1600E,
+    { idXC3S100E  , flXC3S100E  ,  8, 40 },
+    { idXC3S250E  , flXC3S250E  , 20, 52 },
+    { idXC3S500E  , flXC3S500E  , 24, 88 },
+    { idXC3S1200E , flXC3S1200E , 0, flXC3S1200E },
+    { idXC3S1600E , flXC3S1600E , 0, flXC3S1600E },
 
 //
-    idXC3S50A   , flXC3S50A   , 0, 0,
-    idXC3S200A  , flXC3S200A  , 0, 0,
-    idXC3S400A  , flXC3S400A  , 0, 0,
-    idXC3S700A  , flXC3S700A  , 0, 0,
-    idXC3S1400A , flXC3S1400A , 0, 0,
-    idXC3SD1800A, flXC3SD1800A, 0, 0,
-    idXC3SD3400A, flXC3SD3400A, 0, 0,
+    { idXC3S50A   , flXC3S50A   , 0, 0 },
+    { idXC3S200A  , flXC3S200A  , 0, 0 },
+    { idXC3S400A  , flXC3S400A  , 0, 0 },
+    { idXC3S700A  , flXC3S700A  , 0, 0 },
+    { idXC3S1400A , flXC3S1400A , 0, 0 },
+    { idXC3SD1800A, flXC3SD1800A, 0, 0 },
+    { idXC3SD3400A, flXC3SD3400A, 0, 0 },
 
 // S
-    idXC3S50AN  , flXC3S50AN  , 0, 0,
-    idXC3S200AN , flXC3S200AN , 0, 0,
-    idXC3S400AN , flXC3S400AN , 0, 0,
-    idXC3S700AN , flXC3S700AN , 0, 0,
-    idXC3S1400AN, flXC3S1400AN, 0, 0,
+    { idXC3S50AN  , flXC3S50AN  , 0, 0 },
+    { idXC3S200AN , flXC3S200AN , 0, 0 },
+    { idXC3S400AN , flXC3S400AN , 0, 0 },
+    { idXC3S700AN , flXC3S700AN , 0, 0 },
+    { idXC3S1400AN, flXC3S1400AN, 0, 0 },
 
 //
-    idXC6SLX4   , idXC6SLX4   , 0, 0,
-    idXC6SLX9   , idXC6SLX9   , 0, 0,
-    idXC6SLX16  , idXC6SLX16  , 0, 0,
-    idXC6SLX25  , idXC6SLX25  , 0, 0,
-    idXC6SLX25T , idXC6SLX25T , 0, 0,
-    idXC6SLX45  , idXC6SLX45  , 0, 0,
-    idXC6SLX45T , idXC6SLX45T , 0, 0,
-    idXC6SLX75  , idXC6SLX75  , 0, 0,
-    idXC6SLX75T , idXC6SLX75T , 0, 0,
-    idXC6SLX100 , idXC6SLX100 , 0, 0,
-    idXC6SLX100T, idXC6SLX100T, 0, 0,
-    idXC6SLX150 , idXC6SLX150 , 0, 0,
-    idXC6SLX150T, idXC6SLX150T,
+    { idXC6SLX4   , idXC6SLX4   , 0, 0 },
+    { idXC6SLX9   , idXC6SLX9   , 0, 0 },
+    { idXC6SLX16  , idXC6SLX16  , 0, 0 },
+    { idXC6SLX25  , idXC6SLX25  , 0, 0 },
+    { idXC6SLX25T , idXC6SLX25T , 0, 0 },
+    { idXC6SLX45  , idXC6SLX45  , 0, 0 },
+    { idXC6SLX45T , idXC6SLX45T , 0, 0 },
+    { idXC6SLX75  , idXC6SLX75  , 0, 0 },
+    { idXC6SLX75T , idXC6SLX75T , 0, 0 },
+    { idXC6SLX100 , idXC6SLX100 , 0, 0 },
+    { idXC6SLX100T, idXC6SLX100T, 0, 0 },
+    { idXC6SLX150 , idXC6SLX150 , 0, 0 },
+    { idXC6SLX150T, idXC6SLX150T, 0, 0 },
 
 //
-    idXC4VLX15  , flXC4VLX15  , 0, 0,
-    idXC4VLX25  , flXC4VLX25  , 0, 0,
-    idXC4VLX40  , flXC4VLX40  , 0, 0,
-    idXC4VLX60  , flXC4VLX60  , 0, 0,
-    idXC4VLX80  , flXC4VLX80  , 0, 0,
-    idXC4VLX100 , flXC4VLX100 , 0, 0,
-    idXC4VLX160 , flXC4VLX160 , 0, 0,
+    { idXC4VLX15  , flXC4VLX15  , 0, 0 },
+    { idXC4VLX25  , flXC4VLX25  , 0, 0 },
+    { idXC4VLX40  , flXC4VLX40  , 0, 0 },
+    { idXC4VLX60  , flXC4VLX60  , 0, 0 },
+    { idXC4VLX80  , flXC4VLX80  , 0, 0 },
+    { idXC4VLX100 , flXC4VLX100 , 0, 0 },
+    { idXC4VLX160 , flXC4VLX160 , 0, 0 },
 
 //
-    idXC4VSX25  , flXC4VSX25  , 0, 0,
-    idXC4VSX35  , flXC4VSX35  , 0, 0,
-    idXC4VSX55  , flXC4VSX55  , 0, 0,
+    { idXC4VSX25  , flXC4VSX25  , 0, 0 },
+    { idXC4VSX35  , flXC4VSX35  , 0, 0 },
+    { idXC4VSX55  , flXC4VSX55  , 0, 0 },
 
 //
-    idXC4VFX12  , flXC4VFX12  , 0, 0,
-    idXC4VFX20  , flXC4VFX20  , 0, 0,
-    idXC4VFX40  , flXC4VFX40  , 0, 0,
-    idXC4VFX60  , flXC4VFX60  , 0, 0,
-    idXC4VFX100 , flXC4VFX100 , 0, 0,
-    idXC4VFX140 , flXC4VFX140 , 0, 0,
-    idXC4VLX200 , flXC4VLX200 , 0, 0,
+    { idXC4VFX12  , flXC4VFX12  , 0, 0 },
+    { idXC4VFX20  , flXC4VFX20  , 0, 0 },
+    { idXC4VFX40  , flXC4VFX40  , 0, 0 },
+    { idXC4VFX60  , flXC4VFX60  , 0, 0 },
+    { idXC4VFX100 , flXC4VFX100 , 0, 0 },
+    { idXC4VFX140 , flXC4VFX140 , 0, 0 },
+    { idXC4VLX200 , flXC4VLX200 , 0, 0 },
 
 //
-    idXC5VLX30  , flXC5VLX30  , 0, 0,
-    idXC5VLX50  , flXC5VLX50  , 0, 0,
-    idXC5VLX85  , flXC5VLX85  , 0, 0,
-    idXC5VLX110 , flXC5VLX110 , 0, 0,
-    idXC5VLX155 , flXC5VLX155 , 0, 0,
-    idXC5VLX220 , flXC5VLX220 , 0, 0,
-    idXC5VLX330 , flXC5VLX330 , 0, 0,
-    idXC5VLX20T , flXC5VLX20T , 0, 0,
-    idXC5VLX30T , flXC5VLX30T , 0, 0,
-    idXC5VLX50T , flXC5VLX50T , 0, 0,
-    idXC5VLX85T , flXC5VLX85T , 0, 0,
-    idXC5VLX110T, flXC5VLX110T, 0, 0,
-    idXC5VLX155T, flXC5VLX155T, 0, 0,
-    idXC5VLX220T, flXC5VLX220T, 0, 0,
-    idXC5VLX330T, flXC5VLX330T, 0, 0,
+    { idXC5VLX30  , flXC5VLX30  , 0, 0 },
+    { idXC5VLX50  , flXC5VLX50  , 0, 0 },
+    { idXC5VLX85  , flXC5VLX85  , 0, 0 },
+    { idXC5VLX110 , flXC5VLX110 , 0, 0 },
+    { idXC5VLX155 , flXC5VLX155 , 0, 0 },
+    { idXC5VLX220 , flXC5VLX220 , 0, 0 },
+    { idXC5VLX330 , flXC5VLX330 , 0, 0 },
+    { idXC5VLX20T , flXC5VLX20T , 0, 0 },
+    { idXC5VLX30T , flXC5VLX30T , 0, 0 },
+    { idXC5VLX50T , flXC5VLX50T , 0, 0 },
+    { idXC5VLX85T , flXC5VLX85T , 0, 0 },
+    { idXC5VLX110T, flXC5VLX110T, 0, 0 },
+    { idXC5VLX155T, flXC5VLX155T, 0, 0 },
+    { idXC5VLX220T, flXC5VLX220T, 0, 0 },
+    { idXC5VLX330T, flXC5VLX330T, 0, 0 },
 
 //
-    idXC5VSX35T , flXC5VSX35T , 0, 0,
-    idXC5VSX50T , flXC5VSX50T , 0, 0,
-    idXC5VSX95T , flXC5VSX95T , 0, 0,
-    idXC5VSX240T, flXC5VSX240T, 0, 0,
+    { idXC5VSX35T , flXC5VSX35T , 0, 0 },
+    { idXC5VSX50T , flXC5VSX50T , 0, 0 },
+    { idXC5VSX95T , flXC5VSX95T , 0, 0 },
+    { idXC5VSX240T, flXC5VSX240T, 0, 0 },
 
 //
-    idXC5VFX30T , flXC5VFX30T , 0, 0,
-    idXC5VFX70T , flXC5VFX70T , 0, 0,
-    idXC5VFX100T, flXC5VFX100T, 0, 0,
-    idXC5VFX130T, flXC5VFX130T, 0, 0,
-    idXC5VFX200T, flXC5VFX200T, 0, 0,
-    idXC5VTX150T, flXC5VTX150T, 0, 0,
-    idXC5VTX240T, flXC5VTX240T, 0, 0,
+    { idXC5VFX30T , flXC5VFX30T , 0, 0 },
+    { idXC5VFX70T , flXC5VFX70T , 0, 0 },
+    { idXC5VFX100T, flXC5VFX100T, 0, 0 },
+    { idXC5VFX130T, flXC5VFX130T, 0, 0 },
+    { idXC5VFX200T, flXC5VFX200T, 0, 0 },
+    { idXC5VTX150T, flXC5VTX150T, 0, 0 },
+    { idXC5VTX240T, flXC5VTX240T, 0, 0 },
 
 //
-    idXC6VHX250T, flXC6VHX250T, 0, 0,
-    idXC6VHX255T, flXC6VHX255T, 0, 0,
-    idXC6VHX380T, flXC6VHX380T, 0, 0,
-    idXC6VHX565T, flXC6VHX565T, 0, 0,
+    { idXC6VHX250T, flXC6VHX250T, 0, 0 },
+    { idXC6VHX255T, flXC6VHX255T, 0, 0 },
+    { idXC6VHX380T, flXC6VHX380T, 0, 0 },
+    { idXC6VHX565T, flXC6VHX565T, 0, 0 },
 
 //
-    idXC6VLX75T , flXC6VLX75T , 0, 0,
-    idXC6VLX130T, flXC6VLX130T, 0, 0,
-    idXC6VLX195T, flXC6VLX195T, 0, 0,
-    idXC6VLX240T, flXC6VLX240T, 0, 0,
-    idXC6VLX365T, flXC6VLX365T, 0, 0,
-    idXC6VLX550T, flXC6VLX550T, 0, 0,
-    idXC6VLX760 , flXC6VLX760 , 0, 0,
+    { idXC6VLX75T , flXC6VLX75T , 0, 0 },
+    { idXC6VLX130T, flXC6VLX130T, 0, 0 },
+    { idXC6VLX195T, flXC6VLX195T, 0, 0 },
+    { idXC6VLX240T, flXC6VLX240T, 0, 0 },
+    { idXC6VLX365T, flXC6VLX365T, 0, 0 },
+    { idXC6VLX550T, flXC6VLX550T, 0, 0 },
+    { idXC6VLX760 , flXC6VLX760 , 0, 0 },
 
 //
-    idXC6VSX315T, flXC6VSX315T, 0, 0,
-    idXC6VSX475T, flXC6VSX475T, 0, 0,
-    idXQ6VLX130T, flXQ6VLX130T, 0, 0,
-    idXQ6VLX240T, flXQ6VLX240T, 0, 0,
-    idXQ6VLX550T, flXQ6VLX550T, 0, 0,
-    idXQ6VSX315T, flXQ6VSX315T, 0, 0,
-    idXQ6VSX475T, flXQ6VSX475T, 0, 0
+    { idXC6VSX315T, flXC6VSX315T, 0, 0 },
+    { idXC6VSX475T, flXC6VSX475T, 0, 0 },
+    { idXQ6VLX130T, flXQ6VLX130T, 0, 0 },
+    { idXQ6VLX240T, flXQ6VLX240T, 0, 0 },
+    { idXQ6VLX550T, flXQ6VLX550T, 0, 0 },
+    { idXQ6VSX315T, flXQ6VSX315T, 0, 0 },
+    { idXQ6VSX475T, flXQ6VSX475T, 0, 0 }
 } ;
 
 
@@ -311,7 +311,7 @@ void put_string ( char * b ) {
 
 bool parse_header ( int len ) {
     bool result = true ;
-    int i ;
+    unsigned int i ;
 
     if ( ( * ( uint32_t * ) current ) != 0xFFFFFFFF ) {
         result &= get_word() == sizeof ( InitialHeader ) ;
@@ -348,9 +348,9 @@ bool parse_header ( int len ) {
 
 bool parse_packets3 ( void ) {
     bool result = true ;
-    int i, n ;
+    unsigned int i, n ;
     uint32_t header, type ;
-    uint32_t count, autocrc ;
+    uint32_t count, autocrc = 0 ;
     uint32_t * data ;
 
     n = 0 ;
@@ -394,9 +394,9 @@ bool parse_packets3 ( void ) {
 
 bool parse_packets3a ( void ) {
     bool result = true ;
-    int i, n ;
+    unsigned int i, n ;
     uint32_t header, type ;
-    uint32_t count, autocrc ;
+    uint32_t count, autocrc = 0 ;
     uint32_t * data ;
 
     n = 0 ;
@@ -440,9 +440,9 @@ bool parse_packets3a ( void ) {
 
 bool parse_packets3e ( void ) {
     bool result = true ;
-    int i, n ;
+    unsigned int i, n ;
     uint32_t header, type, regnr ;
-    uint32_t count, autocrc ;
+    uint32_t count, autocrc = 0 ;
     uint32_t * data ;
 
     n = 0 ;
@@ -489,9 +489,9 @@ bool parse_packets3e ( void ) {
 
 bool parse_packets6 ( void ) {
     bool result = true ;
-    int i, n ;
+    unsigned int i, n ;
     uint16_t header, type ;
-    uint32_t count, autocrc ;
+    uint32_t count, autocrc = 0 ;
     uint16_t * data ;
 
     n = 0 ;
@@ -553,7 +553,7 @@ void show_file ( void ) {
     }
 
     printf ( "! number of packets: %d\n", bit_file.count ) ;
-    for ( i = 0 ; i < bit_file.count ; i += 1 ) {
+    for ( i = 0 ; i < (int)bit_file.count ; i += 1 ) {
         switch ( bit_file.type ) {
         case bstSpartan3:
             printf ( "! %4d: 0x%08X", i, bit_file.packets3[ i ].header ) ;
@@ -567,7 +567,7 @@ void show_file ( void ) {
                 printf ( " count: %6d : ", bit_file.packets3[ i ].count ) ;
             }
             if ( bit_file.packets3[ i ].count > 0 )
-                for ( j = 0 ; j < 37 && j < bit_file.packets3[ i ].count ; j += 1 ) {
+                for ( j = 0 ; j < 37 && j < (int)bit_file.packets3[ i ].count ; j += 1 ) {
                     printf ( "%08X", bit_file.packets3[ i ].data[ j ] ) ;
                 }
             if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 2 ) {
@@ -592,7 +592,7 @@ void show_file ( void ) {
                 printf ( " count: %6d : ", bit_file.packets3[ i ].count ) ;
             }
             if ( bit_file.packets3[ i ].count > 0 )
-                for ( j = 0 ; j < 37 && j < bit_file.packets3[ i ].count ; j += 1 ) {
+                for ( j = 0 ; j < 37 && j < (int)bit_file.packets3[ i ].count ; j += 1 ) {
                     printf ( "%08X", bit_file.packets3[ i ].data[ j ] ) ;
                 }
             if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 2 ) {
@@ -622,7 +622,7 @@ void show_file ( void ) {
                 int col = 0, coldef = 0, blk = 0, maj = 0, min = 0 ;
                 coldef = abs ( ColumnDefs[FPGAType][ col ] ) ;
 
-                for ( k = 0 ; k < bit_file.packets3[ i ].count ; ) {
+                for ( k = 0 ; k < (int)bit_file.packets3[ i ].count ; ) {
                     if ( ( ( bit_file.packets3[ i ].header >> 29 ) & 0x0003 ) == 2 ) { // FDRI type 2
                         printf ( "\nblk %2d, maj %2d, min %2d : ", blk, maj, min ) ;
                     } else if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0x3fff ) == 2 ) { // FDRI type 1
@@ -639,7 +639,7 @@ void show_file ( void ) {
                     // 26:40810204 27:08102040 28:81002040 29:81020408 30:10204081 31:02040810 32:20408102 33:04081020 34:40810204
                     // 35:08102040 36:81002040 37:81020408 38:10204081 39:02040810 40:20400000
 
-                    for ( j = 0 ; j < FPGAInfo[ FPGAType ].fl && k < bit_file.packets3[ i ].count ; j += 1, k += 1 ) {
+                    for ( j = 0 ; j < FPGAInfo[ FPGAType ].fl && k < (int)bit_file.packets3[ i ].count ; j += 1, k += 1 ) {
 //                       if ( 0 <= j && j <= FPGAInfo[ FPGAType ].fl )
                         if ( FPGAInfo[ FPGAType ].bs <= j && j <= FPGAInfo[ FPGAType ].be ) {
                             printf ( "%2d:%08X ", j, bit_file.packets3[ i ].data[ k ] ) ;
@@ -678,7 +678,7 @@ void show_file ( void ) {
             if ( ( ( bit_file.packets6[ i ].header >> 11 ) & 0x0003 ) != 0 ) {
                 printf ( " %8s," , sRegisterNames_S6[ ( bit_file.packets6[ i ].header >> 5 ) & 0x003F ] ) ;
                 printf ( "  count:  %d", bit_file.packets6[ i ].count ) ;
-                for ( j = 0 ; j < 3 && j < bit_file.packets6[ i ].count ; j += 1 ) {
+                for ( j = 0 ; j < 3 && j < (int)bit_file.packets6[ i ].count ; j += 1 ) {
                     printf ( " : 0x%04X", bit_file.packets6[ i ].data[ j ] ) ;
                 }
                 if ( bit_file.packets6[ i ].header >> 13 == 2 ) {
@@ -694,20 +694,19 @@ void show_file ( void ) {
 #endif
 
 bool merge_code ( uint16_t * code, int len, int nr, int bVerbose ) {
-    int i, j, n, s ;
+    int i, j, s ;
     uint16_t data, * packet, * p ;
     int state ;
 
     // find bulk frame
 
-    n = 0 ;
-    for ( i = 0 ; i < bit_file.count ; i += 1 ) {
+    for ( i = 0 ; i < (int)bit_file.count ; i += 1 ) {
         if ( bit_file.packets6[ i ].header == 0x5060 ) {
             if ( bVerbose > 0 ) {
                 printf ( "! using bulk packet# %d\n", i ) ;
             }
             state = -1 ;
-            for ( j = 0 ; j < bit_file.packets6[ i ].count ; j += 1 ) {
+            for ( j = 0 ; j < (int)bit_file.packets6[ i ].count ; j += 1 ) {
                 data = bit_file.packets6[ i ].data[ j ] ;
                 if ( state == -1 ) {
                     s = j ;
@@ -993,10 +992,10 @@ bool get_code ( uint16_t * code, uint32_t * p, int len ) {
     int state ;
 
     // find bulk frame
-    for ( i = 0 ; i < bit_file.count ; i += 1 ) {
+    for ( i = 0 ; i < (int)bit_file.count ; i += 1 ) {
         if ( bit_file.packets6[ i ].header == 0x5060 ) {
             state = 0 ;
-            for ( j = 0 ; j < bit_file.packets6[ i ].count ; j += 1 ) {
+            for ( j = 0 ; j < (int)bit_file.packets6[ i ].count ; j += 1 ) {
                 if ( state == 0 ) {
                     s = j ;
                 }
@@ -1028,7 +1027,7 @@ void build_header ( void ) {
     // not for BIN files
     if ( bit_file.header.bBit ) {
         put_word ( sizeof ( InitialHeader ) ) ;
-        for ( i = 0 ; i < sizeof ( InitialHeader ) ; i += 1 ) {
+        for ( i = 0 ; i < (int)sizeof ( InitialHeader ) ; i += 1 ) {
             put_byte ( InitialHeader[ i ] ) ;
         }
         put_word ( 1 ) ;
@@ -1058,12 +1057,12 @@ void build_packets ( void ) {
     int i, j ;
 
     // dump all headers with their data
-    for ( i = 0 ; i < bit_file.count ; i += 1 ) {
+    for ( i = 0 ; i < (int)bit_file.count ; i += 1 ) {
         put_word ( bit_file.packets6[ i ].header ) ;
         if ( bit_file.packets6[ i ].header >> 13 == 2 ) {
             put_long ( bit_file.packets6[ i ].count ) ;
         }
-        for ( j = 0 ; j < bit_file.packets6[ i ].count ; j += 1 ) {
+        for ( j = 0 ; j < (int)bit_file.packets6[ i ].count ; j += 1 ) {
             put_word ( bit_file.packets6[ i ].data[ j ] ) ;
         }
         if ( bit_file.packets6[ i ].header >> 13 == 2 ) {
