@@ -34,7 +34,7 @@
 #endif
 
 #define CODESIZE 4096
-#define DATASIZE 256
+#define DATASIZE (CODESIZE*2)
 
 /**
  * pBlazASM work horse
@@ -151,75 +151,76 @@ static bool processOperator ( unsigned int * result, unsigned int term, symbol_t
  * @param p ref to character sequence
  * @return converted character
  */
-static char convert_char ( char * * p ) {
-	int r = 0 ;
-	char * s = *p ;
+static int convert_char ( char * * pr, char * * ps ) {
+	char * s = *ps ;
+	char * r = *pr ;
+	int v ;
+
 	if ( *s == '\\' ) { // '\r' or '\013'
 		s++ ;
 		switch ( *s++ ) { // \a \b \f \n \r \t \v
 		case '\'' :
-			r = '\'' ;
+			*r++ = '\'' ;
 			break ;
 		case '\\' :
-			r = '\\' ;
+			*r++ = '\\' ;
 			break ;
 		case '"' :
-			r = '"' ;
+			*r++ = '"' ;
 			break ;
 		case 'a' :
 		case 'A' :
-			r = '\a' ;
+			*r++ = '\a' ;
 			break ;
 		case 'b' :
 		case 'B' :
-			r = '\b' ;
+			*r++ = '\b' ;
 			break ;
 		case 'f' :
 		case 'F' :
-			r = '\f' ;
+			*r++ = '\f' ;
 			break ;
 		case 'n' :
 		case 'N' :
-			r = '\n' ;
+			*r++ = '\n' ;
 			break ;
 		case 'r' :
 		case 'R' :
-			r = '\r' ;
+			*r++ = '\r' ;
 			break ;
 		case 't' :
 		case 'T' :
-			r = '\t' ;
+			*r++ = '\t' ;
 			break ;
 		case 'v' :
 		case 'V' :
-			r = '\v' ;
+			*r++ = '\v' ;
 			break ;
 		case 'x' :
 		case 'X' :
-			if ( sscanf ( s, "%x", &r ) != 1 ) {
+			if ( sscanf ( s, "%x", &v ) != 1 )
 				return etLEX ;
-			}
-			while ( isxdigit ( *s ) ) {
+			while ( isxdigit ( *s ) )
 				s++ ;
-			}
+            *r++ = v & 0xff ;
 			break ;
 		case '0' :
 			--s ;
-			if ( sscanf ( s, "%o", &r ) != 1 ) {
+			if ( sscanf ( s, "%o", &v ) != 1 )
 				return etLEX ;
-			}
-			while ( isdigit ( *s ) && *s != '8' && *s != '9' ) {
+			while ( isdigit ( *s ) && *s != '8' && *s != '9' )
 				s++ ;
-			}
+            *r++ = v & 0xff ;
 			break ;
 		default :
-			return etLEX ;
+            *r++ = '\\' ;
+            *r++ = *s++ ;
 		}
-	} else {
-		r = *s++ ;
-	}
-	*p = s ;
-	return r ;
+	} else
+		*r++ = *s++ ;
+	*ps = s ;
+	*pr = r ;
+	return etNONE ;
 }
 
 /**
@@ -228,11 +229,16 @@ static char convert_char ( char * * p ) {
  * @return new string with result (needs to be freeed)
  */
 static char * convert_string ( char * s ) {
-	char * r = calloc ( 1, 256 ), *p ;
-	for ( p = r ; *s != '\0' ; )
-		*p++ = convert_char ( &s ) ;
-	*p++ = '\0' ;
-	return r ;
+	char * p = calloc ( 2 * strlen( s ), sizeof( char ) ) ;
+	char *r ;
+
+	for ( r = p ; *s != '\0' ; )
+		if ( convert_char ( &r, &s ) != etNONE ) {
+		    free( r ) ;
+            return NULL ;
+		}
+	*r++ = '\0' ;
+	return p ;
 }
 
 
@@ -274,6 +280,7 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 	error_t e = etNONE ;
 	char * s = NULL ;
 	uint32_t val ;
+	char * r = (char  *)&val ;
 
 	// full expression handling
 	if ( current()->type == tNONE )
@@ -283,7 +290,7 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 	s = current()->text ;
 	switch ( current()->type ) {
 	case tCHAR :
-		val = convert_char ( &s ) ;
+		val = convert_char( &r, &s ) ;
 		break ;
 	case tBIN :
 		// parse a binary value
@@ -743,7 +750,7 @@ static error_t build ( void ) {
                                 return etDOUBLE ;
                         }
                         if ( bActive ) {
-                            if ( pESG == 0 )
+                            if ( pESG <= 0 )
 								return etSCRRNG ;
                             gSCR = gESG[ --pESG ] ;
                         }
@@ -758,7 +765,7 @@ static error_t build ( void ) {
 							if ( (int)result >= gScrSize ) // within data range
 								return etSCRRNG ;
 							if ( bActive ) {
-                                if ( pESG == 255 )
+                                if ( pESG >= 255 )
                                     return etSCRRNG ;
 								gESG[ pESG++ ] = gSCR ; // backup
 								gSCR = result ;
@@ -768,76 +775,61 @@ static error_t build ( void ) {
                         break ;
 
 					case stALIGN :
-						if ( state != bsINIT ) {
+						if ( state != bsINIT )
 							return etSYNTAX ;
-						}
 						tok_next() ;
 						if ( ( e = expression ( &result ) ) == etNONE ) {
-							if ( result <= 0 ) {
+							if ( result <= 0 )
 								return etRANGE ;
-							}
 							if ( bActive ) {
 								gPC = ( gPC + ( result - 1 ) ) / result * result ;
-								if ( gPC >= gCodeRange ) {      // within code range
+								if ( gPC >= gCodeRange )      // within code range
 									return etRANGE ;
-								}
 							}
-						} else {
+						} else
 							return e ;
-						}
 						state = bsEND ;
 						break ;
                     // .END
 					case stEND :
-						if ( state != bsINIT ) {
+						if ( state != bsINIT )
 							return etSYNTAX ;
-						}
 						tok_next() ;
 						if ( ( e = expression ( &result ) ) == etNONE ) {
-							if ( result >= CODESIZE ) {     // within possible code range
+							if ( result >= CODESIZE * 2 )     // within possible code range
 								return etRANGE ;
-							}
-							if ( bActive ) {
+							if ( bActive )
 								gCodeRange = result + 1 ;
-							}
-						} else {
+						} else
 							return e ;
-						}
 						state = bsEND ;
 						break ;
                     // .SCR
 					case stSCRATCHPAD :
-						if ( state != bsINIT ) {
+						if ( state != bsINIT )
 							return etSYNTAX ;
-						}
 						tok_next() ;
 						if ( ( e = expression ( &result ) ) == etNONE ) {
 							if ( bActive ) {
-								gScrLoc = result * 2  ;
-								if ( result >= CODESIZE ) {    // within possible code range
+								if ( result >= gCodeRange )    // within possible code range
 									return etRANGE ;
-								}
+								gScrLoc = result * 2  ;
 							}
-						} else {
+						} else
 							return e ;
-						}
 						if ( comma() ) {
 							if ( ( e = expression ( &result ) ) == etNONE ) {
 								if ( bActive ) {
-									if ( result > 256 ) {
+									if ( result > 2 * gCodeRange )
 										return etSCRSIZE ;
-									}
 									gScrSize = result ;
-									if ( (int)gSCR > gScrSize ) {  // after the fact
+									if ( (int)gSCR > gScrSize )  // after the fact
 										return etSCRRNG ;
-									}
 								}
-							} else {
+							} else
 								return e ;
-							}
-						} else {
+						} else
 							gScrSize = 256 ;
-						}
 						state = bsEND ;
 						break ;
 
@@ -1372,16 +1364,16 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 							return etREGISTER ;
 						if ( !comma() )
 							return etCOMMA ;
-						if ( !srcreg ( &operand2 ) ) {
+						if ( !srcreg ( &operand2 ) ) {  // IN sX, kk
 							if ( !indexed ( &operand2 ) ) {
 								if ( ( e = expression ( &operand2 ) ) != etNONE )
 									return e ;
 								opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) | 0x01000 ;
 							} else
 								opcode = h->value.integer | operand1 | operand2 ;
-						} else {
+						} else {                        // IN sX, sY
 							opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) ;
-                            if ( comma() ) {
+                            if ( comma() ) {            // IN sX, sY, k
 								if ( ( e = expression ( &operand2 ) ) != etNONE )
 									return e ;
                                 if ( 0 < operand2 && operand2 < 15 )
@@ -1489,8 +1481,8 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                         if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
                         if ( bActive ) {
-                            if ( pESG == 0 )
-								return etSCRRNG ;
+							if ( pESG <= 0 )
+                                return etSCRRNG ;
 							*data = gSCR ;
                             gSCR = gESG[ --pESG ] ;
 							*addr = gSCR ;
@@ -1502,9 +1494,9 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						if ( ( e = expression ( &result ) ) == etNONE ) {
 							*addr = result ;
 							if ( (int)result >= gScrSize )// within data range
-								return etRANGE ;
+								return etSCRRNG ;
 							if ( bActive ) {
-                                if ( pESG == 255 )
+                                if ( pESG >= 255 )
                                     return etSCRRNG ;
                                 gESG[ pESG++ ] = gSCR ; // backup
 								gSCR = result ;
@@ -1561,35 +1553,29 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						}
 						break ;
 					case stSCRATCHPAD :
-						if ( state != bsINIT ) {
+						if ( state != bsINIT )
 							return etSYNTAX ;
-						}
 						if ( ( e = expression ( &result ) ) == etNONE ) {
 							if ( bActive ) {
 								gScrLoc = result * 2 ;
+                                *addr = result ;
 							}
-							*addr = gScrLoc ;
-						} else {
+						} else
 							return e ;
-						}
 						if ( comma() ) {
 							if ( ( e = expression ( &result ) ) == etNONE ) {
 								if ( bActive ) {
-									if ( result > 256 ) {
+									if ( result > CODESIZE )
 										return etSCRSIZE ;
-									}
 									gScrSize = result ;
-									if ( (int)gSCR > gScrSize ) {
+									if ( (int)gSCR > gScrSize )
 										return etSCRRNG ;
-									}
+                                    *data = gScrSize ;
 								}
-								*data = gScrSize ;
-							} else {
+							} else
 								return e ;
-							}
-						} else if ( bActive ) {
+						} else if ( bActive )
 							gScrSize = 256 ;
-						}
 						break ;
 					case stDEF :
 						if ( state != bsSYMBOL )
@@ -1606,11 +1592,11 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						if ( tok_current()->type == tSTRING ) {
 							tok_next() ;
 							*data = 0xFFFFFFFF ;
-						} else if ( destreg ( &result ) ) {
+						} else if ( destreg ( &result ) )
 							*data = result ;
-						} else if ( ( e = expression ( &result ) ) == etNONE ) {
+						else if ( ( e = expression ( &result ) ) == etNONE )
 							*data = result ;
-						} else
+						else
 							return e ;
 						break ;
 					case stSET :
@@ -1983,8 +1969,8 @@ static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint
 		if ( data != 0xFFFFFFFF ) {
 			if ( data > 0xFFFF ) {
 				n += fprintf ( f, " %08X  ", data ) ;
-			} else if ( data > 0xFF ) {
-				n += fprintf ( f, "     %04X  ", data ) ;
+//			} else if ( data > 0xFF ) {
+//				n += fprintf ( f, "     %04X  ", data ) ;
 			} else {
 				if ( addr != 0xFFFFFFFF ) {
 					if ( addr >= 0x100 ) {
@@ -2211,7 +2197,7 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 			dump_data ( fmem, hex ) ;
 			fclose ( fmem ) ;
 		}
-		// merge scratch pad in code
+    // merge scratch pad in code
 	} else if ( gScrLoc > -1 ) { // Merge data into code
 		for ( h = 0 ; h < gScrSize ; h += 2 ) {
 			if ( gCode[ ( gScrLoc + h ) / 2 ] == 0xFFFC0000 ) { // Data not overlapping used code
