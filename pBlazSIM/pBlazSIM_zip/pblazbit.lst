@@ -1,0 +1,1075 @@
+---------- source file: init.psm                                                                   
+           
+           //
+           // Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+           //
+           // This file is part of pBlazASM.
+           //
+           // pBlazASM is free software: you can redistribute it and/or modify
+           // it under the terms of the GNU General Public License as published by
+           // the Free Software Foundation, either version 3 of the License, or
+           // (at your option) any later version.
+           //
+           // pBlazASM is distributed in the hope that it will be useful,
+           // but WITHOUT ANY WARRANTY; without even the implied warranty of
+           // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+           // GNU General Public License for more details.
+           //
+           // You should have received a copy of the GNU General Public License
+           // along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
+           //
+           
+           ; -------------------------------------------------------------------------------
+           
+700                          .SCR   0x380                   // we want the scratchpad to appear at 0x380 in the code map
+           
+           ; -------------------------------------------------------------------------------
+           
+3FF                          .ORG   0x3FF
+3FF 22001                    JUMP   interrupt               // default interrupt vector
+           
+           ; -------------------------------------------------------------------------------
+           
+000                          .ORG   0x000                   // code entry
+000 221C5                    JUMP   main
+           
+           ; -------------------------------------------------------------------------------
+           
+001 29000  interrupt       : RETI   DISABLE                 // no interrupt used; just in case
+           
+           ; -------------------------------------------------------------------------------
+           
+           
+---------- source file: UART.psm                                                                   
+           
+           //
+           // Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+           //
+           // This file is part of pBlazASM.
+           //
+           // pBlazASM is free software: you can redistribute it and/or modify
+           // it under the terms of the GNU General Public License as published by
+           // the Free Software Foundation, either version 3 of the License, or
+           // (at your option) any later version.
+           //
+           // pBlazASM is distributed in the hope that it will be useful,
+           // but WITHOUT ANY WARRANTY; without even the implied warranty of
+           // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+           // GNU General Public License for more details.
+           //
+           // You should have received a copy of the GNU General Public License
+           // along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
+           //
+           
+           ; -------------------------------------------------------------------------------
+           ; UART routines
+           ; -------------------------------------------------------------------------------
+           
+       E0  _UART             .EQU   0xE0                    // uCycleCounter.VHD is instatiated at this port address
+       EC  _UART_CS          .EQU   _UART + 12              // UART status register
+       ED  _UART_DA          .EQU   _UART + 13              // UART data in.out registers
+           
+002        puts            :                                // put a string pointed at by s1, to the UART
+002 0A010                    LD     s0, s1
+003 11101                    ADD    s1, 1
+004 1D000                    COMP   s0, 0
+005 31000                    RET    Z
+006 2001A                    CALL   putc
+007 22002                    JUMP   puts
+           
+008        put2hex         :                                // put an (8-bit) value in s0 in 2 hex character to the UART
+008 00E00                    MOVE   sE, s0
+009 1400E                    SR0    s0
+00A 1400E                    SR0    s0
+00B 1400E                    SR0    s0
+00C 1400E                    SR0    s0
+00D 2000F                    CALL   put1hex
+00E 000E0                    MOVE   s0, sE
+00F        put1hex         :                                // put a (4-bit) value in s0 in 1 hex character to the UART
+00F 0300F                    AND    s0, 0x0F
+010 1D00A                    COMP   s0, 10
+011 3A013                    JUMP   C, put1hex1
+012 11007                    ADD    s0, 'A' - 10 - '0'
+013        put1hex1        :
+013 11030                    ADD    s0, '0'
+014 2201A                    JUMP   putc
+           
+015        putsp           :                                // put a space char to the UART
+015 01020                    MOVE   s0, ' '
+016 2201A                    JUMP   putc
+           
+017        putnl           :                                // put CR and LF characters to the UART
+017 0100D                    MOVE   s0, '\r'
+018 2001A                    CALL   putc
+019 0100A                    MOVE   s0, '\n'
+           
+01A        putc            :                                // put a character in s0 to the UART
+01A 09FEC                    IN     sF, _UART_CS
+01B 0DF01                    TEST   sF, 0b00000001          // space for one in the buffer?
+01C 3601A                    JUMP   NZ, putc
+           
+01D 2D0ED                    OUT    s0, _UART_DA
+01E 25000                    RET   
+           
+01F        get1hex         :                                // get a character from the UART and interpret as a hex value ('D' => 00001101)
+01F 2003A  get2hex10       : CALL   getc
+020 00E00                    MOVE   sE, s0
+021 19E30                    SUB    sE, '0'
+022 1DE0A                    COMP   sE, '9' - '0' + 1
+023 3A02B                    JUMP   C, get2hex20
+024 19E11                    SUB    sE, 'A' - '0'
+025 1DE06                    COMP   sE, 'F' - 'A' + 1
+026 3A02A                    JUMP   C, get2hex30
+027 19E20                    SUB    sE, 'a' - 'A'
+028 1DE06                    COMP   sE, 'f' - 'a' + 1
+029 3E01F                    JUMP   NC, get2hex10           // wait for an acceptable character
+02A 11E0A  get2hex30       : ADD    sE, 10
+02B 2001A  get2hex20       : CALL   putc
+02C 000E0                    MOVE   s0, sE
+02D 25000                    RET   
+           
+           
+02E        get2hex         :                                // get 2 characters from the UART and interpret as a hex value ('2D' => 00101101)
+02E 2001F                    CALL   get1hex
+02F 00D00                    MOVE   sD, s0
+030 14D06                    SL0    sD
+031 14D06                    SL0    sD
+032 14D06                    SL0    sD
+033 14D06                    SL0    sD
+034 2001F                    CALL   get1hex
+035 040D0                    OR     s0, sD
+036 25000                    RET   
+           
+037        poll            :                                // check the status of the UART buffer and report in C
+037 09FEC                    IN     sF, _UART_CS
+038 0DF20                    TEST   sF, 0b00100000          // some char in the buffer?
+039 25000                    RET   
+           
+03A        getc            :                                // wait for a character from the UART and return in s0
+03A 09FEC                    IN     sF, _UART_CS
+03B 0DF20                    TEST   sF, 0b00100000          // some char in the buffer?
+03C 3203A                    JUMP   Z, getc
+03D 090ED                    IN     s0, _UART_DA
+           
+03E 25000                    RET   
+           
+           ; -----------UART Subroutines end-------------------------------------------------
+           
+---------- source file: rijndael.psm                                                               
+           
+           //
+           // Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+           //
+           // This file is part of pBlazASM.
+           //
+           // pBlazASM is free software: you can redistribute it and/or modify
+           // it under the terms of the GNU General Public License as published by
+           // the Free Software Foundation, either version 3 of the License, or
+           // (at your option) any later version.
+           //
+           // pBlazASM is distributed in the hope that it will be useful,
+           // but WITHOUT ANY WARRANTY; without even the implied warranty of
+           // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+           // GNU General Public License for more details.
+           //
+           // You should have received a copy of the GNU General Public License
+           // along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
+           //
+           
+           // 
+           // Rijndael (AES-128) block cipher
+           // this code assumes 128b data and a 128b key so: Nk = Nn = Nc = 4
+           // (c) 2003 .. 2012 Henk van Kampen, www.mediatronix.com
+           // 
+           // based on documents by Dr. Brian Gladman,
+           //      http://gladman.plushost.co.uk/oldsite/cryptography_technology/rijndael/aes.spec.v316.pdf
+           // or
+           //	http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf
+           // 
+           // test data from [Gladman]
+           //	PLAINTEXT:    3243f6a8885a308d313198a2e0370734 (pi * 2^124) 
+           //	KEY:          2b7e151628aed2a6abf7158809cf4f3c ( e * 2^124) 
+           // should result in:
+           //	R[10].k_sch   d014f9a8c9ee2589e13f0cc8b6630ca6 
+           //	R[10].output  3925841d02dc09fbdc118597196a0b32 
+           //
+           // to be done:
+           //      decrypt
+           // 
+           
+           // SBOX I/O device, just a look-up ROM
+       F0  SBOX_ROM          .EQU   0xF0                    // uSBOX.VHD is instatiated at this port address
+           
+           // key value
+ 00    2B  inkey             .BYT   0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C
+           
+           // plaintext, key  and result
+ 10    32  plain             .BYT   0x32, 0x43, 0xF6, 0xA8, 0x88, 0x5A, 0x30, 0x8D, 0x31, 0x31, 0x98, 0xA2, 0xE0, 0x37, 0x07, 0x34
+ 20    10  key               .BUF   16
+ 30    10  result            .BUF   16
+           
+           // state buffer
+ 40    10  state             .BUF   16
+           
+           // special registers
+     0100  pKey              .EQU   s1                      // key pointer
+     0200  pState            .EQU   s2                      // state pointer
+           
+           // constants
+       01  X                 .EQU   0x01
+       1B  G                 .EQU   0x1B                    // 0x11B
+       10  b128              .EQU   128 / 8                 // 128 bytes of 8 bits
+           
+           // Rijndael encrypt entry
+           // plain  is assumed to be in {plain }, the key in {inkey}
+           // both will be copied, final state will be the result 
+03F        Encrypt         :
+03F 20060                    CALL   InkeyToKey
+040 2005D                    CALL   InToState               // state = in
+           
+041 20051                    CALL   XorRoundKey             // XorRoundKey( state, k[0], Nc )
+042 01F01                    MOVE   sF, X                   // x^(i-1) (i=1)
+043 01309                    MOVE   s3, 9                   // for round = 1 step 1 to Nn - 1
+044        Round           :                                // 
+044 200AA                    CALL   SubBytes                // ..SubBytes( state, Nc )
+045 200D7                    CALL   ShiftRows               // ..ShiftRows( state, Nc )
+046 200F0                    CALL   MixColumns              // ..MixColumns( state, Nc )
+047 20074                    CALL   NextRoundKey            // ..XorRoundKey( state, k[ round ], Nc )
+048 20051                    CALL   XorRoundKey
+049 19301                    SUB    s3, 1                   // ..step 1
+04A 36044                    JUMP   NZ, Round               // end for
+04B 200AA                    CALL   SubBytes                // SubBytes( state, Nc )
+04C 200D7                    CALL   ShiftRows               // ShiftRows( state, Nc )
+04D 20074                    CALL   NextRoundKey            // XorRoundKey( state, k[ round ], Nc )
+04E 20051                    CALL   XorRoundKey
+04F 2006A                    CALL   StateToOut
+050 25000                    RET                            // result  is last {state}
+           
+           // result should be: (Gladman or fips197)
+           // R[10].k_sch d014f9a8c9ee2589e13f0cc8b6630ca6
+           // R[10].result  3925841d02dc09fbdc118597196a0b32
+           
+           // XorRoundKey( state, k, Nc )
+           
+051        XorRoundKey     :
+051 01120                    MOVE   pKey, key               // get pointer to key
+052 01240                    MOVE   pState, state           // get pointer to state
+           
+053 01010  xor128          : MOVE   s0, b128                // set up loop count
+054 0A410  xornext         : LD     s4, pKey                // get key byte
+055 0A520                    LD     s5, pState              // get state byte
+056 06450                    XOR    s4, s5                  // do the xor
+057 2E420                    ST     s4, pState              // save new state byte
+058 11101                    ADD    pKey, 1                 // increment key pointer
+059 11201                    ADD    pState, 1               // increment state pointer
+05A 19001                    SUB    s0, 1                   // decrement loop counter
+05B 36054                    JUMP   NZ, xornext             // loop back if not done 16 times (128/8)
+05C 25000                    RET   
+           
+05D        InToState       :
+05D 01110                    MOVE   pKey, plain             // get pointer to plain 
+05E 01240                    MOVE   pState, state           // get pointer to state
+05F 22062                    JUMP   ToScratch128
+           
+060        InkeyToKey      :
+060 01100                    MOVE   pKey, inkey             // get pointer to plain 
+061 01220                    MOVE   pState, key             // get pointer to state 
+           
+062 01010  ToScratch128    : MOVE   s0, b128                // set up loop count
+063 0A410  putnext         : LD     s4, pKey                // get plain  byte
+064 2E420                    ST     s4, pState              // save new state byte
+065 11101                    ADD    pKey, 1                 // increment key pointer
+066 11201                    ADD    pState, 1               // increment state pointer
+067 19001                    SUB    s0, 1                   // decrement loop counter
+068 36063                    JUMP   NZ, putnext             // loop back if not done 16 times (128/8)
+069 25000                    RET   
+           
+06A        StateToOut      :
+06A 01140                    MOVE   pKey, state             // get pointer to state
+06B 01230                    MOVE   pState, result          // get pointer to result 
+           
+06C 01010                    MOVE   s0, b128                // set up loop count
+06D 0A410  getnext         : LD     s4, pKey                // get plain  byte
+06E 2E420                    ST     s4, pState              // save new state byte
+06F 11101                    ADD    pKey, 1                 // increment key pointer
+070 11201                    ADD    pState, 1               // increment state pointer
+071 19001                    SUB    s0, 1                   // decrement loop counter
+072 3606D                    JUMP   NZ, getnext             // loop back if not done 16 times (128/8)
+073 25000                    RET   
+           
+074        NextRoundKey    :
+           // temp = k[i - 1]
+074 0B42C                    LD     s4, key + 12            // get last word of previous key
+075 0B52D                    LD     s5, key + 13
+076 0B62E                    LD     s6, key + 14
+077 0B72F                    LD     s7, key + 15
+           
+078 00840                    MOVE   s8, s4                  // RotWord
+079 00450                    MOVE   s4, s5
+07A 00560                    MOVE   s5, s6
+07B 00670                    MOVE   s6, s7
+07C 00780                    MOVE   s7, s8
+           
+07D 00840                    MOVE   s8, s4                  // temp=SubWord( RotWord( temp ) )
+07E 200B3                    CALL   SBox
+07F 00480                    MOVE   s4, s8
+           
+080 064F0                    XOR    s4, sF                  // xor Rcon( i / Nk )
+081 14F06                    SL0    sF                      // x^(i-1) (i+=1)
+082 3E084                    JUMP   NC, nowrap
+083 07F1B                    XOR    sF, G
+084        nowrap          :
+084 00850                    MOVE   s8, s5                  // SubWord( RotWord( temp ) )
+085 200B3                    CALL   SBox
+086 00580                    MOVE   s5, s8
+           
+087 00860                    MOVE   s8, s6                  // SubWord( RotWord( temp ) )
+088 200B3                    CALL   SBox
+089 00680                    MOVE   s6, s8
+           
+08A 00870                    MOVE   s8, s7                  // SubWord( RotWord( temp ) )
+08B 200B3                    CALL   SBox
+08C 00780                    MOVE   s7, s8
+           
+08D 01120                    MOVE   pKey, key
+           
+08E 01010                    MOVE   s0, b128
+08F 0A810  key96           : LD     s8, pKey                // k[i]=k[i - Nk] ^ temp
+090 06480                    XOR    s4, s8
+091 2E410                    ST     s4, pKey
+092 11101                    ADD    pKey, 1
+           
+093 0A810                    LD     s8, pKey                // k[i]=k[i - Nk] ^ temp
+094 06580                    XOR    s5, s8
+095 2E510                    ST     s5, pKey
+096 11101                    ADD    pKey, 1
+           
+097 0A810                    LD     s8, pKey                // k[i]=k[i - Nk] ^ temp
+098 06680                    XOR    s6, s8
+099 2E610                    ST     s6, pKey
+09A 11101                    ADD    pKey, 1
+           
+09B 0A810                    LD     s8, pKey                // k[i]=k[i - Nk] ^ temp
+09C 06780                    XOR    s7, s8
+09D 2E710                    ST     s7, pKey
+09E 11101                    ADD    pKey, 1
+           
+09F 19004                    SUB    s0, 4
+0A0 3608F                    JUMP   NZ, key96
+0A1 25000                    RET   
+           
+           // Sub bytes of one 32b word pointed at by pKey
+0A2        SubWord         :
+0A2 01004                    MOVE   s0, 4
+0A3 0A810  SubWord1        : LD     s8, pKey
+0A4 200B3                    CALL   SBox
+0A5 2E810                    ST     s8, pKey
+0A6 11101                    ADD    pKey, 1
+0A7 19001                    SUB    s0, 1
+0A8 360A3                    JUMP   NZ, SubWord1
+0A9 25000                    RET   
+           
+           // SubBytes( state, Nc )
+0AA        SubBytes        :
+0AA 01240                    MOVE   pState, state           // get pointer to state
+           
+0AB 01010                    MOVE   s0, b128                // set up loop count
+0AC 0A820  sub128          : LD     s8, pState              // get state byte
+0AD 200B3                    CALL   SBox
+0AE 2E820                    ST     s8, pState              // save new state byte
+0AF 11201                    ADD    pState, 1               // increment state pointer
+0B0 19001                    SUB    s0, 1                   // decrement loop counter
+0B1 360AC                    JUMP   NZ, sub128              // loop back if not done 16 times (128/8)
+0B2 25000                    RET   
+           
+           // SBox( s )
+0B3        SBox            :
+0B3 2D8F0                    OUT    s8, SBOX_ROM            // set index
+0B4 098F0                    IN     s8, SBOX_ROM            // get data
+0B5 25000                    RET   
+           
+           // soft version of SBOX, very slow                    
+0B6        SBox_Soft       :
+0B6 200C2                    CALL   MulInverse              // .    x = sbox_affine(mul_inverse(in))//
+0B7        SBoxAffine      :
+           // for(counter = 1// counter <= 4// counter++) {
+0B7 00890                    MOVE   s8, s9                  // s = in//
+0B8 14902                    RL     s9                      // s = (s >> (DEGREE - 1)) | (s << 1)// s &= MASK//
+0B9 06890                    XOR    s8, s9                  // in ^= s//
+0BA 14902                    RL     s9
+0BB 06890                    XOR    s8, s9
+0BC 14902                    RL     s9
+0BD 06890                    XOR    s8, s9
+0BE 14902                    RL     s9
+0BF 06890                    XOR    s8, s9
+0C0 07863                    XOR    s8, 0x63                // in ^= 0x63//
+0C1 25000                    RET                            // return in//
+           // }
+           
+           // MulInverse by trial and error
+0C2        MulInverse      :
+0C2 01900                    MOVE   s9, 0                   // int result = 0//
+0C3 04880                    OR     s8, s8                  // if (in == 0)
+0C4 31000                    RET    Z                       // return 0//
+0C5 11901  MulInverse1     : ADD    s9, 1                   // result = 1// result++
+0C6 31000                    RET    Z                       // result < MOD
+0C7 00C80                    MOVE   sC, s8                  // in
+0C8 00D90                    MOVE   sD, s9                  // result
+0C9 200CD                    CALL   GMul                    // gmul( in, result, ...)
+0CA 19E01                    SUB    sE, 1                   // == 1
+0CB 360C5                    JUMP   NZ, MulInverse1         // == 1?
+0CC 25000                    RET                            // return result
+           
+0CD        GMul            :
+0CD 01E00                    MOVE   sE, 0
+0CE        GMul1           :
+0CE 14D0E                    SR0    sD
+0CF 3A0D2                    JUMP   C, GMul2                // last bit was 1
+0D0 31000                    RET    Z                       // i2 was 0 already ?
+0D1 220D3                    JUMP   GMul3
+           
+0D2 06EC0  GMul2           : XOR    sE, sC
+0D3 14C06  GMul3           : SL0    sC
+0D4 3E0CE                    JUMP   NC, GMul1
+0D5 07C1B                    XOR    sC, G                   // i1 ^= field//
+0D6 220CE                    JUMP   GMul1
+           
+           // ShiftRows( state, Nc )
+0D7        ShiftRows       :
+0D7 0B741                    LD     s7, state + 1
+0D8 0B445                    LD     s4, state + 1 + 4
+0D9 0B549                    LD     s5, state + 1 + 4 + 4
+0DA 0B64D                    LD     s6, state + 1 + 4 + 4 + 4
+0DB 2F441                    ST     s4, state + 1
+0DC 2F545                    ST     s5, state + 1 + 4
+0DD 2F649                    ST     s6, state + 1 + 4 + 4
+0DE 2F74D                    ST     s7, state + 1 + 4 + 4 + 4
+           
+0DF 0B642                    LD     s6, state + 2
+0E0 0B746                    LD     s7, state + 2 + 4
+0E1 0B44A                    LD     s4, state + 2 + 4 + 4
+0E2 0B54E                    LD     s5, state + 2 + 4 + 4 + 4
+0E3 2F442                    ST     s4, state + 2
+0E4 2F546                    ST     s5, state + 2 + 4
+0E5 2F64A                    ST     s6, state + 2 + 4 + 4
+0E6 2F74E                    ST     s7, state + 2 + 4 + 4 + 4
+           
+0E7 0B543                    LD     s5, state + 3
+0E8 0B647                    LD     s6, state + 3 + 4
+0E9 0B74B                    LD     s7, state + 3 + 4 + 4
+0EA 0B44F                    LD     s4, state + 3 + 4 + 4 + 4
+0EB 2F443                    ST     s4, state + 3
+0EC 2F547                    ST     s5, state + 3 + 4
+0ED 2F64B                    ST     s6, state + 3 + 4 + 4
+0EE 2F74F                    ST     s7, state + 3 + 4 + 4 + 4
+           
+0EF 25000                    RET   
+           
+           // MixColumns( state, Nc )
+0F0        MixColumns      :
+           
+0F0 0B440                    LD     s4, state + 0
+0F1 0B541                    LD     s5, state + 1
+0F2 0B642                    LD     s6, state + 2
+0F3 0B743                    LD     s7, state + 3
+0F4 20115                    CALL   MixColumn
+0F5 2F440                    ST     s4, state + 0
+0F6 2F541                    ST     s5, state + 1
+0F7 2F642                    ST     s6, state + 2
+0F8 2F743                    ST     s7, state + 3
+           
+0F9 0B444                    LD     s4, state + 0 + 4
+0FA 0B545                    LD     s5, state + 1 + 4
+0FB 0B646                    LD     s6, state + 2 + 4
+0FC 0B747                    LD     s7, state + 3 + 4
+0FD 20115                    CALL   MixColumn
+0FE 2F444                    ST     s4, state + 0 + 4
+0FF 2F545                    ST     s5, state + 1 + 4
+100 2F646                    ST     s6, state + 2 + 4
+101 2F747                    ST     s7, state + 3 + 4
+           
+102 0B448                    LD     s4, state + 0 + 4 + 4
+103 0B549                    LD     s5, state + 1 + 4 + 4
+104 0B64A                    LD     s6, state + 2 + 4 + 4
+105 0B74B                    LD     s7, state + 3 + 4 + 4
+106 20115                    CALL   MixColumn
+107 2F448                    ST     s4, state + 0 + 4 + 4
+108 2F549                    ST     s5, state + 1 + 4 + 4
+109 2F64A                    ST     s6, state + 2 + 4 + 4
+10A 2F74B                    ST     s7, state + 3 + 4 + 4
+           
+10B 0B44C                    LD     s4, state + 0 + 4 + 4 + 4
+10C 0B54D                    LD     s5, state + 1 + 4 + 4 + 4
+10D 0B64E                    LD     s6, state + 2 + 4 + 4 + 4
+10E 0B74F                    LD     s7, state + 3 + 4 + 4 + 4
+10F 20115                    CALL   MixColumn
+110 2F44C                    ST     s4, state + 0 + 4 + 4 + 4
+111 2F54D                    ST     s5, state + 1 + 4 + 4 + 4
+112 2F64E                    ST     s6, state + 2 + 4 + 4 + 4
+113 2F74F                    ST     s7, state + 3 + 4 + 4 + 4
+           
+114 25000                    RET   
+           
+115        MixColumn       :
+115 00940                    MOVE   s9, s4                  // t = c[0] ^ c[3]
+116 06970                    XOR    s9, s7
+117 00A50                    MOVE   sA, s5                  // u = c[1] ^ c[2]
+118 06A60                    XOR    sA, s6
+119 00B90                    MOVE   sB, s9                  // v = t ^ u
+11A 06BA0                    XOR    sB, sA
+           
+11B 00840                    MOVE   s8, s4                  // c[0] = c[0] ^ v ^ FFmul(0x02, c[0] ^ c[1])
+11C 06850                    XOR    s8, s5
+11D 14806                    SL0    s8
+11E 3E120                    JUMP   NC, mcf1
+11F 0781B                    XOR    s8, G
+120 068B0  mcf1            : XOR    s8, sB
+121 06480                    XOR    s4, s8
+           
+122 008A0                    MOVE   s8, sA                  // c[1] = c[1] ^ v ^ FFmul(0x02, u)
+123 14806                    SL0    s8
+124 3E126                    JUMP   NC, mcf2
+125 0781B                    XOR    s8, G
+126 068B0  mcf2            : XOR    s8, sB
+127 06580                    XOR    s5, s8
+           
+128 00860                    MOVE   s8, s6                  // c[2] = c[2] ^ v ^ FFmul(0x02, c[2] ^ c[3])
+129 06870                    XOR    s8, s7
+12A 14806                    SL0    s8
+12B 3E12D                    JUMP   NC, mcf3
+12C 0781B                    XOR    s8, G
+12D 068B0  mcf3            : XOR    s8, sB
+12E 06680                    XOR    s6, s8
+           
+12F 00890                    MOVE   s8, s9                  // c[3] = c[3] ^ v ^ FFmul(0x02, t)
+130 14806                    SL0    s8
+131 3E133                    JUMP   NC, mcf4
+132 0781B                    XOR    s8, G
+133 068B0  mcf4            : XOR    s8, sB
+134 06780                    XOR    s7, s8
+           
+135 25000                    RET   
+---------- source file: decimal.psm                                                                
+           
+           //
+           // Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+           //
+           // This file is part of pBlazASM.
+           //
+           // pBlazASM is free software: you can redistribute it and/or modify
+           // it under the terms of the GNU General Public License as published by
+           // the Free Software Foundation, either version 3 of the License, or
+           // (at your option) any later version.
+           //
+           // pBlazASM is distributed in the hope that it will be useful,
+           // but WITHOUT ANY WARRANTY; without even the implied warranty of
+           // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+           // GNU General Public License for more details.
+           //
+           // You should have received a copy of the GNU General Public License
+           // along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
+           //
+           
+       0A  C10ll             .EQU   10 % 256
+       00  C10lh             .EQU   10 / 256 % 256
+       00  C10hl             .EQU   10 / 256 / 256 % 256
+       00  C10hh             .EQU   10 / 256 / 256 / 256 % 256
+           
+       64  C100ll            .EQU   100 % 256
+       00  C100lh            .EQU   100 / 256 % 256
+       00  C100hl            .EQU   100 / 256 / 256 % 256
+       00  C100hh            .EQU   100 / 256 / 256 / 256 % 256
+           
+       E8  C1kll             .EQU   1000 % 256
+       03  C1klh             .EQU   1000 / 256 % 256
+       00  C1khl             .EQU   1000 / 256 / 256 % 256
+       00  C1khh             .EQU   1000 / 256 / 256 / 256 % 256
+           
+       10  C10kll            .EQU   10000 % 256
+       27  C10klh            .EQU   10000 / 256 % 256
+       00  C10khl            .EQU   10000 / 256 / 256 % 256
+       00  C10khh            .EQU   10000 / 256 / 256 / 256 % 256
+           
+       A0  C100kll           .EQU   100000 % 256
+       86  C100klh           .EQU   100000 / 256 % 256
+       01  C100khl           .EQU   100000 / 256 / 256 % 256
+       00  C100khh           .EQU   100000 / 256 / 256 / 256 % 256
+           
+       40  C1Mll             .EQU   1000000 % 256
+       42  C1Mlh             .EQU   1000000 / 256 % 256
+       0F  C1Mhl             .EQU   1000000 / 256 / 256 % 256
+       00  C1Mhh             .EQU   1000000 / 256 / 256 / 256 % 256
+           
+       80  C10Mll            .EQU   10000000 % 256
+       96  C10Mlh            .EQU   10000000 / 256 % 256
+       98  C10Mhl            .EQU   10000000 / 256 / 256 % 256
+       00  C10Mhh            .EQU   10000000 / 256 / 256 / 256 % 256
+           
+       00  C100Mll           .EQU   100000000 % 256
+       E1  C100Mlh           .EQU   100000000 / 256 % 256
+       F5  C100Mhl           .EQU   100000000 / 256 / 256 % 256
+       05  C100Mhh           .EQU   100000000 / 256 / 256 / 256 % 256
+           
+       00  C1Gll             .EQU   1000000000 % 256
+       CA  C1Glh             .EQU   1000000000 / 256 % 256
+       9A  C1Ghl             .EQU   1000000000 / 256 / 256 % 256
+       3B  C1Ghh             .EQU   1000000000 / 256 / 256 / 256 % 256
+           
+ 50    0B  d32               .BUF   11
+           
+           // convert a 32 bit value in s0..s3 to a decimal string
+           // reptitively substracts 9 powers of 10, remainder is last digit
+           
+136        convd32         :
+           
+136 01430                    MOVE   s4, '0'                 // start with a zero
+137 01550                    MOVE   s5, d32
+           
+138        convd32_1G      :                                // try to divide by 1G
+138 11401                    ADD    s4, 1                   // count successes
+139 19000                    SUB    s0, C1Gll
+13A 1B1CA                    SUBC   s1, C1Glh
+13B 1B29A                    SUBC   s2, C1Ghl
+13C 1B33B                    SUBC   s3, C1Ghh
+13D 3E138                    JUMP   NC, convd32_1G
+           
+13E 19401                    SUB    s4, 1                   // restore
+13F 11000                    ADD    s0, C1Gll
+140 131CA                    ADDC   s1, C1Glh
+141 1329A                    ADDC   s2, C1Ghl
+142 1333B                    ADDC   s3, C1Ghh
+           
+143 2E450                    ST     s4, s5                  // save string
+144 11501                    ADD    s5, 1
+           
+145 01430                    MOVE   s4, '0'                 // start with a zero
+           
+146        convd32_100M    :                                // try to divide by 100M
+146 11401                    ADD    s4, 1                   // count successes
+147 19000                    SUB    s0, C100Mll
+148 1B1E1                    SUBC   s1, C100Mlh
+149 1B2F5                    SUBC   s2, C100Mhl
+14A 1B305                    SUBC   s3, C100Mhh
+14B 3E146                    JUMP   NC, convd32_100M
+           
+14C 19401                    SUB    s4, 1                   // restore
+14D 11000                    ADD    s0, C100Mll
+14E 131E1                    ADDC   s1, C100Mlh
+14F 132F5                    ADDC   s2, C100Mhl
+150 13305                    ADDC   s3, C100Mhh
+           
+151 2E450                    ST     s4, s5                  // save string
+152 11501                    ADD    s5, 1
+           
+153 01430                    MOVE   s4, '0'                 // start with a zero
+           
+154        convd32_10M     :                                // try to divide by 10M
+154 11401                    ADD    s4, 1                   // count successes
+155 19080                    SUB    s0, C10Mll
+156 1B196                    SUBC   s1, C10Mlh
+157 1B298                    SUBC   s2, C10Mhl
+158 1B300                    SUBC   s3, C10Mhh
+159 3E154                    JUMP   NC, convd32_10M
+           
+15A 19401                    SUB    s4, 1                   // restore
+15B 11080                    ADD    s0, C10Mll
+15C 13196                    ADDC   s1, C10Mlh
+15D 13298                    ADDC   s2, C10Mhl
+15E 13300                    ADDC   s3, C10Mhh
+           
+15F 2E450                    ST     s4, s5                  // save string
+160 11501                    ADD    s5, 1
+           
+161 01430                    MOVE   s4, '0'                 // start with a zero
+           
+162        convd32_1M      :                                // try to divide by 1M
+162 11401                    ADD    s4, 1                   // count successes
+163 19040                    SUB    s0, C1Mll
+164 1B142                    SUBC   s1, C1Mlh
+165 1B20F                    SUBC   s2, C1Mhl
+166 1B300                    SUBC   s3, C1Mhh
+167 3E162                    JUMP   NC, convd32_1M
+           
+168 19401                    SUB    s4, 1                   // restore
+169 11040                    ADD    s0, C1Mll
+16A 13142                    ADDC   s1, C1Mlh
+16B 1320F                    ADDC   s2, C1Mhl
+16C 13300                    ADDC   s3, C1Mhh
+           
+16D 2E450                    ST     s4, s5                  // save string
+16E 11501                    ADD    s5, 1
+           
+16F 01430                    MOVE   s4, '0'                 // start with a zero
+           
+170        convd32_100k    :                                // try to divide by 100k
+170 11401                    ADD    s4, 1                   // count successes
+171 190A0                    SUB    s0, C100kll
+172 1B186                    SUBC   s1, C100klh
+173 1B201                    SUBC   s2, C100khl
+174 1B300                    SUBC   s3, C100khh
+175 3E170                    JUMP   NC, convd32_100k
+           
+176 19401                    SUB    s4, 1                   // restore
+177 110A0                    ADD    s0, C100kll
+178 13186                    ADDC   s1, C100klh
+179 13201                    ADDC   s2, C100khl
+17A 13300                    ADDC   s3, C100khh
+           
+17B 2E450                    ST     s4, s5                  // save string
+17C 11501                    ADD    s5, 1
+           
+17D 01430                    MOVE   s4, '0'                 // start with a zero
+           
+17E        convd32_10k     :                                // try to divide by 10k
+17E 11401                    ADD    s4, 1                   // count successes
+17F 19010                    SUB    s0, C10kll
+180 1B127                    SUBC   s1, C10klh
+181 1B200                    SUBC   s2, C10khl
+182 1B300                    SUBC   s3, C10khh
+183 3E17E                    JUMP   NC, convd32_10k
+           
+184 19401                    SUB    s4, 1                   // restore
+185 11010                    ADD    s0, C10kll
+186 13127                    ADDC   s1, C10klh
+187 13200                    ADDC   s2, C10khl
+188 13300                    ADDC   s3, C10khh
+           
+189 2E450                    ST     s4, s5                  // save string
+18A 11501                    ADD    s5, 1
+           
+18B 01430                    MOVE   s4, '0'                 // start with a zero
+           
+18C        convd32_1k      :                                // try to divide by 1k
+18C 11401                    ADD    s4, 1                   // count successes
+18D 190E8                    SUB    s0, C1kll
+18E 1B103                    SUBC   s1, C1klh
+18F 1B200                    SUBC   s2, C1khl
+190 1B300                    SUBC   s3, C1khh
+191 3E18C                    JUMP   NC, convd32_1k
+           
+192 19401                    SUB    s4, 1                   // restore
+193 110E8                    ADD    s0, C1kll
+194 13103                    ADDC   s1, C1klh
+195 13200                    ADDC   s2, C1khl
+196 13300                    ADDC   s3, C1khh
+           
+197 2E450                    ST     s4, s5                  // save string
+198 11501                    ADD    s5, 1
+           
+199 01430                    MOVE   s4, '0'                 // start with a zero
+           
+19A        convd32_100     :                                // try to divide by 100
+19A 11401                    ADD    s4, 1                   // count successes
+19B 19064                    SUB    s0, C100ll
+19C 1B100                    SUBC   s1, C100lh
+19D 1B200                    SUBC   s2, C100hl
+19E 1B300                    SUBC   s3, C100hh
+19F 3E19A                    JUMP   NC, convd32_100
+           
+1A0 19401                    SUB    s4, 1                   // restore
+1A1 11064                    ADD    s0, C100ll
+1A2 13100                    ADDC   s1, C100lh
+1A3 13200                    ADDC   s2, C100hl
+1A4 13300                    ADDC   s3, C100hh
+           
+1A5 2E450                    ST     s4, s5                  // save string
+1A6 11501                    ADD    s5, 1
+           
+1A7 01430                    MOVE   s4, '0'                 // start with a zero
+           
+1A8        convd32_10      :                                // try to divide by 10
+1A8 11401                    ADD    s4, 1                   // count successes
+1A9 1900A                    SUB    s0, C10ll
+1AA 1B100                    SUBC   s1, C10lh
+1AB 1B200                    SUBC   s2, C10hl
+1AC 1B300                    SUBC   s3, C10hh
+1AD 3E1A8                    JUMP   NC, convd32_10
+           
+1AE 19401                    SUB    s4, 1                   // restore
+1AF 1100A                    ADD    s0, C10ll
+1B0 13100                    ADDC   s1, C10lh
+1B1 13200                    ADDC   s2, C10hl
+1B2 13300                    ADDC   s3, C10hh
+           
+1B3 2E450                    ST     s4, s5                  // save string
+1B4 11501                    ADD    s5, 1
+           
+1B5 11030                    ADD    s0, '0'
+1B6 2E050                    ST     s0, s5                  // remainder is last digit
+1B7 11501                    ADD    s5, 1
+           
+1B8 01000                    MOVE   s0, 0                   // string terminated by zero
+1B9 2E050                    ST     s0, s5
+           
+1BA 25000                    RET   
+           
+           // print decimal string with leading zeroes
+           
+1BB        putd032         :
+1BB 01150                    MOVE   s1, d32
+1BC 22002                    JUMP   puts
+           
+           // print decimal string without leading zeroes	
+           
+1BD        putd32          :
+1BD 01150                    MOVE   s1, d32
+1BE        putd32_10       :
+1BE 0A010                    LD     s0, s1
+1BF 1D030                    COMP   s0, '0'
+1C0 36002                    JUMP   NZ, puts
+1C1 1D159                    COMP   s1, d32 + 9
+1C2 32002                    JUMP   Z, puts
+1C3 11101                    ADD    s1, 1
+1C4 221BE                    JUMP   putd32_10
+---------- source file: main.psm                                                                   
+           
+           //
+           // Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+           //
+           // This file is part of pBlazASM.
+           //
+           // pBlazASM is free software: you can redistribute it and/or modify
+           // it under the terms of the GNU General Public License as published by
+           // the Free Software Foundation, either version 3 of the License, or
+           // (at your option) any later version.
+           //
+           // pBlazASM is distributed in the hope that it will be useful,
+           // but WITHOUT ANY WARRANTY; without even the implied warranty of
+           // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+           // GNU General Public License for more details.
+           //
+           // You should have received a copy of the GNU General Public License
+           // along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
+           //
+           
+           // -------------------------------------------------------------------------------
+           // main entry
+           // -------------------------------------------------------------------------------
+           
+       C0  CC                .EQU   0xC0                    // uCycleCounter.VHD is instatiated at this port address
+           
+ 5B    0D  help              .TXT   "\r\n  d)ump, s)cratchpad, p)orts, g)o, c)ounter, r)ijndael"
+ 94    0D  prompt            .TXT   "\r\nPico\x99: "
+ 9E    20  cycles            .TXT   " cycles"
+ A6    0D  error             .TXT   "\r\n??"
+           
+1C5        main            :
+1C5 01194                    MOVE   s1, prompt              // prompt
+1C6 20002                    CALL   puts
+           
+1C7 2003A                    CALL   getc                    // get user command character
+1C8 2001A                    CALL   putc                    // echo this character
+           
+1C9 1D03F                    COMP   s0, '?'                 // ? for help
+1CA 361CE                    JUMP   NZ, main10              // no
+           
+1CB 0115B                    MOVE   s1, help                // prompt
+1CC 20002                    CALL   puts
+           
+1CD 221C5                    JUMP   main
+           
+1CE        main10          :
+1CE 1D064                    COMP   s0, 'd'                 // d for dump?
+1CF 361F0                    JUMP   NZ, main20              // no
+           
+1D0 2D0C0                    OUT    s0, CC                  // 1st timestamp
+           
+           // dump the 256 byte scratchpad in hex
+1D1 01200                    MOVE   s2, 0                   // address pointer
+1D2 01C10                    MOVE   sC, 16                  // 16 rows
+1D3        dump10          :
+1D3 20017                    CALL   putnl                   // first a newline
+1D4 00020                    MOVE   s0, s2                  // print one address per line
+1D5 20008                    CALL   put2hex                 // in hex
+1D6 0103A                    MOVE   s0, ':'
+1D7 2001A                    CALL   putc                    // followed by a column
+1D8 20015                    CALL   putsp                   // and a space
+           
+1D9 01D10                    MOVE   sD, 16                  // 16 values per row
+1DA        dump20          :
+1DA 0A020                    LD     s0, s2                  // fetch the data
+1DB 11201                    ADD    s2, 1                   // increment address pointer
+1DC 20008                    CALL   put2hex                 // print value in hex
+1DD 20015                    CALL   putsp                   // followed by a space
+           
+1DE 19D01                    SUB    sD, 1                   // did we do all?
+1DF 361DA                    JUMP   NZ, dump20              // not yet
+           
+1E0 19210                    SUB    s2, 16                  // yes, backup address pointer by 16
+           
+1E1 20015                    CALL   putsp                   // first a space
+           
+1E2 01D10                    MOVE   sD, 16                  // again 16 characters per row
+1E3        dump30          :
+1E3 0A020                    LD     s0, s2                  // get the data again
+1E4 11201                    ADD    s2, 1                   // and increment pointer
+           
+1E5 1D020                    COMP   s0, ' '                 // is this character a printing one or a control character
+1E6 3E1E8                    JUMP   NC, dump40              // printing
+1E7 0102E                    MOVE   s0, '.'                 // no, control characters are replaced by a preriod
+           
+1E8 2001A  dump40          : CALL   putc                    // print the character as is
+1E9 20015                    CALL   putsp                   // and a space
+           
+1EA 19D01                    SUB    sD, 1                   // did we do all?
+1EB 361E3                    JUMP   NZ, dump30              // not yet
+           
+1EC 19C01                    SUB    sC, 1                   // yes, but did we do all rows?
+1ED 361D3                    JUMP   NZ, dump10              // no, next one
+           
+1EE 2D0C0                    OUT    s0, CC                  // 2nd timestamp
+           
+1EF 221C5                    JUMP   main                    // done all, back to prompt
+           
+           
+           // modify scratchpad
+1F0        main20          :
+1F0 1D073                    COMP   s0, 's'                 // s for scratchpad
+1F1 36210                    JUMP   NZ, main30
+           
+1F2 20015                    CALL   putsp
+1F3 2002E                    CALL   get2hex
+           
+1F4 00200                    MOVE   s2, s0                  // address pointer
+           
+1F5 20017  modscr10        : CALL   putnl                   // first a newline
+1F6 00020                    MOVE   s0, s2                  // print the address
+1F7 20008                    CALL   put2hex                 // in hex
+1F8 0103A                    MOVE   s0, ':'
+1F9 2001A                    CALL   putc                    // followed by a column
+1FA 20015                    CALL   putsp                   // and a space
+           
+1FB 0A020                    LD     s0, s2                  // fetch the data
+1FC 20008                    CALL   put2hex                 // print value in hex
+1FD 20015                    CALL   putsp                   // followed by a space
+           
+1FE 2003A                    CALL   getc                    // get sub-command
+1FF 2001A                    CALL   putc                    // echo
+           
+200 1D02B                    COMP   s0, '+'                 // increment pointer?
+201 36204                    JUMP   NZ, modscr20            // no
+202 11201                    ADD    s2, 1
+203 221F5                    JUMP   modscr10
+           
+204        modscr20        :
+204 1D02D                    COMP   s0, '-'                 // decrement pointer
+205 36208                    JUMP   NZ, modscr30            // no
+206 19201                    SUB    s2, 1
+207 221F5                    JUMP   modscr10
+           
+208        modscr30        :
+208 1D03D                    COMP   s0, '='                 // assign
+209 3620D                    JUMP   NZ, modscr40
+           
+20A 2002E                    CALL   get2hex                 // get a hex byte
+20B 2E020                    ST     s0, s2                  // store at pointer
+20C 221F5                    JUMP   modscr10
+           
+20D        modscr40        :
+20D 1D00D                    COMP   s0, '\r'                // quit
+20E 361F5                    JUMP   NZ, modscr10
+           
+20F 221C5                    JUMP   main
+           
+           
+           // modify ports
+210        main30          :
+210 1D070                    COMP   s0, 'p'                 // p for port?
+211 36230                    JUMP   NZ, main40
+           
+212 20015                    CALL   putsp
+213 2002E                    CALL   get2hex                 // get 2 characters as a hex byte
+           
+214 00200                    MOVE   s2, s0                  // address pointer
+           
+215 20017  modport10       : CALL   putnl                   // first a newline
+216 00020                    MOVE   s0, s2                  // print the address
+217 20008                    CALL   put2hex                 // in hex
+218 0103A                    MOVE   s0, ':'
+219 2001A                    CALL   putc                    // followed by a column
+21A 20015                    CALL   putsp                   // and a space
+           
+21B 08020                    IN     s0, s2                  // fetch the data
+21C 20008                    CALL   put2hex                 // print value in hex
+21D 20015                    CALL   putsp                   // followed by a space
+           
+21E 2003A                    CALL   getc                    // get sub-command
+21F 2001A                    CALL   putc                    // echo
+           
+220 1D02B                    COMP   s0, '+'                 // increment pointer?
+221 36224                    JUMP   NZ, modport20           // no
+222 11201                    ADD    s2, 1
+223 22215                    JUMP   modport10
+           
+224        modport20       :
+224 1D02D                    COMP   s0, '-'                 // decrement pointer
+225 36228                    JUMP   NZ, modport30           // no
+226 19201                    SUB    s2, 1
+227 22215                    JUMP   modport10
+           
+228        modport30       :
+228 1D03D                    COMP   s0, '='                 // assign
+229 3622D                    JUMP   NZ, modport40
+           
+22A 2002E                    CALL   get2hex                 // get a hex byte
+22B 2C020                    OUT    s0, s2                  // store at pointer
+22C 22215                    JUMP   modport10
+           
+22D        modport40       :
+22D 1D00D                    COMP   s0, '\r'                // quit
+22E 36215                    JUMP   NZ, modport10
+           
+22F 221C5                    JUMP   main
+           
+           // go
+230        main40          :
+230 1D067                    COMP   s0, 'g'                 // g for go?
+231 36237                    JUMP   NZ, main50
+           
+232 20015                    CALL   putsp
+233 2002E                    CALL   get2hex                 // 4 characters as a hex word
+234 00400                    MOVE   s4, s0
+235 2002E                    CALL   get2hex
+236 26400                    JUMP   s4, s0                  // just go boldly
+           
+           // Rijndael
+237        main50          :
+237 1D072                    COMP   s0, 'r'                 // r for rijndael (AES128)
+238 3623D                    JUMP   NZ, main60
+           
+239 2D0C0                    OUT    s0, CC
+23A 2003F                    CALL   Encrypt
+23B 2D0C0                    OUT    s0, CC
+           
+23C 221C5                    JUMP   main
+           
+           // show counter
+23D        main60          :
+23D 1D063                    COMP   s0, 'c'                 // c for counter?
+23E 36249                    JUMP   NZ, main70
+           
+23F 20015                    CALL   putsp
+           
+240 090C8                    IN     s0, CC + 8              // delta
+241 091C9                    IN     s1, CC + 9
+242 092CA                    IN     s2, CC + 10
+243 093CB                    IN     s3, CC + 11
+           
+244 20136                    CALL   convd32                 // convert to decimal
+245 201BD                    CALL   putd32                  // print decimal string without leading zeroes
+           
+246 0119E                    MOVE   s1, cycles              // print ' cycles'
+247 20002                    CALL   puts
+           
+248 221C5                    JUMP   main
+           
+           //
+249        main70          :
+           
+249        main90          :
+249 011A6                    MOVE   s1, error               // unknown command, print error string
+24A 20002                    CALL   puts
+           
+24B 221C5                    JUMP   main
+           
+           // ------------main end------------------------------------------------------------
