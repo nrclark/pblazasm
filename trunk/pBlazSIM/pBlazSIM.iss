@@ -29,7 +29,7 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 
 [Files]
 Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM-build-QT4_8-Release\release\pBlazSIM.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM\pBlazSIM_zip\libgcc_s_dw2-1.dll"; DestDir: "{app}"; Flags: ignoreversion
+; Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM\pBlazSIM_zip\libgcc_s_dw2-1.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM\pBlazSIM_zip\mingwm10.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM\pBlazSIM_zip\pblazbit.lst"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM\pBlazSIM_zip\pblazbit.scr"; DestDir: "{app}"; Flags: ignoreversion
