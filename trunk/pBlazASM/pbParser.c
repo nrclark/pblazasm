@@ -290,7 +290,8 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 	s = current()->text ;
 	switch ( current()->type ) {
 	case tCHAR :
-		val = convert_char( &r, &s ) ;
+		if ( convert_char( &r, &s ) != etNONE )
+            return etEXPR ;
 		break ;
 	case tBIN :
 		// parse a binary value
