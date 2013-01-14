@@ -55,13 +55,13 @@ static void usage ( char * text ) {
     printf ( "under certain conditions. See <http://www.gnu.org/licenses/>\n"  ) ;
 
 	printf ( "\nUsage:\n" ) ;
-	printf ( "   pBlazASM -3|-6 [-k] [-v] [-f] [-c[<MEMfile>]] [-s[<MEMfile>]] [-l[<LSTfile>]] <input file> <input file> <input file> ...\n"
-	         "   where:\n"
-	         "         -3      select Picoblaze-3, mandatory\n"
+	printf ( "   pBlazASM -3|-6 [-k] [-v] [-f] [-c[<MEMfile>]] [-s[<MEMfile>]] [-l[<LSTfile>]] <input file> <input file> <input file> ...\n" ) ;
+	printf ( "   where:\n" ) ;
+	printf ( "         -3      select Picoblaze-3, mandatory\n"
 	         "         -6      select Picoblaze-6, mandatory\n"
 	         "         -c/-C   creates a code (.MEM) file (not in combo with -x/-X)\n"
-	         "         -x/-X   creates a code (.HEX) file (not in combo with -c/-C)\n"
-	         "         -s/-S   creates a data (.SCR) file\n"
+	         "         -x/-X   creates a code (.HEX) file (not in combo with -c/-C)\n" ) ;
+	printf ( "         -s/-S   creates a data (.SCR) file\n"
 	         "         -l      creates a LST file\n"
 	         "         -k      select KCPSM mode with limited expression handling (-3 only)\n"
 	         "         -v      generates verbose reporting\n"
