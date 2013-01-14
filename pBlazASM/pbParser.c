@@ -154,7 +154,7 @@ static bool processOperator ( unsigned int * result, unsigned int term, symbol_t
 static int convert_char ( char * * pr, char * * ps ) {
 	char * s = *ps ;
 	char * r = *pr ;
-	int v ;
+	unsigned int v ;
 
 	if ( *s == '\\' ) { // '\r' or '\013'
 		s++ ;
@@ -248,12 +248,12 @@ static char * convert_string ( char * s ) {
 
 static symbol_t * eval_ptok = 0 ; // pointer to current token, index in 'tokens[]'
 
-symbol_t * eval_current( void ) {
+static symbol_t * eval_current( void ) {
 //    printf( "%s\n", eval_ptok->text ) ;
     return eval_ptok ;
 }
 
-symbol_t * eval_next( void ) {
+static symbol_t * eval_next( void ) {
     return eval_ptok++ ;
 }
 
@@ -679,30 +679,25 @@ static error_t build ( void ) {
 			h = find_symbol ( tok_current()->text, false ) ;
 			if ( h == NULL ) {
 				h = find_symbol ( tok_current()->text, true ) ;
-				if ( h == NULL || h->type != tOPCODE ) {
+				if ( h == NULL || h->type != tOPCODE )
 					h = NULL ;
-				}
 			}
 			if ( h != NULL ) {
 				switch ( h->type ) {
 				case tLABEL :
-					if ( state != bsINIT ) {
+					if ( state != bsINIT )
 						return etSYNTAX ;
-					}
-					if ( h->subtype != stDOT ) {
+					if ( h->subtype != stDOT )
 						return etSYNTAX ;
-					}
 					h->value.integer = oPC ;
 					symtok = tok_current() ;
 					state = bsLABEL ;
 					break ;
 				case tOPCODE :
-					if ( state != bsINIT && state != bsLABELED ) {
+					if ( state != bsINIT && state != bsLABELED )
 						return etSYNTAX ;
-					}
-					if ( bActive ) {
+					if ( bActive )
 						gPC += 1 ;
-					}
 					state = bsEND ; // we know enough for now
 					break ;
 				case tDIRECTIVE :
@@ -921,18 +916,15 @@ static error_t build ( void ) {
 						if ( symtok->type != tIDENT ) {
 							return etSYNTAX ;
 						}
-						if ( !comma() ) {
+						if ( !comma() )
 							return etCOMMA ;
-						}
 						// normal expression?
 						if ( ( e = expression ( &result ) ) == etNONE ) {
 							value.integer = result ;
-							if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) ) {
+							if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) )
 								return etDOUBLE ;
-							}
-						} else {
+						} else
 							return e ;
-						}
 						state = bsEND ;
 						break ;
 					case stNAMEREG :
@@ -1377,7 +1369,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                             if ( comma() ) {            // IN sX, sY, k
 								if ( ( e = expression ( &operand2 ) ) != etNONE )
 									return e ;
-                                if ( 0 < operand2 && operand2 < 15 )
+                                if ( operand2 < 15 )
                                     opcode |= operand2 ;
                                 else
                                     return etOVERFLOW ;
@@ -1792,8 +1784,8 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 									dup = convert_string ( h->value.string ) ;
 								} else
 									dup = convert_string ( tok_current()->text ) ;
-								int i = 0 ;
 								if ( bActive ) {
+                                    int i = 0 ;
 									if ( *data == 0xFFFFFFFF && strlen ( dup ) > 0 )
 										*data = dup[ 0 ] ;
 									for ( i = 0 ; i < (int)strlen ( dup ) + 1 ; i += 1 )
@@ -2073,7 +2065,7 @@ static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint
 	fprintf ( f, "\n" ) ;
 }
 
-char * file_gets( char * s, int n, FILE * stream ) {
+static char * file_gets( char * s, int n, FILE * stream ) {
     char * l = s ;
 
     do {

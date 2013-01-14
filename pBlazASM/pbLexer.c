@@ -337,6 +337,8 @@ bool lex( char * line, const bool mode ) {
             case '~' :
                 ptok->subtype = stTILDA ;
                 break ;
+            default :
+                ptok->subtype = stNONE ;
             }
             end = s ;
             state = lsCopy ;
@@ -352,6 +354,8 @@ bool lex( char * line, const bool mode ) {
                 case '>' :
                     ptok->subtype = stSHR ;
                     break ;
+                default :
+                    ptok->subtype = stNONE ;
                 }
                 end = ++s ;
                 state = lsCopy ;
@@ -402,9 +406,10 @@ bool lex( char * line, const bool mode ) {
             state = lsInit ;
             break ;
 
-            // any errors
+        // any errors
         case lsError :
             *pterm = '\0' ;
+        default :
             ptok->type = tERROR ;
             return false ;
         }

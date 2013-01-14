@@ -13,6 +13,8 @@
 				<Option compiler="clang_compiler" />
 				<Option parameters="-6 -l test.psm" />
 				<Compiler>
+					<Add option="-Winline" />
+					<Add option="-Wswitch-default" />
 					<Add option="-Wextra" />
 					<Add option="-Wall" />
 					<Add option="-pg" />
