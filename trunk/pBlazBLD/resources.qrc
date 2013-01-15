@@ -1,0 +1,23 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>bullet_ball_blue.png</file>
+        <file>bullet_ball_glass_blue.png</file>
+        <file>bullet_ball_glass_green.png</file>
+        <file>bullet_ball_glass_red.png</file>
+        <file>bullet_ball_glass_yellow.png</file>
+        <file>bullet_ball_green.png</file>
+        <file>bullet_ball_red.png</file>
+        <file>bullet_ball_yellow.png</file>
+        <file>bullet_square_blue.png</file>
+        <file>bullet_square_green.png</file>
+        <file>bullet_square_red.png</file>
+        <file>exit.png</file>
+        <file>folder_document.png</file>
+        <file>bullet_ball_glass.png</file>
+        <file>refresh.png</file>
+        <file>folder_new.png</file>
+        <file>worker.ico</file>
+        <file>disk_blue_window.ico</file>
+        <file>disk_green.ico</file>
+    </qresource>
+</RCC>
