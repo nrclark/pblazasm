@@ -5,6 +5,9 @@
 #include <QFileDialog>
 #include <QFile>
 #include <QMessageBox>
+#include <QLabel>
+#include <QCloseEvent>
+#include <QSettings>
 
 
 #include <Qsci/qsciscintilla.h>
@@ -21,15 +24,17 @@ class MainWindow : public QMainWindow
     
 public:
     explicit MainWindow(QWidget *parent = 0);
-    ~MainWindow();
+    ~MainWindow() ;
     
-public slots:
+    void closeEvent( QCloseEvent *event ) ;
 
 private slots:
-    void on_modificationChanged(bool m) ;
+    void onModificationchanged(bool m) ;
+    void onTextchanged();
+    void onMarginClicked(int margin, int line, Qt::KeyboardModifiers state);
+    void onCursorpositionchanged(int line, int index);
 
     void on_actionAbout_triggered();
-    void on_actionExit_triggered();
     void on_actionOpen_triggered();
     void on_actionSave_triggered();
     void on_actionSaveAs_triggered();
@@ -41,12 +46,19 @@ private:
     QsciScintilla * textEdit ;
     QsciLexer * lexer ;
 
+    QLabel * lbMode ;
+    QLabel * lbModified ;
+    QLabel * lbPosition ;
+
     QFile * currentFile ;
 
     bool saveFile(const QString fileName ) ;
     bool maybeSave() ;
     bool saveas() ;
     bool save() ;
+
+    void readSettings();
+    void writeSettings();
 } ;
 
 #endif // MAINWINDOW_H
