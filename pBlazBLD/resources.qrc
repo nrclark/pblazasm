@@ -19,5 +19,13 @@
         <file>worker.ico</file>
         <file>disk_blue_window.ico</file>
         <file>disk_green.ico</file>
+        <file>copy.png</file>
+        <file>cut.png</file>
+        <file>delete.png</file>
+        <file>paste.png</file>
+        <file>redo.png</file>
+        <file>undo.png</file>
+        <file>about.png</file>
+        <file>worker.png</file>
     </qresource>
 </RCC>

@@ -4,9 +4,11 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
 
+    QIcon icon ;
+    icon.addFile( ":/files/worker.ico" ) ;
     this->setWindowTitle( "pBlazBLD V0.1 (Qt4.8.4) - http://www.mediatronix.com" ) ;
-    this->setWindowIcon( QIcon( ":/files/worker.ico" ) ) ;
-    qApp->setWindowIcon( QIcon( ":/files/worker.ico" )  ) ;
+    this->setWindowIcon( icon ) ;
+    qApp->setWindowIcon( icon ) ;
     qApp->setApplicationName("pBlazBLD V0.1 (Qt4.8.4)");
 
     QFont fixedFont( "Consolas [Monaco]", 9 ) ;
@@ -51,12 +53,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     // cut and paste support
     ui->actionCut->setEnabled( false ) ;
     ui->actionCopy->setEnabled( false ) ;
+    ui->actionDelete->setEnabled( false ) ;
     connect( ui->actionCut, SIGNAL( triggered() ), textEdit, SLOT( cut() ) ) ;
     connect( ui->actionCopy, SIGNAL( triggered() ), textEdit, SLOT( copy() ) ) ;
-    connect( ui->actionPaste, SIGNAL( triggered() ), textEdit, SLOT( paste() ) ) ;
     connect( ui->actionDelete, SIGNAL (triggered() ), textEdit, SLOT( delete_selection() ) ) ;
     connect( textEdit, SIGNAL( copyAvailable(bool) ), ui->actionCut, SLOT( setEnabled(bool) ) ) ;
     connect( textEdit, SIGNAL( copyAvailable(bool) ), ui->actionCopy, SLOT( setEnabled(bool) ) ) ;
+    connect( textEdit, SIGNAL( copyAvailable(bool) ), ui->actionDelete, SLOT( setEnabled(bool) ) ) ;
+
+    connect( ui->actionPaste, SIGNAL( triggered() ), textEdit, SLOT( paste() ) ) ;
 
     // undo and redo support
     ui->actionUndo->setEnabled( false ) ;
@@ -73,8 +78,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect( textEdit, SIGNAL( modificationChanged(bool) ), this, SLOT( onModificationchanged(bool) ) ) ;
     connect( textEdit, SIGNAL( textChanged() ), this, SLOT( onTextchanged() ) ) ;
 
+    ui->actionSave->setEnabled( false ) ;
+    connect( textEdit, SIGNAL( modificationChanged(bool) ), ui->actionSave, SLOT( setEnabled(bool) ) ) ;
+
     // exit
     connect( ui->actionExit, SIGNAL( triggered() ), this, SLOT( close() ) ) ;
+
+    // builders
+    ui->actionAssemble->setEnabled( QFile::exists( "./pBlazASM.exe" ) ) ;
+    ui->actionMerge->setEnabled( QFile::exists( "./pBlazMRG.exe" ) ) ;
+    ui->actionBitfile->setEnabled( QFile::exists( "./pBlazBIT.exe" ) ) ;
 
     readSettings() ;
 }
@@ -213,4 +226,23 @@ bool MainWindow::maybeSave() {
             return false ;
     }
     return true ;
+}
+
+void MainWindow::on_actionAssemble_triggered() {
+    QProcess pBlazASM( this ) ;
+    pBlazASM.setProcessChannelMode( QProcess::MergedChannels ) ;
+
+    QString program = "./pBlazASM.exe" ;
+
+    QStringList arguments ;
+    arguments << "-v" << "-6" << "x" ; // << currentFile->fileName() ;
+    qDebug() << arguments ;
+
+    pBlazASM.start( program, arguments ) ;
+    if ( ! pBlazASM.waitForStarted( 1000 ) )
+             return ;
+    if ( ! pBlazASM.waitForFinished( 2000 ) )
+        qDebug() << "pBlazASM failed:" << pBlazASM.errorString();
+    else
+        qDebug() << "pBlazASM output:" << pBlazASM.readAll();
 }

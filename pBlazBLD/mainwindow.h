@@ -4,10 +4,13 @@
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QFile>
+#include <QDir>
 #include <QMessageBox>
 #include <QLabel>
 #include <QCloseEvent>
 #include <QSettings>
+#include <QProcess>
+#include <QDebug>
 
 
 #include <Qsci/qsciscintilla.h>
@@ -39,6 +42,8 @@ private slots:
     void on_actionSave_triggered();
     void on_actionSaveAs_triggered();
     void on_actionNew_triggered();
+
+    void on_actionAssemble_triggered();
 
 private:
     Ui::MainWindow * ui ;

@@ -11,6 +11,10 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = pBlazBLD
 TEMPLATE = app
 
+win32 {
+    QMAKE_LFLAGS += -static-libgcc -static-libstdc++
+}
+
 LIBS += libqscintilla2
 
 SOURCES += main.cpp\
