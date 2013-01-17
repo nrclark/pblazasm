@@ -11,34 +11,99 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     QFont fixedFont( "Consolas [Monaco]", 9 ) ;
 
+    lbMode = new QLabel( tr( "insert" ) ) ;
+    ui->statusBar->addWidget( lbMode, 50 ) ;
+    lbModified = new QLabel( tr("N") ) ;
+    ui->statusBar->addWidget( lbModified, 50 ) ;
+    lbPosition = new QLabel( tr("00:00") ) ;
+    ui->statusBar->addWidget( lbPosition, 50 ) ;
+
     // source editor
     textEdit = new QsciScintilla() ;
     setCentralWidget( textEdit ) ;
 
+    // lexer for Picoblaze Assembler text
     lexer = new QsciLexerPsm() ;
     textEdit->setLexer( lexer ) ;
     lexer->setFont( fixedFont ) ;
 
-    textEdit->marginLineNumbers( 50 ) ;
+    // editor settings
+    textEdit->setMarginWidth( 0, QString("00000") ) ;
+    textEdit->setMarginType( 0, QsciScintilla::NumberMargin ) ;
+    textEdit->setMarginWidth( 1, QString("0") ) ;
+    textEdit->setMarginType( 1, QsciScintilla::SymbolMargin ) ;
+    textEdit->setMarginWidth( 2, QString("0") ) ;
+    textEdit->setMarginType( 2, QsciScintilla::SymbolMargin ) ;
+    textEdit->setMarginWidth( 3, QString("0") ) ;
+    textEdit->setMarginType( 3, QsciScintilla::SymbolMargin ) ;
+
+    textEdit->markerDefine( 'M', Qt::ControlModifier ) ;
+    textEdit->setMarginMarkerMask( 1, 0xFFFFFFFF ) ;
+    textEdit->setMarginMarkerMask( 2, 0xFFFFFFFF ) ;
+    textEdit->setMarginMarkerMask( 3, 0xFFFFFFFF ) ;
+
+    // our file object
     currentFile = new QFile() ;
 
-    connect( textEdit, SIGNAL( modificationChanged(bool) ), this, SLOT( on_modificationChanged(bool) ) ) ;
-
+    // standard
     connect( ui->actionAbout_Qt, SIGNAL( triggered() ), qApp, SLOT( aboutQt() ) ) ;
 
+    // cut and paste support
+    ui->actionCut->setEnabled( false ) ;
+    ui->actionCopy->setEnabled( false ) ;
     connect( ui->actionCut, SIGNAL( triggered() ), textEdit, SLOT( cut() ) ) ;
     connect( ui->actionCopy, SIGNAL( triggered() ), textEdit, SLOT( copy() ) ) ;
     connect( ui->actionPaste, SIGNAL( triggered() ), textEdit, SLOT( paste() ) ) ;
-
-    ui->actionCut->setEnabled(false);
-    ui->actionCopy->setEnabled(false);
+    connect( ui->actionDelete, SIGNAL (triggered() ), textEdit, SLOT( delete_selection() ) ) ;
     connect( textEdit, SIGNAL( copyAvailable(bool) ), ui->actionCut, SLOT( setEnabled(bool) ) ) ;
     connect( textEdit, SIGNAL( copyAvailable(bool) ), ui->actionCopy, SLOT( setEnabled(bool) ) ) ;
+
+    // undo and redo support
+    ui->actionUndo->setEnabled( false ) ;
+    ui->actionRedo->setEnabled( false ) ;
+    connect( ui->actionUndo, SIGNAL( triggered() ), textEdit, SLOT( undo() ) ) ;
+    connect( ui->actionRedo, SIGNAL( triggered() ), textEdit, SLOT( redo() ) ) ;
+
+    // markers
+    connect( textEdit, SIGNAL( marginClicked(int, int, Qt::KeyboardModifiers) ),
+        this, SLOT( onMarginClicked(int, int, Qt::KeyboardModifiers) ) ) ;
+
+    // editor status
+    connect( textEdit, SIGNAL( cursorPositionChanged(int, int) ), this, SLOT( onCursorpositionchanged(int, int) ) ) ;
+    connect( textEdit, SIGNAL( modificationChanged(bool) ), this, SLOT( onModificationchanged(bool) ) ) ;
+    connect( textEdit, SIGNAL( textChanged() ), this, SLOT( onTextchanged() ) ) ;
+
+    // exit
+    connect( ui->actionExit, SIGNAL( triggered() ), this, SLOT( close() ) ) ;
+
+    readSettings() ;
 }
 
 MainWindow::~MainWindow() {
     delete ui ;
 }
+
+void MainWindow::readSettings() {
+    QSettings settings( "Mediatronix", "pBlazBLD" ) ;
+    QPoint pos = settings.value("pos", QPoint(200, 200)).toPoint();
+    QSize size = settings.value("size", QSize(400, 400)).toSize();
+    resize( size ) ;
+    move( pos ) ;
+}
+
+void MainWindow::writeSettings() {
+    QSettings settings( "Mediatronix", "pBlazBLD" ) ;
+    settings.setValue( "pos", pos() ) ;
+    settings.setValue( "size", size() ) ;
+}
+
+void MainWindow::closeEvent( QCloseEvent *event ) {
+    if ( maybeSave() ) {
+        writeSettings() ;
+        event->accept() ;
+    } else
+        event->ignore() ;
+ }
 
 void MainWindow::on_actionAbout_triggered() {
     QMessageBox::about( this, "pBlazBLD", windowTitle() +
@@ -48,11 +113,6 @@ void MainWindow::on_actionAbout_triggered() {
     ) ;
 }
 
-void MainWindow::on_actionExit_triggered() {
-    qApp->exit();
-}
-
-
 void MainWindow::on_actionNew_triggered() {
     if ( maybeSave() ) {
         textEdit->clear() ;
@@ -60,18 +120,33 @@ void MainWindow::on_actionNew_triggered() {
         currentFile->setFileName( "" ) ;
     }
 }
+void MainWindow::onCursorpositionchanged(int line, int index) {
+    lbPosition->setText( QString( "%1 : %2" ).arg( line + 1 ).arg( index + 1 ) ) ;
+}
 
-void MainWindow::on_modificationChanged(bool m) {
-    statusBar()->showMessage( QString("modified %1" ).arg( m ), 2000 ) ;
+void MainWindow::onTextchanged() {
+    ui->actionUndo->setEnabled(textEdit->isUndoAvailable());
+    ui->actionRedo->setEnabled(textEdit->isRedoAvailable());
+}
+
+void MainWindow::onMarginClicked( int margin, int line, Qt::KeyboardModifiers state ) {
+    textEdit->markerAdd( margin, state ) ;
+}
+
+void MainWindow::onModificationchanged( bool m ) {
+    lbModified->setText( m ? "Y" : "N" ) ;
 }
 
 void MainWindow::on_actionOpen_triggered() {
+    QString fileName = QFileDialog::getOpenFileName(
+        this, tr("Open Source File"), ".", tr( "Picoblaze source files (*.psm *.psh)" ) ) ;
+    if ( fileName == "" )
+        return ;
+
     if ( maybeSave() ) {
-        QString fileName = QFileDialog::getOpenFileName(
-            this, tr("Open Source File"), ".", tr( "Picoblaze source files (*.psm *.psh)" ) ) ;
         currentFile->setFileName ( fileName ) ;
 
-        if (! currentFile->open(QIODevice::ReadOnly | QIODevice::Text) ) {
+        if ( ! currentFile->open(QIODevice::ReadOnly | QIODevice::Text) ) {
             QMessageBox mb ;
             mb.setStandardButtons( QMessageBox::Ok ) ;
             mb.setInformativeText( fileName );
@@ -110,7 +185,7 @@ bool MainWindow::saveas() {
 bool MainWindow::saveFile(const QString fileName) {
     QFile file( fileName ) ;
 
-    if ( !file.open(QFile::WriteOnly) ) {
+    if ( !file.open( QFile::WriteOnly ) ) {
         QMessageBox::warning(this, tr("Application"),
             tr("Cannot write file %1:\n%2.").arg(fileName).arg(file.errorString()));
         return false ;
@@ -133,12 +208,9 @@ bool MainWindow::maybeSave() {
              QMessageBox::Cancel | QMessageBox::Escape
         ) ;
         if ( ret == QMessageBox::Yes )
-            return save();
+            return save() ;
         else if ( ret == QMessageBox::Cancel )
             return false ;
     }
-    return true;
+    return true ;
 }
-
-
-
