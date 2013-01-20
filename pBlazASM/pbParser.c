@@ -64,7 +64,7 @@ static int indent = 4 ;
 
 // generated code and data
 static uint32_t gCode[ CODESIZE ] ; // code space and scratchpad space (in words)
-static uint8_t gData[ DATASIZE ] ; // code space and scratchpad space (in words)
+static uint16_t gData[ DATASIZE ] ; // code space and scratchpad space (in words)
 
 // code
 static uint32_t gCodeRange = 1024 ; // selected code size
@@ -229,12 +229,12 @@ static int convert_char ( char * * pr, char * * ps ) {
  * @return new string with result (needs to be freeed)
  */
 static char * convert_string ( char * s ) {
-	char * p = calloc ( 2 * strlen( s ), sizeof( char ) ) ;
+	char * p = calloc ( 2 * strlen( s ) + 1, sizeof( char ) ) ;
 	char *r ;
 
 	for ( r = p ; *s != '\0' ; )
 		if ( convert_char ( &r, &s ) != etNONE ) {
-		    free( r ) ;
+		    free( p ) ;
             return NULL ;
 		}
 	*r++ = '\0' ;
@@ -309,7 +309,14 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 		val = 0 ;
 		for ( p = s ; *p != 0 ; p++ ) {
             switch ( *p ) {
-            case '0' ... '7' :
+            case '0' :
+            case '1' :
+            case '2' :
+            case '3' :
+            case '4' :
+            case '5' :
+            case '6' :
+            case '7' :
                 val = ( val << 3 ) + *p -'0' ;
                 break ;
             case '_' :
@@ -324,7 +331,16 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 		val = 0 ;
 		for ( p = s ; *p != 0 ; p++ ) {
             switch ( *p ) {
-            case '0' ... '9' :
+            case '0' :
+            case '1' :
+            case '2' :
+            case '3' :
+            case '4' :
+            case '5' :
+            case '6' :
+            case '7' :
+            case '8' :
+            case '9' :
                 val = ( val * 10 ) + *p -'0' ;
                 break ;
             case '_' :
@@ -339,13 +355,32 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 		val = 0 ;
 		for ( p = s ; *p != 0 ; p++ ) {
             switch ( *p ) {
-            case '0' ... '9' :
+            case '0' :
+            case '1' :
+            case '2' :
+            case '3' :
+            case '4' :
+            case '5' :
+            case '6' :
+            case '7' :
+            case '8' :
+            case '9' :
                 val = ( val << 4 ) + *p -'0' ;
                 break ;
-            case 'A' ... 'F' :
+            case 'A' :
+            case 'B' :
+            case 'C' :
+            case 'D' :
+            case 'E' :
+            case 'F' :
                 val = ( val << 4 ) + *p -'A' + 10 ;
                 break ;
-            case 'a' ... 'f' :
+            case 'a' :
+            case 'b' :
+            case 'c' :
+            case 'd' :
+            case 'e' :
+            case 'f' :
                 val = ( val << 4 ) + *p -'a' + 10 ;
                 break ;
             case '_' :
@@ -1789,7 +1824,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 									if ( *data == 0xFFFFFFFF && strlen ( dup ) > 0 )
 										*data = dup[ 0 ] ;
 									for ( i = 0 ; i < (int)strlen ( dup ) + 1 ; i += 1 )
-										gData[ gSCR++ ] = dup[ i ] ;
+										gData[ gSCR++ ] = dup[ i ] & 0x00FF ;
 								}
 								free ( dup ) ;
 								if ( (int)gSCR > gScrSize )
@@ -1950,6 +1985,10 @@ static void dump_data ( FILE * f, bool hex ) {
 static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint32_t data ) {
 	int n = 0 ;
 	char * s = NULL ;
+
+	if ( f == NULL )
+		return;
+
 	tok_first() ;
 	if ( e != etNONE ) {
 		fprintf ( f, "?? %s:\n", s_errors[ e ] ) ;
@@ -2100,7 +2139,7 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 		gCode[ h ] = 0xFFFC0000 ;
 	// clear data
 	for ( h = 0 ; h < DATASIZE ; h += 1 )
-		gData[ h ] = 0x00 ;
+		gData[ h ] = 0xDE00 ;
 
 	Sources = sourcefilenames ;
 	gCodeRange = 1024 ;
@@ -2150,7 +2189,7 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 	bMode = mode ;
 	bActive = true ;
 
-	if ( bCode ) {
+	if ( bCode && flist != NULL ) {
 		if ( b6 )
 			fprintf ( flist, "PB6\n" ) ;
 		else
@@ -2163,16 +2202,16 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 			result = false ;
 			goto finally ;
 		}
+		if ( flist != NULL ) {
 		fprintf ( flist, "---------- source file: %-75s\n", gSource ) ;
+		}
 		// pass 2, build code and scratchpad
 		for ( gLinenr = 0 ; file_gets ( line, sizeof ( line ), fsrc ) != NULL ; ) {
 			if ( lex ( line, mode ) ) {
 				result &= error ( e = assemble ( &addr, &code, &data, b6 ) ) ;
-				if ( flist != NULL )
 					print_line ( flist, e, addr, code, data ) ;
 			} else {
 				result &= error ( etLEX ) ;
-				if ( flist != NULL )
 					print_line ( flist, etLEX, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF ) ;
 			}
 			tok_free() ;
@@ -2193,11 +2232,13 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
     // merge scratch pad in code
 	} else if ( gScrLoc > -1 ) { // Merge data into code
 		for ( h = 0 ; h < gScrSize ; h += 2 ) {
-			if ( gCode[ ( gScrLoc + h ) / 2 ] == 0xFFFC0000 ) { // Data not overlapping used code
-				gCode[ ( gScrLoc + h ) / 2 ] = ( gData[ h + 1 ] << 8 ) | gData[ h ];
-			} else {
-				fprintf ( stderr, "? data and code overlap at: 0x%03x\n", ( gScrLoc + h ) / 2 ) ;
-			}
+			if ( ( ( gData [ h ] & 0xFF00 ) != 0xDE00 ) || ( ( gData [ h + 1 ] & 0xFF00 ) != 0xDE00 ) ) {
+                if ( gCode[ ( gScrLoc + h ) / 2 ] == 0xFFFC0000 ) { // Data not overlapping used code
+                    gCode[ ( gScrLoc + h ) / 2 ] = ( gData[ h + 1 ] << 8 ) | gData[ h ];
+                } else {
+                    fprintf ( stderr, "? data and code overlap at: 0x%03x\n", ( gScrLoc + h ) / 2 ) ;
+                }
+            }
 		}
 	} else if ( gSCR > 0 )
 		fprintf ( stderr, "? data section discarded, no .SCR given\n" ) ;

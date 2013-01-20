@@ -120,8 +120,8 @@ void init_symbol ( bool b6 ) {
     stamps[ 3 ].value.integer = ptime->tm_year - 100 ;
     stamps[ 4 ].value.integer = ptime->tm_mon + 1 ;
     stamps[ 5 ].value.integer = ptime->tm_mday ;
-    stamps[ 6 ].value.string = __TIME__ ;
-    stamps[ 7 ].value.string = __DATE__ ;
+    stamps[ 6 ].value.string = strdup ( __TIME__ ) ;
+    stamps[ 7 ].value.string = strdup ( __DATE__ ) ;
 
     for ( h = 0 ; h < (int)sizeof ( stamps ) / (int)sizeof ( symbol_t ) ; h += 1 )
         add_keyword ( &stamps[ h ] ) ;

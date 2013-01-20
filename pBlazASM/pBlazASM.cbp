@@ -40,6 +40,9 @@
 				</Linker>
 			</Target>
 		</Build>
+		<Linker>
+			<Add option="-static-libgcc" />
+		</Linker>
 		<Unit filename="getopt.h">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
