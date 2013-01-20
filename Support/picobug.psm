@@ -1,6 +1,6 @@
 
 //
-// Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+// Copyright © 2003..2013 : Henk van Kampen <henk@mediatronix.com>
 //
 // This file is part of pBlazASM.
 //
@@ -82,7 +82,7 @@ dump30:
 		
 		COMP	s0, ' '				// is this character a printing one or a control character
 		JUMP	NC, dump40			// printing
-		MOVE	s0, '.'				// no, control characters are replaced by a preriod
+		MOVE	s0, '.'				// no, control characters are replaced by a period
 		
 dump40:		CALL	putc				// print the character as is
 		CALL	putsp				// and a space
