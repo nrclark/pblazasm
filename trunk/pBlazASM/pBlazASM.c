@@ -26,14 +26,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <malloc.h>
-#include <unistd.h>
 
 #include "pbTypes.h"
 #include "pbParser.h"
 #include "pbLibgen.h"
 
-#ifdef TCC
+#if defined TCC || defined _MSC_VER
 #include "getopt.h"
+#else
+#include <unistd.h>
 #endif
 
 #include "version.h"
