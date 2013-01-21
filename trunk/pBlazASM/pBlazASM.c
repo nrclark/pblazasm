@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2003..2013 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright ï¿½ 2003..2013 : Henk van Kampen <henk@mediatronix.com>
  *
  *  This file is part of pBlazASM.
  *
@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
 
 #include "pbTypes.h"
 #include "pbParser.h"
