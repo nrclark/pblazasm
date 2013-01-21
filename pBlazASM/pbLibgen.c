@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2003..2013 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright ï¿½ 2003..2013 : Henk van Kampen <henk@mediatronix.com>
  *
  *	This file is part of pBlazASM.
  *
@@ -40,7 +40,7 @@ char * filename( const char * path ) {
 char * dirname( const char * path ) {
     char * newpath ;
     const char * slash ;
-    int length ;
+    long length ;
 
     slash = strrchr( path, '\\' ) ;
     if ( slash == 0 ) {

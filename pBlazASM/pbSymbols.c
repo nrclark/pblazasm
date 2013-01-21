@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2003..2013 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright ï¿½ 2003..2013 : Henk van Kampen <henk@mediatronix.com>
  *
  *  This file is part of pBlazASM.
  *
@@ -21,7 +21,7 @@
  * Implements a closed hash table, with linear probing, with an increment of 1
  */
 
-#include <malloc.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <stdint.h>
