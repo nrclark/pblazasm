@@ -22,15 +22,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <unistd.h>
 #include <time.h>
 
 #include "pbTypes.h"
 #include "pbLibgen.h"
 #include "pbCRC32.h"
 
-#ifdef TCC
+#if defined TCC || defined _MSC_VER
 #include "getopt.h"
+#else
+#include <unistd.h>
 #endif
 
 #include "bsParse.h"
@@ -49,7 +50,7 @@ static void usage ( char * text ) {
     printf ( "under certain conditions. See <http://www.gnu.org/licenses/>\n"  ) ;
 
     printf ( "\nUSAGE:\n" ) ;
-    printf ( "   pBlazBIT -3|-3a|-3e|-6 [-v] -b<nr_blockram> -c<MEM code inputfile> [-s<MEM data inputfile] -o<BIT outputfile> <BIT inputfile>\\n" ) ;
+    printf ( "   pBlazBIT -3|-3a|-3e|-6 [-v] -b<nr_blockram> -c<MEM code inputfile> [-s<MEM data inputfile] -o<BIT outputfile> <BIT inputfile>\n" ) ;
 }
 
 bool loadMEM ( const char * strCodefile, const char * strDatafile ) {
