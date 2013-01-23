@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <unistd.h>
 #include <time.h>
 
 #include "pbTypes.h"
@@ -29,11 +28,13 @@
 #include "pbPicoCore.h"
 #include "version.h"
 
-#ifdef TCC
+#if defined TCC || defined _MSC_VER
 #include "getopt.h"
+#else
+#include <unistd.h>
 #endif
 
-
+// data
 static INST_t Code[ MAXMEM ] ;
 static uint32_t Data[ MAXSCR ] ;
 static uint64_t inst_map = 0ll ;
