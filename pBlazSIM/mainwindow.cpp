@@ -43,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi( this ) ;
 
     this->setWindowTitle( "pBlazSIM V1.7 (Qt4.8.4) - http://www.mediatronix.com" ) ;
-    this->setWindowIcon(QIcon(":/files/bug_red.ico"));
+    this->setWindowIcon( QIcon( ":/files/bug_red.ico" ) ) ;
 
     // font used for all views
     QFont fixedFont( "Consolas [Monaco]", 9 ) ;
@@ -52,7 +52,9 @@ MainWindow::MainWindow(QWidget *parent) :
     engine = new QScriptEngine() ;
     debugger = new QScriptEngineDebugger() ;
     debugger->attachTo( engine ) ;
-    QFile scriptFile( /* qApp->applicationDirPath() + "/" + */ ":/files/IO.js" ) ;
+    QFile scriptFile(                           /* qApp->applicationDirPath() + "/" + */
+        ":/files/IO.js"
+    ) ;
     if ( ! scriptFile.open( QIODevice::ReadOnly ) )
         qDebug() << "no IO config script file: " << scriptFile.fileName() ;
     QTextStream stream( &scriptFile ) ;
@@ -61,29 +63,29 @@ MainWindow::MainWindow(QWidget *parent) :
     engine->evaluate( program ) ;
 
     // terminal support
-    eater = new KeyPressEater();
+    eater = new KeyPressEater() ;
     eater->w = this ;
     ui->teTerminal->installEventFilter( eater ) ;
-    ui->teTerminal->setFont(fixedFont);
+    ui->teTerminal->setFont( fixedFont ) ;
 
     lhsb = new HexSpinBox() ;
-    lhsb->setPrefix("0x") ;
-    lhsb->setMinimum(0x00) ;
-    lhsb->setMaximum(0xFF ) ;
-    ui->verticalLayoutIO->insertWidget(1, lhsb) ;
+    lhsb->setPrefix( "0x" ) ;
+    lhsb->setMinimum( 0x00 ) ;
+    lhsb->setMaximum( 0xFF ) ;
+    ui->verticalLayoutIO->insertWidget( 1, lhsb ) ;
 
     fhsb = new HexSpinBox() ;
-    fhsb->setPrefix("0x") ;
-    fhsb->setMinimum(0x00) ;
-    fhsb->setMaximum(0xFF) ;
-    ui->verticalLayoutIO->insertWidget(1, fhsb) ;
+    fhsb->setPrefix( "0x" ) ;
+    fhsb->setMinimum( 0x00 ) ;
+    fhsb->setMaximum( 0xFF ) ;
+    ui->verticalLayoutIO->insertWidget( 1, fhsb ) ;
 
 
-    // tabWidget to show scratchpad
-    ui->tabWidget->setCurrentIndex( 0 ) ;
+    // twIO to show scratchpad
+    ui->twIO->setCurrentIndex( 0 ) ;
 
     // our simulated core
-    pBlaze = new Picoblaze();
+    pBlaze = new QmtxPicoblaze();
 
     // icons used for Code view
     blueIcon = new QIcon(":/images/bullet_ball_glass_blue.png");
@@ -224,7 +226,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // emulated IO devices
 
     // Scripted IO
-    pBlaze->setIOdevice( this, 0x00, 0xFF, new SCRIPT() ) ;
+    pBlaze->setIODevice( this, 0x00, 0xFF, new SCRIPT() ) ;
 
     // setup ledsmodel for ledsview
     ledsModel = new QStandardItemModel ;
@@ -255,20 +257,20 @@ MainWindow::MainWindow(QWidget *parent) :
         for ( int bits = 0 ; bits < 8 ; bits += 1 )
             leds->setItem( bits, ledsModel->item( bits, io ) ) ;
         leds->update();
-        pBlaze->setIOdevice( this, io, io, leds ) ;
+        pBlaze->setIODevice( this, io, io, leds ) ;
     }
 
     // UART, lives in 2 places
     UART_IN = new QQueue<uint32_t>() ;
-    pBlaze->setIOdevice( this, 0xEC, 0xED, new UART() ) ;
+    pBlaze->setIODevice( this, 0xEC, 0xED, new UART() ) ;
 
     // CC, lives in 16 places
     CC * cc = new CC() ;
     cc->pBlaze = pBlaze ;
-    pBlaze->setIOdevice( this, 0xC0, 0xCF, cc ) ;
+    pBlaze->setIODevice( this, 0xC0, 0xCF, cc ) ;
 
     // SBOX
-    pBlaze->setIOdevice( this, 0xF0, 0xF0, new SBOX() ) ;
+    pBlaze->setIODevice( this, 0xF0, 0xF0, new SBOX() ) ;
 
 
     // timer for running code
@@ -527,7 +529,7 @@ void MainWindow::on_actionExit_triggered()
 
 // select/deselect helper
 void MainWindow::selectLine( QItemSelectionModel::SelectionFlags option ) {
-    QStandardItem * item = pBlaze->getCurrentCodeItem() ;
+    QStandardItem * item = (QStandardItem *)pBlaze->getCurrentCodeItem() ;
     if ( item != NULL ) {
         QItemSelectionModel * selection = ui->tvCode->selectionModel() ;
         selection->select( item->index(), option | QItemSelectionModel::Rows ) ;
@@ -678,7 +680,7 @@ void MainWindow::on_tvStack_doubleClicked(const QModelIndex &index) {
 
     if ( col == 1 ) {
         int retaddr = pBlaze->getStackPcValue( row ) ;
-        item = pBlaze->getCodeItem( retaddr ) ;
+        item = (QStandardItem *)pBlaze->getCodeItem( retaddr ) ;
         if ( item != NULL ) {
             ui->tvCode->scrollTo( item->index(), QAbstractItemView::EnsureVisible);
             ui->tvCode->setFocus( Qt::MouseFocusReason );
@@ -711,7 +713,7 @@ void MainWindow::on_tvState_doubleClicked(const QModelIndex &index) {
 
     if ( col == 1 && row == 0 ) {
         uint32_t pc = pBlaze->getPcValue() ;
-        item = pBlaze->getCodeItem( pc ) ;
+        item = (QStandardItem *)pBlaze->getCodeItem( pc ) ;
         if ( item != NULL ) {
             ui->tvCode->scrollTo( item->index(), QAbstractItemView::EnsureVisible);
             ui->tvCode->setFocus( Qt::MouseFocusReason );
@@ -786,7 +788,7 @@ void MainWindow::on_actionRemove_triggered() {
     for ( int addr = 0 ; addr < MAXMEM ; addr += 1 ) {
         if ( pBlaze->getBreakpoint( addr ) ) {
             pBlaze->resetBreakpoint( addr ) ;
-            QStandardItem * item = pBlaze->getCodeItem( addr ) ;
+            QStandardItem * item = (QStandardItem *)pBlaze->getCodeItem( addr ) ;
             if ( item != NULL )
                 item->setIcon( *blueIcon ) ;
         }

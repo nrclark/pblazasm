@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2003..2013 : Henk van Kampen <henk@mediatronix.com>
  *
  *  This file is part of pBlazASM.
  *
@@ -20,110 +20,29 @@
 #ifndef PBLAZE_H
 #define PBLAZE_H
 
-#include <QStandardItem>
-
-class Picoblaze ;
-
 #define MAXMEM 4096
 #define MAXSCR 256
 #define MAXIO 256
 #define MAXSTK 32
 #define MAXREG 16
 
-class IODevice : public QObject
- {
-     Q_OBJECT
-
+class IODevice {
 public:
     virtual ~IODevice(){}
 
-    virtual uint32_t getValue ( uint32_t address ) { return 0 ; }
+    virtual uint32_t getValue ( uint32_t address ) { return address ; }
     virtual void setValue ( uint32_t address, uint32_t value ) {}
     virtual void update( void ) {}
 
-    QObject * w ;
+    void * w ;
 
 protected :
    int addr ;
 } ;
 
-class SCRIPT : public IODevice {
-    Q_OBJECT
-
-public:
-   uint32_t getValue ( uint32_t address ) ;
-   void setValue ( uint32_t address, uint32_t value ) ;
-
-protected :
-} ;
-
-class UART : public IODevice
-{
-     Q_OBJECT
-
- public:
-    uint32_t getValue ( uint32_t address ) ;
-    void setValue ( uint32_t address, uint32_t value ) ;
-
-protected :
-} ;
-
-class CC : public IODevice
-{
-     Q_OBJECT
-
-private:
-    uint64_t TimeStamp ;
-    uint64_t TimeDelta ;
-
-public:
-    uint32_t getValue ( uint32_t address ) ;
-    void setValue ( uint32_t address, uint32_t value ) ;
-
-    Picoblaze * pBlaze ;
-} ;
-
-class SBOX : public IODevice
-{
-     Q_OBJECT
-
- public:
-    uint32_t getValue ( uint32_t address ) ;
-    void setValue ( uint32_t address, uint32_t value ) ;
-
-private:
-    uint32_t index ;
-} ;
-
-class LEDs : public IODevice
-{
-     Q_OBJECT
-
- public:
-    LEDs( void ) ;
-    void setItem ( uint32_t reg, QStandardItem * item ) {
-        leds[ reg ] = item ;
-    }
-
-    uint32_t getValue ( uint32_t address ) ;
-    void setValue ( uint32_t address, uint32_t value ) ;
-    void update( void ) ;
-
-private:
-    QStandardItem * leds[ 8 ] ;
-
-    uint32_t rack ;
-
-    QIcon * greenIcon ;
-    QIcon * blackIcon ;
-} ;
-
 
 // Picoblaze
-class Picoblaze : public QObject
- {
-     Q_OBJECT
-
+class Picoblaze {
     friend class IODevice ;
     friend class UART ;
     friend class CC ;
@@ -135,9 +54,6 @@ public:
 
     void clearCode( void ) ;
     void clearScratchpad( void ) ;
-    void updateData( void ) ;
-    void updateState( void ) ;
-    void updateIO( void ) ;
 
     void setCore( bool bCore ) {
         bPB3 = bCore ;
@@ -172,14 +88,15 @@ public:
     }
 
     void setScratchpadData( uint32_t cell, uint32_t value ) {
-        scratchpad[ cell ].value = value ;
+        if ( cell < MAXSCR )
+            scratchpad[ cell ].value = value ;
     }
 
-    QStandardItem * getCodeItem( uint32_t address ) {
+    void * getCodeItem( uint32_t address ) {
         return Code[ address ].item ;
     }
 
-    QStandardItem * getCurrentCodeItem( void ) {
+    void * getCurrentCodeItem( void ) {
         if ( pc < MAXMEM )
             return Code[ pc ].item ;
         else
@@ -190,7 +107,7 @@ public:
         return Code[ address ].count ;
     }
 
-    void setCodeItem( uint32_t address, uint32_t code, uint32_t line, QStandardItem * item ){
+    void setCodeItem( uint32_t address, uint32_t code, uint32_t line, void * item ){
         Code[ address ].code = code ;
         Code[ address ].line = line ;
         Code[ address ].breakpoint = false ;
@@ -202,35 +119,63 @@ public:
         return pc ;
     }
 
+    uint32_t getSpValue( void ) {
+        return sp ;
+    }
+
+    bool getZero() {
+        return zero ;
+    }
+
+    bool getCarry() {
+        return carry ;
+    }
+
+    bool getEnable() {
+        return enable ;
+    }
+
+    int getBank() {
+        return bank ;
+    }
+
     uint32_t getStackPcValue( uint32_t address ) {
         return stack[ address ].pc ;
     }
 
-    void setStackItem ( uint32_t sp, QStandardItem * item ) {
+    void * getStackItem ( uint32_t sp ) {
+        return stack[ sp ].item ;
+    }
+
+    void setStackItem ( uint32_t sp, void * item ) {
         stack[ sp ].pc = 0 ;
         stack[ sp ].zero = false ;
         stack[ sp ].carry = false ;
         stack[ sp ].item = item ;
     }
 
-    void setScratchpadItem ( uint32_t cell, QStandardItem * item ) {
+    void * getScratchpadItem ( uint32_t cell ) {
+        return scratchpad[ cell ].item ;
+    }
+
+    void setScratchpadItem ( uint32_t cell, void * item ) {
         scratchpad[ cell ].value = 0 ;
         scratchpad[ cell ].item = item ;
     }
 
     void setScratchpadValue ( uint32_t cell, uint32_t value ) {
         scratchpad[ cell ].value = value ;
-        if ( scratchpad[ cell ].item != NULL ) {
-            QString s = QString("%1").arg( value, 2, 16 ).toUpper() ;
-            scratchpad[ cell ].item->setData( s, Qt::DisplayRole ) ;
-        }
     }
 
     uint32_t getScratchpadValue ( uint32_t cell ) {
         return scratchpad[ cell ].value ;
     }
 
-    void setRegisterItem ( uint32_t reg, QStandardItem * item ) {
+    void * getRegisterItem( uint32_t reg ) {
+        return registers[ 1 ][ reg ].item ;
+    }
+
+    void setRegisterItem ( uint32_t reg, void * item ) {
         registers[ 0 ][ reg ].value = 0 ;
         registers[ 0 ][ reg ].item = item ;
         registers[ 1 ][ reg ].value = 0 ;
@@ -239,21 +184,17 @@ public:
 
     void setRegisterValue ( uint32_t cell, uint32_t value ) {
         registers[ bank ][ cell ].value = value ;
-        if ( registers[ bank ][ cell ].item != NULL ) {
-            QString s = QString("%1").arg( value, 2, 16 ).toUpper() ;
-            registers[ bank ][ cell ].item->setData( s, Qt::DisplayRole ) ;
-        }
     }
 
     uint32_t getRegisterValue ( uint32_t cell ) {
         return registers[ bank ][ cell ].value ;
     }
 
-    void setStateItem ( uint32_t row, QStandardItem * item ) {
-        stateItems[ row ] = item ;
+    bool isRegisterDefined( int reg ) {
+        return registers[ bank ][ reg ].defined ;
     }
 
-    void setIOdevice ( QObject * w, int addr_l, int addr_h, IODevice * device ) {
+    void setIODevice ( void * w, int addr_l, int addr_h, IODevice * device ) {
         device->w = w ;
         for ( int addr = addr_l ; addr <= addr_h ; addr +=1 )
             IO[ addr ].device = device ;
@@ -268,59 +209,51 @@ public:
     bool stepPB6 ( void ) ;
 
 private:
-    void updateScratchPad( void ) ;
-    void updateStack( void ) ;
-    void updateRegisters( void ) ;
-
     typedef struct _inst {
         uint32_t code ;
-        uint line ;
+        unsigned line ;
         bool breakpoint ;
         uint64_t count ;
-        QStandardItem * item ;
+        void * item ;
     } INST_t ;
 
     typedef struct _stack {
         uint32_t pc ;
         bool zero ;
         bool carry ;
-        QStandardItem * item ;
+        void * item ;
     } STACK_t ;
 
     typedef struct _register {
         uint32_t value ;
         bool defined ;
-        QStandardItem * item ;
+        void * item ;
     } REG_t ;
 
     typedef struct _data {
         uint32_t value ;
-        QStandardItem * item ;
+        void * item ;
     } DATA_t ;
 
     typedef struct _io {
         IODevice * device ;
-        QStandardItem * item ;
+        void * item ;
     } IO_t ;
 
-    uint64_t CycleCounter ;
-
-    INST_t Code[ MAXMEM ] ;
-
     bool bPB3 ;
+    uint64_t CycleCounter ;
 
     uint32_t pc, npc, barrier ;
     uint32_t sp, nsp ;
     int bank ;
 
+    INST_t Code[ MAXMEM ] ;
     DATA_t scratchpad[ MAXSCR ] ;
     STACK_t stack[ 32 ] ;
     REG_t registers[ 2 ][ 16 ] ;
     IO_t IO[ MAXSCR ] ;
-    QStandardItem * stateItems[ 6 ] ;
 
     bool carry, zero, enable ;
-
 
     inline uint32_t DestReg ( const int code ) {
         return ( code >> 8 ) & 0xF ;
@@ -340,10 +273,7 @@ private:
         else
             return code & 0xFFF ;
     }
-
 } ;
-
-
 
 #endif // PBLAZE_H
 

@@ -20,6 +20,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QObject>
+
 #include <QMainWindow>
 #include <QStringList>
 #include <QStringListModel>
@@ -49,6 +51,7 @@
 
 
 #include "pBlaze.h"
+#include "pBlazeIO.h"
 #include "hexspinbox.h"
 
 
@@ -69,7 +72,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    Picoblaze * pBlaze ;
+    QmtxPicoblaze * pBlaze ;
     QQueue<uint32_t> * UART_IN ;
 
 public slots:
