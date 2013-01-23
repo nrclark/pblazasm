@@ -21,15 +21,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <unistd.h>
 #include <time.h>
 
 #include "pbTypes.h"
 #include "pbLibgen.h"
 
-#ifdef TCC
+#if defined TCC || defined _MSC_VER
 #include "getopt.h"
+#else
+#include <unistd.h>
 #endif
+
 
 #include "version.h"
 
