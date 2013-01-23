@@ -533,7 +533,6 @@ bool parse_packets6 ( void ) {
     return result ;
 }
 
-#ifdef _DEBUG_
 void show_file ( void ) {
     int i, j, k ;
     FILE * outfile ;
@@ -691,7 +690,6 @@ void show_file ( void ) {
     }
     fclose ( outfile ) ;
 }
-#endif
 
 bool merge_code ( uint16_t * code, int len, int nr, int bVerbose ) {
     int i, j, s ;
@@ -1163,11 +1161,9 @@ bool parse_file ( const char * strBitfile, BitStreamType_e bsType, int bVerbose 
         break;
     }
 
-#ifdef _DEBUG_
 // report
     if ( result && ( bVerbose > 1 ) )
         show_file() ;
-#endif
 
     free ( pRaw ) ;
     fclose ( infile ) ;
