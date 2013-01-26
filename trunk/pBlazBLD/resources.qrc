@@ -27,5 +27,7 @@
         <file>undo.png</file>
         <file>about.png</file>
         <file>worker.png</file>
+        <file>document_add.png</file>
+        <file>document_delete.png</file>
     </qresource>
 </RCC>

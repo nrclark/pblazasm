@@ -11,11 +11,14 @@
 #include <QSettings>
 #include <QProcess>
 #include <QDebug>
-
+#include <QLayout>
+#include <QSplitter>
+#include <QMenu>
 
 #include <Qsci/qsciscintilla.h>
 #include <Qsci/qscilexerpsm.h>
 
+#include "projecthandler.h"
 
 namespace Ui {
     class MainWindow;
@@ -42,8 +45,11 @@ private slots:
     void on_actionSave_triggered();
     void on_actionSaveAs_triggered();
     void on_actionNew_triggered();
-
     void on_actionAssemble_triggered();
+    void on_actionAdd_source_file_triggered();
+    void on_actionRemove_source_file_triggered();
+
+    void on_treeWidget_pressed(const QModelIndex &index);
 
 private:
     Ui::MainWindow * ui ;
@@ -56,6 +62,9 @@ private:
     QLabel * lbPosition ;
 
     QFile * currentFile ;
+    QmtxProjectHandler * projectHandler ;
+
+    QMenu * popup ;
 
     bool saveFile(const QString fileName ) ;
     bool maybeSave() ;
