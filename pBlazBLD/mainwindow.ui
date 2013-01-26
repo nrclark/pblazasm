@@ -42,6 +42,9 @@
     <addaction name="actionSave"/>
     <addaction name="actionSaveAs"/>
     <addaction name="separator"/>
+    <addaction name="actionAdd_source_file"/>
+    <addaction name="actionRemove_source_file"/>
+    <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -88,6 +91,9 @@
    <addaction name="actionSave"/>
    <addaction name="actionSaveAs"/>
    <addaction name="actionExit"/>
+   <addaction name="separator"/>
+   <addaction name="actionAdd_source_file"/>
+   <addaction name="actionRemove_source_file"/>
    <addaction name="separator"/>
    <addaction name="actionUndo"/>
    <addaction name="actionRedo"/>
@@ -229,6 +235,29 @@
    </property>
    <property name="text">
     <string>Redo</string>
+   </property>
+  </action>
+  <action name="actionAdd_source_file">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/document_add.png</normaloff>:/images/document_add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add source file</string>
+   </property>
+  </action>
+  <action name="actionCancel">
+   <property name="text">
+    <string>Cancel</string>
+   </property>
+  </action>
+  <action name="actionRemove_source_file">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/document_delete.png</normaloff>:/images/document_delete.png</iconset>
+   </property>
+   <property name="text">
+    <string>Remove source file</string>
    </property>
   </action>
  </widget>

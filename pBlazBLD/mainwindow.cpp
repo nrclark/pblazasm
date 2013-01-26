@@ -8,8 +8,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     icon.addFile( ":/files/worker.ico" ) ;
     this->setWindowTitle( "pBlazBLD V0.1 (Qt4.8.4) - http://www.mediatronix.com" ) ;
     this->setWindowIcon( icon ) ;
-    qApp->setWindowIcon( icon ) ;
     qApp->setApplicationName("pBlazBLD V0.1 (Qt4.8.4)");
+    qApp->setWindowIcon( icon ) ;
+
+    // main splitter layout
+    QSplitter * splitter = new QSplitter( this ) ;
+    setCentralWidget( splitter ) ;
 
     QFont fixedFont( "Consolas [Monaco]", 9 ) ;
 
@@ -20,9 +24,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     lbPosition = new QLabel( tr("00:00") ) ;
     ui->statusBar->addWidget( lbPosition, 50 ) ;
 
+    popup = new QMenu() ;
+    popup->addAction( ui->actionAdd_source_file ) ;
+    popup->addAction( ui->actionRemove_source_file ) ;
+    popup->addSeparator();
+    popup->addAction( ui->actionCancel ) ;
+
+    projectHandler = new QmtxProjectHandler( this ) ;
+
+    splitter->addWidget( projectHandler->getVariantEditor() ) ;
+    projectHandler->getVariantEditor()->setFont( fixedFont ) ;
+
     // source editor
-    textEdit = new QsciScintilla() ;
-    setCentralWidget( textEdit ) ;
+    textEdit = new QsciScintilla( splitter ) ;
 
     // lexer for Picoblaze Assembler text
     lexer = new QsciLexerPsm() ;
@@ -89,6 +103,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->actionMerge->setEnabled( QFile::exists( "./pBlazMRG.exe" ) ) ;
     ui->actionBitfile->setEnabled( QFile::exists( "./pBlazBIT.exe" ) ) ;
 
+    splitter->setStretchFactor( 0, 20 ) ;
+    splitter->setStretchFactor( 1, 80 ) ;
+
     readSettings() ;
 }
 
@@ -143,6 +160,7 @@ void MainWindow::onTextchanged() {
 }
 
 void MainWindow::onMarginClicked( int margin, int line, Qt::KeyboardModifiers state ) {
+    Q_UNUSED(line ) ;
     textEdit->markerAdd( margin, state ) ;
 }
 
@@ -153,7 +171,7 @@ void MainWindow::onModificationchanged( bool m ) {
 void MainWindow::on_actionOpen_triggered() {
     QString fileName = QFileDialog::getOpenFileName(
         this, tr("Open Source File"), ".", tr( "Picoblaze source files (*.psm *.psh)" ) ) ;
-    if ( fileName == "" )
+    if ( fileName.isNull() )
         return ;
 
     if ( maybeSave() ) {
@@ -200,7 +218,7 @@ bool MainWindow::saveFile(const QString fileName) {
 
     if ( !file.open( QFile::WriteOnly ) ) {
         QMessageBox::warning(this, tr("Application"),
-            tr("Cannot write file %1:\n%2.").arg(fileName).arg(file.errorString()));
+            tr("Cannot write file %1:\n%2.").arg(fileName).arg(file.errorString() ) ) ;
         return false ;
     }
 
@@ -245,4 +263,16 @@ void MainWindow::on_actionAssemble_triggered() {
         qDebug() << "pBlazASM failed:" << pBlazASM.errorString();
     else
         qDebug() << "pBlazASM output:" << pBlazASM.readAll();
+}
+
+void MainWindow::on_actionAdd_source_file_triggered() {
+    projectHandler->addSourceFile( currentFile->fileName() ) ;
+}
+
+void MainWindow::on_actionRemove_source_file_triggered() {
+    projectHandler->removeSourceFile( currentFile->fileName() ) ;
+}
+
+void MainWindow::on_treeWidget_pressed(const QModelIndex &index) {
+    Q_UNUSED( index ) ;
 }
