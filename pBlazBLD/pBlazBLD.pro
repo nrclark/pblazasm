@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui xml
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -15,17 +15,19 @@ win32 {
     QMAKE_LFLAGS += -static-libgcc -static-libstdc++
 }
 
-include(../../../qt-solutions-qt-solutions/qtpropertybrowser/src/qtpropertybrowser.pri)
+include(../../../qtsolutions/qtpropertybrowser/src/qtpropertybrowser.pri)
 include(extension/extension.pri)
 
 LIBS += libqscintilla2
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    projecthandler.cpp
+    projecthandler.cpp \
+    qxmlsettings.cpp
 
 HEADERS  += mainwindow.h \
-    projecthandler.h
+    projecthandler.h \
+    qxmlsettings.h
 
 FORMS    += mainwindow.ui
 

@@ -1,9 +1,15 @@
 #ifndef PROJECTHANDLER_H
 #define PROJECTHANDLER_H
 
+#include <QObject>
+
+#include <QSizePolicy>
 #include <QXmlStreamReader>
 #include <QFile>
 #include <QFileInfo>
+#include <QMessageBox>
+#include <QSettings>
+#include <QFileDialog>
 
 #include "variantmanager.h"
 #include "variantfactory.h"
@@ -13,27 +19,53 @@
 #include "qttreepropertybrowser.h"
 
 
-
 class QmtxProjectHandler {
 public:
     explicit QmtxProjectHandler( QObject *parent = 0 ) ;
     virtual ~QmtxProjectHandler() ;
 
+    bool isModified();
+
+    void Init();
+    void New() ;
+    void Load() ;
+    void Save() ;
+    bool maybeSave() ;
+
     void addSourceFile( QString fileName ) ;
     void removeSourceFile(QString fileName) ;
 
     QtTreePropertyBrowser * getVariantEditor( void ) ;
+    QFont getFont() ;
+
+public Q_SLOTS:
+    void setModified(QtProperty * prop, const QVariant &var ) ;
 
 private:
-    QtVariantPropertyManager * variantManager ;
-    QtVariantEditorFactory * variantFactory ;
+    QString projectFileName ;
+    VariantManager * variantManager ;
+    VariantFactory * variantFactory ;
     QtTreePropertyBrowser * variantEditor ;
+    QFont * fixedFont ;
+    bool modified ;
 
-    QtProperty * editorItem, * asmItem, * mrgItem, * bitItem ;
-    QtProperty * asmOptions, * asmSources ;
-    QtProperty * mrgOptions, * mrgSources ;
-    QtProperty * bitOptions, * bitSources ;
+    QtVariantProperty * editorItem, * asmItem, * mrgItem, * bitItem ;
+    QtVariantProperty * asmOptions, * asmSources ;
+    QtVariantProperty * asmOptVerbose ;
 
+    QtVariantProperty * mrgOptions, * mrgSources ;
+    QtVariantProperty * mrgOptVerbose ;
+
+    QtVariantProperty * bitOptions, * bitSources ;
+    QtVariantProperty * bitOptVerbose ;
+
+    QtVariantProperty * fontItem ;
+    QtVariantProperty * projectItem ;
+
+    bool load_file();
+    bool save_file();
+    bool saveas();
+    bool save() ;
 } ;
 
 

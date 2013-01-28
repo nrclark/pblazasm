@@ -15,8 +15,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     QSplitter * splitter = new QSplitter( this ) ;
     setCentralWidget( splitter ) ;
 
-    QFont fixedFont( "Consolas [Monaco]", 9 ) ;
-
     lbMode = new QLabel( tr( "insert" ) ) ;
     ui->statusBar->addWidget( lbMode, 50 ) ;
     lbModified = new QLabel( tr("N") ) ;
@@ -33,7 +31,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     projectHandler = new QmtxProjectHandler( this ) ;
 
     splitter->addWidget( projectHandler->getVariantEditor() ) ;
-    projectHandler->getVariantEditor()->setFont( fixedFont ) ;
 
     // source editor
     textEdit = new QsciScintilla( splitter ) ;
@@ -41,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     // lexer for Picoblaze Assembler text
     lexer = new QsciLexerPsm() ;
     textEdit->setLexer( lexer ) ;
-    lexer->setFont( fixedFont ) ;
+    lexer->setFont( projectHandler->getFont() ) ;
 
     // editor settings
     textEdit->setMarginWidth( 0, QString("00000") ) ;
@@ -128,7 +125,7 @@ void MainWindow::writeSettings() {
 }
 
 void MainWindow::closeEvent( QCloseEvent *event ) {
-    if ( maybeSave() ) {
+    if ( projectHandler->maybeSave() && maybeSaveFile() ) {
         writeSettings() ;
         event->accept() ;
     } else
@@ -144,7 +141,7 @@ void MainWindow::on_actionAbout_triggered() {
 }
 
 void MainWindow::on_actionNew_triggered() {
-    if ( maybeSave() ) {
+    if ( maybeSaveFile() ) {
         textEdit->clear() ;
         textEdit->setModified( false ) ;
         currentFile->setFileName( "" ) ;
@@ -174,7 +171,7 @@ void MainWindow::on_actionOpen_triggered() {
     if ( fileName.isNull() )
         return ;
 
-    if ( maybeSave() ) {
+    if ( maybeSaveFile() ) {
         currentFile->setFileName ( fileName ) ;
 
         if ( ! currentFile->open(QIODevice::ReadOnly | QIODevice::Text) ) {
@@ -229,13 +226,11 @@ bool MainWindow::saveFile(const QString fileName) {
     return true ;
 }
 
-bool MainWindow::maybeSave() {
+bool MainWindow::maybeSaveFile() {
     if ( textEdit->isModified() ) {
         int ret = QMessageBox::warning(this, tr("pBlazBLD"),
-             tr("The document has been modified.\n"
-                "Do you want to save your changes?"),
-             QMessageBox::Yes | QMessageBox::Default,
-             QMessageBox::No,
+             "The document has been modified.\nDo you want to save your changes?",
+             QMessageBox::Yes | QMessageBox::No,
              QMessageBox::Cancel | QMessageBox::Escape
         ) ;
         if ( ret == QMessageBox::Yes )
@@ -273,6 +268,17 @@ void MainWindow::on_actionRemove_source_file_triggered() {
     projectHandler->removeSourceFile( currentFile->fileName() ) ;
 }
 
-void MainWindow::on_treeWidget_pressed(const QModelIndex &index) {
-    Q_UNUSED( index ) ;
+void MainWindow::on_actionNew_Project_triggered() {
+    projectHandler->New() ;
 }
+
+void MainWindow::on_actionOpen_Project_triggered() {
+    projectHandler->Load() ;
+}
+
+void MainWindow::on_actionSave_Project_triggered() {
+    projectHandler->Save() ;
+}
+
+
+

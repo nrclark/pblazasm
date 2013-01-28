@@ -37,13 +37,16 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionNew_Project"/>
+    <addaction name="actionOpen_Project"/>
+    <addaction name="actionAdd_source_file"/>
+    <addaction name="actionRemove_source_file"/>
+    <addaction name="actionSave_Project"/>
+    <addaction name="separator"/>
     <addaction name="actionNew"/>
     <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
     <addaction name="actionSaveAs"/>
-    <addaction name="separator"/>
-    <addaction name="actionAdd_source_file"/>
-    <addaction name="actionRemove_source_file"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
@@ -86,14 +89,17 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionNew_Project"/>
+   <addaction name="actionOpen_Project"/>
+   <addaction name="actionAdd_source_file"/>
+   <addaction name="actionRemove_source_file"/>
+   <addaction name="actionSave_Project"/>
+   <addaction name="actionExit"/>
+   <addaction name="separator"/>
    <addaction name="actionNew"/>
    <addaction name="actionOpen"/>
    <addaction name="actionSave"/>
    <addaction name="actionSaveAs"/>
-   <addaction name="actionExit"/>
-   <addaction name="separator"/>
-   <addaction name="actionAdd_source_file"/>
-   <addaction name="actionRemove_source_file"/>
    <addaction name="separator"/>
    <addaction name="actionUndo"/>
    <addaction name="actionRedo"/>
@@ -245,6 +251,9 @@
    <property name="text">
     <string>Add source file</string>
    </property>
+   <property name="toolTip">
+    <string>Add source file to project</string>
+   </property>
   </action>
   <action name="actionCancel">
    <property name="text">
@@ -258,6 +267,45 @@
    </property>
    <property name="text">
     <string>Remove source file</string>
+   </property>
+   <property name="toolTip">
+    <string>Remove source file from project</string>
+   </property>
+  </action>
+  <action name="actionNew_Project">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/document_new.png</normaloff>:/images/document_new.png</iconset>
+   </property>
+   <property name="text">
+    <string>New Project</string>
+   </property>
+   <property name="toolTip">
+    <string>Create new project</string>
+   </property>
+  </action>
+  <action name="actionOpen_Project">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/document_into.png</normaloff>:/images/document_into.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open Project</string>
+   </property>
+   <property name="toolTip">
+    <string>Open an existing project</string>
+   </property>
+  </action>
+  <action name="actionSave_Project">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/document_out.png</normaloff>:/images/document_out.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save Project</string>
+   </property>
+   <property name="toolTip">
+    <string>Save current project</string>
    </property>
   </action>
  </widget>

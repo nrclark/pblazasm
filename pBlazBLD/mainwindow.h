@@ -49,7 +49,9 @@ private slots:
     void on_actionAdd_source_file_triggered();
     void on_actionRemove_source_file_triggered();
 
-    void on_treeWidget_pressed(const QModelIndex &index);
+    void on_actionNew_Project_triggered();
+    void on_actionOpen_Project_triggered();
+    void on_actionSave_Project_triggered();
 
 private:
     Ui::MainWindow * ui ;
@@ -67,7 +69,7 @@ private:
     QMenu * popup ;
 
     bool saveFile(const QString fileName ) ;
-    bool maybeSave() ;
+    bool maybeSaveFile() ;
     bool saveas() ;
     bool save() ;
 
