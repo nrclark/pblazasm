@@ -29,5 +29,8 @@
         <file>worker.png</file>
         <file>document_add.png</file>
         <file>document_delete.png</file>
+        <file>document_into.png</file>
+        <file>document_new.png</file>
+        <file>document_out.png</file>
     </qresource>
 </RCC>
