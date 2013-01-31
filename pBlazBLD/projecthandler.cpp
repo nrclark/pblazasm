@@ -50,7 +50,7 @@ void QmtxProjectHandler::Init() {
     editorItem->addSubProperty( fontItem ) ;
     variantEditor->setExpanded( britem, false ) ;
 
-
+    // pBlazASM
     asmItem = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), QLatin1String(" pBlazASM options"));
     britem = variantEditor->addProperty( asmItem );
     variantEditor->setBackgroundColor( britem, QColor( 240, 250, 240, 255 ) ) ;
@@ -61,7 +61,7 @@ void QmtxProjectHandler::Init() {
     asmOptVerbose = variantManager->addProperty(QVariant::Bool, QLatin1String(" Verbose"));
     asmOptions->addSubProperty( asmOptVerbose ) ;
 
-    item = variantManager->addProperty(QtVariantPropertyManager::enumTypeId(), QLatin1String(" Picoblaze version"));
+    asmOptPBx = variantManager->addProperty(QtVariantPropertyManager::enumTypeId(), QLatin1String(" Picoblaze version"));
     QStringList picoNames ;
     picoNames << "Picoblaze-3" << "Picoblaze-6" ;
     item->setAttribute( QLatin1String( "enumNames" ), picoNames ) ;
@@ -86,7 +86,7 @@ void QmtxProjectHandler::Init() {
     asmSources = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), QLatin1String(" Sources"));
     asmItem->addSubProperty( asmSources ) ;
 
-
+    // pBlazMRG
     mrgItem = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), QLatin1String(" pBlazMRG options"));
     britem = variantEditor->addProperty( mrgItem );
     variantEditor->setBackgroundColor( britem, QColor( 240, 240, 250, 255 ) ) ;
@@ -105,7 +105,7 @@ void QmtxProjectHandler::Init() {
     item->setAttribute( "filter", "Source files (*.vhd *.vhdl)" ) ;
     mrgSources->addSubProperty( item ) ;
 
-
+    // pBlazBIT
     bitItem = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), QLatin1String(" pBlazBIT options"));
     britem = variantEditor->addProperty( bitItem );
     variantEditor->setBackgroundColor( britem, QColor( 240, 240, 200, 255 ) ) ;
@@ -170,7 +170,8 @@ void QmtxProjectHandler::addSourceFile( QString filename ) {
         if ( (*i)->valueText() == filename )
             return ;
 
-    QtVariantProperty * item = variantManager->addProperty(VariantManager::filePathTypeId(), "Source File");
+    int count = asmSources->subProperties().count() ;
+    QtVariantProperty * item = variantManager->addProperty(VariantManager::filePathTypeId(), QString( "source-%1" ).arg( count ) ) ;
     item->setValue( filename ) ;
     item->setAttribute( "filter", "Source files (*.psm *.psh)" ) ;
     asmSources->addSubProperty( item ) ;
@@ -182,6 +183,21 @@ void QmtxProjectHandler::removeSourceFile( QString fileName ) {
     for ( QList<QtProperty *>::iterator i = properties.begin() ; i != properties.end() ; ++i )
         if ( (*i)->valueText() == fileName )
             asmSources->removeSubProperty( *i ) ;
+}
+
+QStringList QmtxProjectHandler::asmArguments() {
+    QStringList args ;
+
+    args << ( asmOptPBx->value() == 1 ? "-6" : "-3" ) ;
+
+    if ( asmOptVerbose->value().toBool() )
+        args << "-v " ;
+
+    args << "x" ;
+
+    int count = asmSources->subProperties().count() ;
+
+    return args ;
 }
 
 QtTreePropertyBrowser * QmtxProjectHandler::getVariantEditor() {
@@ -241,6 +257,20 @@ bool QmtxProjectHandler::load_file() {
     mrgOptVerbose->setValue( settings.value("pBlazMRG/options/verbose").toBool() ) ;
     bitOptVerbose->setValue( settings.value("pBlazBIT/options/verbose").toBool() ) ;
 
+    settings.beginGroup( "pBlazASM" ) ;
+        settings.beginGroup( "sources" ) ;
+        int size = settings.value( "size" ).toInt() ;
+        for ( int i = 0 ; i < size ; i += 1 ) {
+            QString index = QString( "source-%1" ).arg( i ) ;
+            QString filename = settings.value( index ).toString() ;
+            QtVariantProperty * item = variantManager->addProperty(VariantManager::filePathTypeId(), index ) ;
+            item->setValue( filename ) ;
+            item->setAttribute( "filter", "Source files (*.psm *.psh)" ) ;
+            asmSources->addSubProperty( item ) ;
+        }
+        settings.endGroup() ;
+    settings.endGroup() ;
+
     return true ;
 }
 
@@ -257,11 +287,18 @@ bool QmtxProjectHandler::save_file() {
             settings.setValue( "verbose", true ) ;
             settings.setValue( "core", "pb3" ) ;
         settings.endGroup() ;
+
         settings.beginGroup( "sources" ) ;
-            settings.setValue( "File0", "picobug.psm" ) ;
-            settings.setValue( "File1", "rijndael.psm" ) ;
+        int count = asmSources->subProperties().count() ;
+
+        settings.setValue( "size", count ) ;
+        for ( int i = 0 ; i < count ; i += 1 ) {
+            QString index = QString( "source-%1" ).arg( i ) ;
+            settings.setValue( index, asmSources->subProperties()[i]->valueText() ) ;
+        }
         settings.endGroup() ;
     settings.endGroup() ;
+
     settings.beginGroup( "pBlazMRG" ) ;
         settings.beginGroup( "options" ) ;
             settings.setValue( "verbose", true ) ;
@@ -270,6 +307,7 @@ bool QmtxProjectHandler::save_file() {
             settings.setValue( "template", "template.vhdl" ) ;
         settings.endGroup() ;
     settings.endGroup() ;
+
     settings.beginGroup( "pBlazBIT" ) ;
         settings.beginGroup( "options" ) ;
             settings.setValue( "verbose", true ) ;

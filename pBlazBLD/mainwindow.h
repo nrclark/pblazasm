@@ -20,6 +20,8 @@
 
 #include "projecthandler.h"
 
+const int MAXRECENTFILES = 8 ;
+
 namespace Ui {
     class MainWindow;
 }
@@ -53,6 +55,8 @@ private slots:
     void on_actionOpen_Project_triggered();
     void on_actionSave_Project_triggered();
 
+    void openRecentFile() ;
+
 private:
     Ui::MainWindow * ui ;
 
@@ -67,6 +71,13 @@ private:
     QmtxProjectHandler * projectHandler ;
 
     QMenu * popup ;
+    QAction * recentFileActs[ MAXRECENTFILES ] ;
+    QAction * separatorAct ;
+
+    void loadFile(const QString filename) ;
+    void updateRecentFileActions() ;
+    QString strippedName(const QString &fullFileName);
+    void setCurrentFile(const QString &filename);
 
     bool saveFile(const QString fileName ) ;
     bool maybeSaveFile() ;
