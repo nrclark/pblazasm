@@ -1,19 +1,124 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+//class Highlighter : public QSyntaxHighlighter { Q_OBJECT
+//public:
+//    Highlighter(QTextDocument *parent = 0);
+
+//protected:
+//    void highlightBlock(const QString &text);
+
+//private:
+//    struct HighlightingRule {
+//        QRegExp pattern;
+//        QTextCharFormat format;
+//    } ;
+//    QVector<HighlightingRule> highlightingRules;
+
+//    QRegExp commentStartExpression;
+//    QRegExp commentEndExpression;
+
+//    QTextCharFormat keywordFormat;
+//    QTextCharFormat classFormat;
+//    QTextCharFormat singleLineCommentFormat;
+//    QTextCharFormat multiLineCommentFormat;
+//    QTextCharFormat quotationFormat;
+//    QTextCharFormat functionFormat;
+//};
+
+//Highlighter::Highlighter( QTextDocument *parent ) : QSyntaxHighlighter(parent) {
+//    HighlightingRule rule;
+
+//    keywordFormat.setForeground(Qt::darkBlue);
+//    keywordFormat.setFontWeight(QFont::Bold);
+//    QStringList keywordPatterns;
+//    keywordPatterns << "\\bchar\\b" << "\\bclass\\b" << "\\bconst\\b"
+//                    << "\\bdouble\\b" << "\\benum\\b" << "\\bexplicit\\b"
+//                    << "\\bfriend\\b" << "\\binline\\b" << "\\bint\\b"
+//                    << "\\blong\\b" << "\\bnamespace\\b" << "\\boperator\\b"
+//                    << "\\bprivate\\b" << "\\bprotected\\b" << "\\bpublic\\b"
+//                    << "\\bshort\\b" << "\\bsignals\\b" << "\\bsigned\\b"
+//                    << "\\bslots\\b" << "\\bstatic\\b" << "\\bstruct\\b"
+//                    << "\\btemplate\\b" << "\\btypedef\\b" << "\\btypename\\b"
+//                    << "\\bunion\\b" << "\\bunsigned\\b" << "\\bvirtual\\b"
+//                    << "\\bvoid\\b" << "\\bvolatile\\b";
+//    foreach (const QString &pattern, keywordPatterns) {
+//        rule.pattern = QRegExp(pattern);
+//        rule.format = keywordFormat;
+//        highlightingRules.append(rule);
+//    }
+
+//    classFormat.setFontWeight(QFont::Bold);
+//    classFormat.setForeground(Qt::darkMagenta);
+//    rule.pattern = QRegExp("\\bQ[A-Za-z]+\\b");
+//    rule.format = classFormat;
+//    highlightingRules.append(rule);
+
+//    quotationFormat.setForeground(Qt::darkGreen);
+//    rule.pattern = QRegExp("\".*\"");
+//    rule.format = quotationFormat;
+//    highlightingRules.append(rule);
+
+//    functionFormat.setFontItalic(true);
+//    functionFormat.setForeground(Qt::blue);
+//    rule.pattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\()");
+//    rule.format = functionFormat;
+//    highlightingRules.append(rule);
+
+//    singleLineCommentFormat.setForeground(Qt::red);
+//    rule.pattern = QRegExp("//[^\n]*");
+//    rule.format = singleLineCommentFormat;
+//    highlightingRules.append(rule);
+
+//    multiLineCommentFormat.setForeground(Qt::red);
+
+//    commentStartExpression = QRegExp("/\\*");
+//    commentEndExpression = QRegExp("\\*/");
+//}
+
+//void Highlighter::highlightBlock(const QString &text) {
+//     foreach (const HighlightingRule &rule, highlightingRules) {
+//         QRegExp expression(rule.pattern);
+//         int index = expression.indexIn(text);
+//         while (index >= 0) {
+//             int length = expression.matchedLength();
+//             setFormat(index, length, rule.format);
+//             index = expression.indexIn(text, index + length);
+//         }
+//     }
+//    setCurrentBlockState(0);
+
+//    int startIndex = 0;
+//    if (previousBlockState() != 1)
+//        startIndex = commentStartExpression.indexIn(text);
+
+//    while (startIndex >= 0) {
+//        int endIndex = commentEndExpression.indexIn(text, startIndex);
+//        int commentLength;
+//        if (endIndex == -1) {
+//            setCurrentBlockState(1);
+//            commentLength = text.length() - startIndex;
+//        } else {
+//            commentLength = endIndex - startIndex + commentEndExpression.matchedLength();
+//        }
+//        setFormat(startIndex, commentLength, multiLineCommentFormat);
+//        startIndex = commentStartExpression.indexIn(text, startIndex + commentLength);
+//    }
+//}
+
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
 
     QIcon icon ;
     icon.addFile( ":/files/worker.ico" ) ;
-    this->setWindowTitle( "pBlazBLD V0.1 (Qt4.8.4) - http://www.mediatronix.com" ) ;
+    this->setWindowTitle( "pBlazBLD V0.1 (" + QString(QT_VERSION_STR) + ") - http://www.mediatronix.com" ) ;
     this->setWindowIcon( icon ) ;
-    qApp->setApplicationName("pBlazBLD V0.1 (Qt4.8.4)");
+    qApp->setApplicationName("pBlazBLD V0.1 (" + QString(QT_VERSION_STR) + ")");
     qApp->setWindowIcon( icon ) ;
 
     // main splitter layout
-    QSplitter * splitter = new QSplitter( this ) ;
-    setCentralWidget( splitter ) ;
+    QSplitter * hSplitter = new QSplitter( this ) ;
+    setCentralWidget( hSplitter ) ;
 
     lbMode = new QLabel( tr( "insert" ) ) ;
     ui->statusBar->addWidget( lbMode, 50 ) ;
@@ -44,15 +149,26 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     // create a project manager
     projectHandler = new QmtxProjectHandler( this ) ;
 
-    splitter->addWidget( projectHandler->getVariantEditor() ) ;
+    hSplitter->addWidget( projectHandler->getVariantEditor() ) ;
+    QSplitter * vSplitter = new QSplitter( this ) ;
+    vSplitter->setOrientation( Qt::Vertical ) ;
+    hSplitter->addWidget( vSplitter ) ;
 
     // our source editor
-    textEdit = new QsciScintilla( splitter ) ;
+    textEdit = new QsciScintilla( vSplitter ) ;
 
     // and its lexer for Picoblaze Assembler source
     lexer = new QsciLexerPsm() ;
     textEdit->setLexer( lexer ) ;
     lexer->setFont( projectHandler->getFont() ) ;
+
+    // log
+    logBox = new QPlainTextEdit( vSplitter ) ;
+    logBox->setReadOnly( true );
+    logBox->setFont( projectHandler->getFont() ) ;
+    connect( logBox, SIGNAL(cursorPositionChanged()), this, SLOT(highlightLogBox())) ;
+//    highlighter = new Highlighter( logBox->document() ) ;
+
 
     // editor settings
     textEdit->setMarginWidth( 0, QString("00000") ) ;
@@ -114,8 +230,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->actionMerge->setEnabled( QFile::exists( "./pBlazMRG.exe" ) ) ;
     ui->actionBitfile->setEnabled( QFile::exists( "./pBlazBIT.exe" ) ) ;
 
-    splitter->setStretchFactor( 0, 20 ) ;
-    splitter->setStretchFactor( 1, 80 ) ;
+    hSplitter->setStretchFactor( 0, 20 ) ;
+    hSplitter->setStretchFactor( 1, 80 ) ;
+    vSplitter->setStretchFactor( 0, 80 ) ;
+    vSplitter->setStretchFactor( 1, 20 ) ;
 
     readSettings() ;
 }
@@ -123,6 +241,35 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 MainWindow::~MainWindow() {
     delete ui ;
 }
+
+void MainWindow::highlightLogBox() {
+    QTextEdit::ExtraSelection highlight ;
+    highlight.cursor = logBox->textCursor() ;
+    highlight.format.setProperty(QTextFormat::FullWidthSelection, true ) ;
+    highlight.format.setBackground( Qt::magenta );
+    QList<QTextEdit::ExtraSelection> extras ;
+    extras << highlight ;
+    logBox->setExtraSelections( extras ) ;
+
+    QTextCursor cursor = logBox->textCursor() ;
+    cursor.select( QTextCursor::LineUnderCursor ) ;
+    QString text = cursor.selectedText() ;
+//    qDebug() << text ;
+
+    QRegExp regexp( QString("^([a-z]:[^:]+):([0-9]+):"), Qt::CaseInsensitive, QRegExp::RegExp ) ;
+    regexp.indexIn( text ) ;
+    QStringList list ;
+    list << regexp.capturedTexts() ;
+//    qDebug() << list ;
+
+    if ( list[ 0 ].isEmpty() )
+         return ;
+
+    loadFile( list[ 1 ] ) ;
+    textEdit->setCursorPosition( list[ 2 ].toInt(), 1 ) ;
+    textEdit->setFocus();
+}
+
 
 void MainWindow::readSettings() {
     QSettings settings( "Mediatronix", "pBlazBLD" ) ;
@@ -191,6 +338,8 @@ void MainWindow::openRecentFile() {
 void MainWindow::loadFile( const QString filename ) {
     if ( filename.isNull() )
         return ;
+    if ( filename == currentFile->fileName() )
+        return ;
     if ( maybeSaveFile() ) {
         setCurrentFile( filename ) ;
 
@@ -257,8 +406,7 @@ bool MainWindow::maybeSaveFile() {
     if ( textEdit->isModified() ) {
         int ret = QMessageBox::warning(this, tr("pBlazBLD"),
              "The document has been modified.\nDo you want to save your changes?",
-             QMessageBox::Yes | QMessageBox::No,
-             QMessageBox::Cancel | QMessageBox::Escape
+             QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Cancel
         ) ;
         if ( ret == QMessageBox::Yes )
             return save() ;
@@ -271,20 +419,18 @@ bool MainWindow::maybeSaveFile() {
 void MainWindow::on_actionAssemble_triggered() {
     QProcess pBlazASM( this ) ;
     pBlazASM.setProcessChannelMode( QProcess::MergedChannels ) ;
-//    pBlazASM.setReadChannel( ) ;
 
     QString program = "./pBlazASM.exe " ;
-
     QStringList arguments =  projectHandler->asmArguments() ;
-    qDebug() << program << arguments ;
+//    qDebug() << program << arguments ;
 
     pBlazASM.start( program, arguments ) ;
     if ( ! pBlazASM.waitForStarted( 1000 ) )
              return ;
     if ( ! pBlazASM.waitForFinished( 2000 ) )
-        qDebug() << "pBlazASM failed:" << pBlazASM.errorString();
+        logBox->appendPlainText( "pBlazASM failed: " + pBlazASM.errorString() ) ;
     else
-        qDebug() << "pBlazASM output:" << pBlazASM.readAll();
+        logBox->appendPlainText( "pBlazASM output:" + pBlazASM.readAll() ) ;
 }
 
 void MainWindow::setCurrentFile(const QString &filename) {
@@ -346,3 +492,8 @@ void MainWindow::on_actionSave_Project_triggered() {
     projectHandler->Save() ;
 }
 
+
+void MainWindow::on_actionClose_triggered() {
+    if ( maybeSaveFile() )
+        textEdit->clear();
+}

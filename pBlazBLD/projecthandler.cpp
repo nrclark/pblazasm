@@ -64,9 +64,9 @@ void QmtxProjectHandler::Init() {
     asmOptPBx = variantManager->addProperty(QtVariantPropertyManager::enumTypeId(), QLatin1String(" Picoblaze version"));
     QStringList picoNames ;
     picoNames << "Picoblaze-3" << "Picoblaze-6" ;
-    item->setAttribute( QLatin1String( "enumNames" ), picoNames ) ;
-    item->setValue( 1 ) ;
-    asmOptions->addSubProperty( item ) ;
+    asmOptPBx->setAttribute( QLatin1String( "enumNames" ), picoNames ) ;
+    asmOptPBx->setValue( 1 ) ;
+    asmOptions->addSubProperty( asmOptPBx ) ;
 
     item = variantManager->addProperty(VariantManager::filePathTypeId(), "Code (*.mrg) File");
     item->setValue( "<default>" ) ;
@@ -191,11 +191,11 @@ QStringList QmtxProjectHandler::asmArguments() {
     args << ( asmOptPBx->value() == 1 ? "-6" : "-3" ) ;
 
     if ( asmOptVerbose->value().toBool() )
-        args << "-v " ;
-
-    args << "x" ;
+        args << "-v" ;
 
     int count = asmSources->subProperties().count() ;
+    for ( int i = 0 ; i < count ; i += 1 )
+        args << asmSources->subProperties()[i]->valueText() ;
 
     return args ;
 }

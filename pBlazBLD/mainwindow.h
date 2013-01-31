@@ -14,6 +14,9 @@
 #include <QLayout>
 #include <QSplitter>
 #include <QMenu>
+#include <QPlainTextEdit>
+#include <QSyntaxHighlighter>
+
 
 #include <Qsci/qsciscintilla.h>
 #include <Qsci/qscilexerpsm.h>
@@ -56,12 +59,17 @@ private slots:
     void on_actionSave_Project_triggered();
 
     void openRecentFile() ;
+    void highlightLogBox() ;
+
+    void on_actionClose_triggered();
 
 private:
     Ui::MainWindow * ui ;
 
     QsciScintilla * textEdit ;
     QsciLexer * lexer ;
+    QPlainTextEdit * logBox ;
+    QSyntaxHighlighter * highlighter ;
 
     QLabel * lbMode ;
     QLabel * lbModified ;
