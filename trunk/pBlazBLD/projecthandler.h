@@ -35,6 +35,8 @@ public:
     void addSourceFile( QString fileName ) ;
     void removeSourceFile(QString fileName) ;
 
+    QStringList asmArguments() ;
+
     QtTreePropertyBrowser * getVariantEditor( void ) ;
     QFont getFont() ;
 
@@ -51,7 +53,7 @@ private:
 
     QtVariantProperty * editorItem, * asmItem, * mrgItem, * bitItem ;
     QtVariantProperty * asmOptions, * asmSources ;
-    QtVariantProperty * asmOptVerbose ;
+    QtVariantProperty * asmOptVerbose, * asmOptPBx ;
 
     QtVariantProperty * mrgOptions, * mrgSources ;
     QtVariantProperty * mrgOptVerbose ;

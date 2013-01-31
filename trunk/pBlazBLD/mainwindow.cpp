@@ -28,14 +28,28 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     popup->addSeparator();
     popup->addAction( ui->actionCancel ) ;
 
+    // create MRU list
+    for ( int i = 0; i < MAXRECENTFILES; ++i ) {
+        recentFileActs[i] = new QAction(this);
+        recentFileActs[i]->setVisible(false);
+        connect(recentFileActs[i], SIGNAL(triggered()),
+                this, SLOT(openRecentFile()));
+    }
+
+    // add to the file menu
+    separatorAct = ui->menuFile->addSeparator();
+    for ( int i = 0; i < MAXRECENTFILES; ++i )
+        ui->menuFile->addAction( recentFileActs[i] ) ;
+
+    // create a project manager
     projectHandler = new QmtxProjectHandler( this ) ;
 
     splitter->addWidget( projectHandler->getVariantEditor() ) ;
 
-    // source editor
+    // our source editor
     textEdit = new QsciScintilla( splitter ) ;
 
-    // lexer for Picoblaze Assembler text
+    // and its lexer for Picoblaze Assembler source
     lexer = new QsciLexerPsm() ;
     textEdit->setLexer( lexer ) ;
     lexer->setFont( projectHandler->getFont() ) ;
@@ -114,6 +128,9 @@ void MainWindow::readSettings() {
     QSettings settings( "Mediatronix", "pBlazBLD" ) ;
     QPoint pos = settings.value("pos", QPoint(200, 200)).toPoint();
     QSize size = settings.value("size", QSize(400, 400)).toSize();
+
+    updateRecentFileActions() ;
+
     resize( size ) ;
     move( pos ) ;
 }
@@ -144,7 +161,7 @@ void MainWindow::on_actionNew_triggered() {
     if ( maybeSaveFile() ) {
         textEdit->clear() ;
         textEdit->setModified( false ) ;
-        currentFile->setFileName( "" ) ;
+        setCurrentFile( "" ) ;
     }
 }
 void MainWindow::onCursorpositionchanged(int line, int index) {
@@ -165,19 +182,22 @@ void MainWindow::onModificationchanged( bool m ) {
     lbModified->setText( m ? "Y" : "N" ) ;
 }
 
-void MainWindow::on_actionOpen_triggered() {
-    QString fileName = QFileDialog::getOpenFileName(
-        this, tr("Open Source File"), ".", tr( "Picoblaze source files (*.psm *.psh)" ) ) ;
-    if ( fileName.isNull() )
-        return ;
+void MainWindow::openRecentFile() {
+    QAction * action = qobject_cast<QAction *>(sender() ) ;
+    if ( action )
+        loadFile(action->data().toString());
+}
 
+void MainWindow::loadFile( const QString filename ) {
+    if ( filename.isNull() )
+        return ;
     if ( maybeSaveFile() ) {
-        currentFile->setFileName ( fileName ) ;
+        setCurrentFile( filename ) ;
 
         if ( ! currentFile->open(QIODevice::ReadOnly | QIODevice::Text) ) {
             QMessageBox mb ;
             mb.setStandardButtons( QMessageBox::Ok ) ;
-            mb.setInformativeText( fileName );
+            mb.setInformativeText( filename );
             mb.setText( "Could not open file:" ) ;
             mb.exec() ;
             return ;
@@ -186,6 +206,13 @@ void MainWindow::on_actionOpen_triggered() {
         textEdit->setModified( false ) ;
         currentFile->close() ;
     }
+}
+
+void MainWindow::on_actionOpen_triggered() {
+    QString filename = QFileDialog::getOpenFileName(
+        this, tr("Open Source File"), ".", tr( "Picoblaze source files (*.psm *.psh)" ) ) ;
+    if ( ! filename.isEmpty() )
+        loadFile( filename ) ;
 }
 
 void MainWindow::on_actionSave_triggered() {
@@ -244,12 +271,12 @@ bool MainWindow::maybeSaveFile() {
 void MainWindow::on_actionAssemble_triggered() {
     QProcess pBlazASM( this ) ;
     pBlazASM.setProcessChannelMode( QProcess::MergedChannels ) ;
+//    pBlazASM.setReadChannel( ) ;
 
-    QString program = "./pBlazASM.exe" ;
+    QString program = "./pBlazASM.exe " ;
 
-    QStringList arguments ;
-    arguments << "-v" << "-6" << "x" ; // << currentFile->fileName() ;
-    qDebug() << arguments ;
+    QStringList arguments =  projectHandler->asmArguments() ;
+    qDebug() << program << arguments ;
 
     pBlazASM.start( program, arguments ) ;
     if ( ! pBlazASM.waitForStarted( 1000 ) )
@@ -258,6 +285,45 @@ void MainWindow::on_actionAssemble_triggered() {
         qDebug() << "pBlazASM failed:" << pBlazASM.errorString();
     else
         qDebug() << "pBlazASM output:" << pBlazASM.readAll();
+}
+
+void MainWindow::setCurrentFile(const QString &filename) {
+    currentFile->setFileName ( filename ) ;
+    setWindowFilePath( filename ) ;
+
+    QSettings settings( "Mediatronix", "pBlazBLD" ) ;
+
+    QStringList files = settings.value("recentFileList").toStringList();
+    files.removeAll( filename ) ;
+    files.prepend( filename );
+    while (files.size() > MAXRECENTFILES)
+        files.removeLast();
+
+    settings.setValue("recentFileList", files);
+    updateRecentFileActions();
+}
+
+void MainWindow::updateRecentFileActions() {
+    QSettings settings( "Mediatronix", "pBlazBLD" ) ;
+
+    QStringList files = settings.value("recentFileList").toStringList();
+
+    int numRecentFiles = qMin(files.size(), (int)MAXRECENTFILES);
+
+    for (int i = 0; i < numRecentFiles; ++i) {
+        QString text = QString("&%1 %2").arg(i + 1).arg(strippedName(files[i]) ) ;
+        recentFileActs[i]->setText( text ) ;
+        recentFileActs[i]->setData( files[i] ) ;
+        recentFileActs[i]->setVisible( true ) ;
+    }
+    for (int j = numRecentFiles; j < MAXRECENTFILES; ++j)
+        recentFileActs[j]->setVisible(false);
+
+    separatorAct->setVisible( numRecentFiles > 0 ) ;
+}
+
+QString MainWindow::strippedName(const QString &fullFileName) {
+    return QFileInfo(fullFileName).fileName() ;
 }
 
 void MainWindow::on_actionAdd_source_file_triggered() {
@@ -279,6 +345,4 @@ void MainWindow::on_actionOpen_Project_triggered() {
 void MainWindow::on_actionSave_Project_triggered() {
     projectHandler->Save() ;
 }
-
-
 
