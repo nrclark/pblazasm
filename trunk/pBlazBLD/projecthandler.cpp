@@ -139,12 +139,16 @@ void QmtxProjectHandler::New() {
     Init();
 }
 
-void QmtxProjectHandler::Load() {
+void QmtxProjectHandler::Load( QString filename ) {
     if ( maybeSave() ) {
-        projectFileName = QFileDialog::getOpenFileName(
-            0, "Open Project File", ".", "pBlazBLD project files (*.mtx);;All files (*.*)" ) ;
-        if ( projectFileName.isNull() )
-            return ;
+        if ( filename.isEmpty() ) {
+            projectFileName = QFileDialog::getOpenFileName(
+                0, "Open Project File", ".", "pBlazBLD project files (*.mtx);;All files (*.*)" ) ;
+            if ( projectFileName.isNull() )
+                return ;
+        } else {
+            projectFileName = filename ;
+        }
 
         if ( ! load_file() ) {
             QMessageBox mb ;
@@ -198,6 +202,10 @@ QStringList QmtxProjectHandler::asmArguments() {
         args << asmSources->subProperties()[i]->valueText() ;
 
     return args ;
+}
+
+QString QmtxProjectHandler::fileName() {
+    return projectFileName ;
 }
 
 QtTreePropertyBrowser * QmtxProjectHandler::getVariantEditor() {

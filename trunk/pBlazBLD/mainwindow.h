@@ -13,6 +13,7 @@
 #include <QDebug>
 #include <QLayout>
 #include <QSplitter>
+#include <QTabWidget>
 #include <QMenu>
 #include <QPlainTextEdit>
 #include <QSyntaxHighlighter>
@@ -58,6 +59,7 @@ private slots:
     void on_actionOpen_Project_triggered();
     void on_actionSave_Project_triggered();
 
+    void openRecentProject();
     void openRecentFile() ;
     void highlightLogBox() ;
 
@@ -66,6 +68,7 @@ private slots:
 private:
     Ui::MainWindow * ui ;
 
+    QTabWidget * tabWidget ;
     QsciScintilla * textEdit ;
     QsciLexer * lexer ;
     QPlainTextEdit * logBox ;
@@ -79,11 +82,14 @@ private:
     QmtxProjectHandler * projectHandler ;
 
     QMenu * popup ;
+    QAction * recentProjectActs[ MAXRECENTFILES ] ;
     QAction * recentFileActs[ MAXRECENTFILES ] ;
-    QAction * separatorAct ;
+    QAction * separatorProjectAct ;
+    QAction * separatorFileAct ;
 
     void loadFile(const QString filename) ;
-    void updateRecentFileActions() ;
+    void loadProject(const QString filename);
+    void updateRecentlyUsedActions() ;
     QString strippedName(const QString &fullFileName);
     void setCurrentFile(const QString &filename);
 

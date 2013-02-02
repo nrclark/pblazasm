@@ -28,7 +28,7 @@ public:
 
     void Init();
     void New() ;
-    void Load() ;
+    void Load(QString filename) ;
     void Save() ;
     bool maybeSave() ;
 
@@ -36,6 +36,7 @@ public:
     void removeSourceFile(QString fileName) ;
 
     QStringList asmArguments() ;
+    QString fileName() ;
 
     QtTreePropertyBrowser * getVariantEditor( void ) ;
     QFont getFont() ;
