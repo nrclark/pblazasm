@@ -117,8 +117,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qApp->setWindowIcon( icon ) ;
 
     // main splitter layout
-    QSplitter * hSplitter = new QSplitter( this ) ;
-    setCentralWidget( hSplitter ) ;
+    QSplitter * vSplitter = new QSplitter() ;
+    vSplitter->setOrientation( Qt::Vertical ) ;
+    setCentralWidget( vSplitter ) ;
+
+    // tab widget
+    tabWidget = new QTabWidget() ;
+    vSplitter->addWidget( tabWidget ) ;
+    tabWidget->setTabPosition( QTabWidget::West ) ;
 
     lbMode = new QLabel( tr( "insert" ) ) ;
     ui->statusBar->addWidget( lbMode, 50 ) ;
@@ -133,7 +139,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     popup->addSeparator();
     popup->addAction( ui->actionCancel ) ;
 
-    // create MRU list
+    // create MRU project list
+    for ( int i = 0; i < MAXRECENTFILES; ++i ) {
+        recentProjectActs[i] = new QAction(this);
+        recentProjectActs[i]->setVisible(false);
+        connect(recentProjectActs[i], SIGNAL(triggered()),
+                this, SLOT(openRecentProject()));
+    }
+
+    // create MRU file list
     for ( int i = 0; i < MAXRECENTFILES; ++i ) {
         recentFileActs[i] = new QAction(this);
         recentFileActs[i]->setVisible(false);
@@ -142,20 +156,24 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     }
 
     // add to the file menu
-    separatorAct = ui->menuFile->addSeparator();
+    separatorProjectAct = ui->menuFile->addSeparator();
+    for ( int i = 0; i < MAXRECENTFILES; ++i )
+        ui->menuFile->addAction( recentProjectActs[i] ) ;
+
+    // add to the file menu
+    separatorFileAct = ui->menuFile->addSeparator();
     for ( int i = 0; i < MAXRECENTFILES; ++i )
         ui->menuFile->addAction( recentFileActs[i] ) ;
 
     // create a project manager
     projectHandler = new QmtxProjectHandler( this ) ;
 
-    hSplitter->addWidget( projectHandler->getVariantEditor() ) ;
-    QSplitter * vSplitter = new QSplitter( this ) ;
-    vSplitter->setOrientation( Qt::Vertical ) ;
-    hSplitter->addWidget( vSplitter ) ;
 
     // our source editor
-    textEdit = new QsciScintilla( vSplitter ) ;
+    textEdit = new QsciScintilla( this ) ;
+
+    tabWidget->addTab( projectHandler->getVariantEditor(), "Project" ) ;
+    tabWidget->addTab( textEdit, "Source" ) ;
 
     // and its lexer for Picoblaze Assembler source
     lexer = new QsciLexerPsm() ;
@@ -163,7 +181,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     lexer->setFont( projectHandler->getFont() ) ;
 
     // log
-    logBox = new QPlainTextEdit( vSplitter ) ;
+    logBox = new QPlainTextEdit() ;
+    vSplitter->addWidget( logBox );
     logBox->setReadOnly( true );
     logBox->setFont( projectHandler->getFont() ) ;
     connect( logBox, SIGNAL(cursorPositionChanged()), this, SLOT(highlightLogBox())) ;
@@ -230,8 +249,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->actionMerge->setEnabled( QFile::exists( "./pBlazMRG.exe" ) ) ;
     ui->actionBitfile->setEnabled( QFile::exists( "./pBlazBIT.exe" ) ) ;
 
-    hSplitter->setStretchFactor( 0, 20 ) ;
-    hSplitter->setStretchFactor( 1, 80 ) ;
     vSplitter->setStretchFactor( 0, 80 ) ;
     vSplitter->setStretchFactor( 1, 20 ) ;
 
@@ -266,7 +283,7 @@ void MainWindow::highlightLogBox() {
          return ;
 
     loadFile( list[ 1 ] ) ;
-    textEdit->setCursorPosition( list[ 2 ].toInt(), 1 ) ;
+    textEdit->setCursorPosition( list[ 2 ].toInt() - 1, 0 ) ;
     textEdit->setFocus();
 }
 
@@ -276,7 +293,7 @@ void MainWindow::readSettings() {
     QPoint pos = settings.value("pos", QPoint(200, 200)).toPoint();
     QSize size = settings.value("size", QSize(400, 400)).toSize();
 
-    updateRecentFileActions() ;
+    updateRecentlyUsedActions() ;
 
     resize( size ) ;
     move( pos ) ;
@@ -335,6 +352,12 @@ void MainWindow::openRecentFile() {
         loadFile(action->data().toString());
 }
 
+void MainWindow::openRecentProject() {
+    QAction * action = qobject_cast<QAction *>(sender() ) ;
+    if ( action )
+        loadProject(action->data().toString());
+}
+
 void MainWindow::loadFile( const QString filename ) {
     if ( filename.isNull() )
         return ;
@@ -351,10 +374,19 @@ void MainWindow::loadFile( const QString filename ) {
             mb.exec() ;
             return ;
         }
+        tabWidget->setCurrentWidget( textEdit ) ;
         textEdit->read( currentFile ) ;
         textEdit->setModified( false ) ;
         currentFile->close() ;
     }
+}
+
+void MainWindow::loadProject( const QString filename ) {
+    if ( filename.isNull() )
+        return ;
+    if ( filename == currentFile->fileName() )
+        return ;
+    projectHandler->Load( filename ) ;
 }
 
 void MainWindow::on_actionOpen_triggered() {
@@ -427,10 +459,12 @@ void MainWindow::on_actionAssemble_triggered() {
     pBlazASM.start( program, arguments ) ;
     if ( ! pBlazASM.waitForStarted( 1000 ) )
              return ;
-    if ( ! pBlazASM.waitForFinished( 2000 ) )
-        logBox->appendPlainText( "pBlazASM failed: " + pBlazASM.errorString() ) ;
-    else
-        logBox->appendPlainText( "pBlazASM output:" + pBlazASM.readAll() ) ;
+    if ( ! pBlazASM.waitForFinished( 2000 ) ) {
+//        logBox->setCurrentCharFormat( ) ;
+        logBox->appendPlainText( "pBlazASM failed:\n" + pBlazASM.errorString() ) ;
+    } else {
+        logBox->appendPlainText( "pBlazASM output:\n" + pBlazASM.readAll() ) ;
+    }
 }
 
 void MainWindow::setCurrentFile(const QString &filename) {
@@ -446,13 +480,28 @@ void MainWindow::setCurrentFile(const QString &filename) {
         files.removeLast();
 
     settings.setValue("recentFileList", files);
-    updateRecentFileActions();
+    updateRecentlyUsedActions();
 }
 
-void MainWindow::updateRecentFileActions() {
+void MainWindow::updateRecentlyUsedActions() {
     QSettings settings( "Mediatronix", "pBlazBLD" ) ;
 
-    QStringList files = settings.value("recentFileList").toStringList();
+    QStringList projects = settings.value( "recentProjectList" ).toStringList();
+
+    int numRecentProjects = qMin(projects.size(), (int)MAXRECENTFILES);
+
+    for (int i = 0; i < numRecentProjects; ++i) {
+        QString text = QString("&%1 %2").arg(i + 1).arg(strippedName(projects[i]) ) ;
+        recentProjectActs[i]->setText( text ) ;
+        recentProjectActs[i]->setData( projects[i] ) ;
+        recentProjectActs[i]->setVisible( true ) ;
+    }
+    for (int j = numRecentProjects; j < MAXRECENTFILES; ++j)
+        recentProjectActs[j]->setVisible(false);
+
+    separatorProjectAct->setVisible( numRecentProjects > 0 ) ;
+
+    QStringList files = settings.value( "recentFileList" ).toStringList();
 
     int numRecentFiles = qMin(files.size(), (int)MAXRECENTFILES);
 
@@ -465,7 +514,7 @@ void MainWindow::updateRecentFileActions() {
     for (int j = numRecentFiles; j < MAXRECENTFILES; ++j)
         recentFileActs[j]->setVisible(false);
 
-    separatorAct->setVisible( numRecentFiles > 0 ) ;
+    separatorFileAct->setVisible( numRecentFiles > 0 ) ;
 }
 
 QString MainWindow::strippedName(const QString &fullFileName) {
@@ -473,27 +522,46 @@ QString MainWindow::strippedName(const QString &fullFileName) {
 }
 
 void MainWindow::on_actionAdd_source_file_triggered() {
+    tabWidget->setCurrentWidget( projectHandler->getVariantEditor() ) ;
     projectHandler->addSourceFile( currentFile->fileName() ) ;
 }
 
 void MainWindow::on_actionRemove_source_file_triggered() {
+    tabWidget->setCurrentWidget( projectHandler->getVariantEditor() ) ;
     projectHandler->removeSourceFile( currentFile->fileName() ) ;
 }
 
 void MainWindow::on_actionNew_Project_triggered() {
+    tabWidget->setCurrentWidget( projectHandler->getVariantEditor() ) ;
     projectHandler->New() ;
 }
 
 void MainWindow::on_actionOpen_Project_triggered() {
-    projectHandler->Load() ;
+    tabWidget->setCurrentWidget( projectHandler->getVariantEditor() ) ;
+    projectHandler->Load( "" ) ;
+
+    if ( projectHandler->fileName().isEmpty() )
+        return ;
+
+    QSettings settings( "Mediatronix", "pBlazBLD" ) ;
+
+    QStringList projects = settings.value("recentProjectList").toStringList();
+    projects.removeAll( projectHandler->fileName() ) ;
+    projects.prepend( projectHandler->fileName() ) ;
+    while ( projects.size() > MAXRECENTFILES )
+        projects.removeLast() ;
+
+    settings.setValue("recentProjectList", projects ) ;
+    updateRecentlyUsedActions();
 }
 
 void MainWindow::on_actionSave_Project_triggered() {
+    tabWidget->setCurrentWidget( projectHandler->getVariantEditor() ) ;
     projectHandler->Save() ;
 }
 
-
 void MainWindow::on_actionClose_triggered() {
+    tabWidget->setCurrentWidget( textEdit ) ;
     if ( maybeSaveFile() )
         textEdit->clear();
 }
