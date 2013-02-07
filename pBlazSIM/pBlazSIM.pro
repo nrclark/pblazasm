@@ -15,8 +15,6 @@ win32 {
     QMAKE_LFLAGS += -static-libgcc -static-libstdc++
 }
 
-LIBS += libqscintilla2
-
 SOURCES  += \
     main.cpp \
     mainwindow.cpp \
@@ -35,3 +33,5 @@ FORMS    += \
 
 RESOURCES += \
     resources.qrc
+
+OTHER_FILES +=

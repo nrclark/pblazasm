@@ -1,7 +1,6 @@
 <RCC>
     <qresource prefix="/files">
         <file>bug_red.ico</file>
-        <file>IO.js</file>
     </qresource>
     <qresource prefix="/images">
         <file>breakpoint.png</file>
