@@ -437,9 +437,11 @@ bool Picoblaze::stepPB6 ( void ) {
             npc = Address12 ( c ) ;
         break ;
 
-    case 0x026000 : // 0x26000 ... 0x26FFF : // JUMP sX, sY
-        return false ;
-
+    case 0x026000 : { // 0x26000 ... 0x26FFF : // JUMP sX, sY
+            int sX = registers[ bank ][ DestReg ( c ) ].value ;
+            int sY = registers[ bank ][ SrcReg ( c ) ].value ;
+            npc = ( ( sX << 8 ) & 0x0F ) | sY ;
+        }
         break ;
 
     case 0x020000 : // 0x20000 ... 0x20FFF : // CALL
@@ -497,11 +499,13 @@ bool Picoblaze::stepPB6 ( void ) {
             npc = Address12 ( c ) ;
         }
         break ;
-    case 0x024000 : // 0x24000 ... 0x24FFF : // CALL sX, sY
-        if ( sp > 30 )
-            return false ;
-
-        return false ;
+    case 0x024000 : { // 0x24000 ... 0x24FFF : // CALL sX, sY
+            if ( sp > 30 )
+                return false ;
+            int sX = registers[ bank ][ DestReg ( c ) ].value ;
+            int sY = registers[ bank ][ SrcReg ( c ) ].value ;
+            npc = ( ( sX << 8 ) & 0x0F ) | sY ;
+        }
         break ;
 
     case 0x25000 : // RET

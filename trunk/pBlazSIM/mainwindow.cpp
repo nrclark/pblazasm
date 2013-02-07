@@ -47,7 +47,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi( this ) ;
 
-    this->setWindowTitle( "pBlazSIM V1.7 (Qt4.8.4) - http://www.mediatronix.com" ) ;
+    this->setWindowTitle( "pBlazSIM " + QString(PBLAZSIM_VERSION_STR) + " (" + QString(QT_VERSION_STR) + ") - http://www.mediatronix.com" ) ;
     this->setWindowIcon( QIcon( ":/files/bug_red.ico" ) ) ;
 
     // font used for all views
