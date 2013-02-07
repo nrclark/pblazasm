@@ -35,6 +35,7 @@ uint32_t UART::getValue ( uint32_t address ) {
 }
 
 void UART::setValue ( uint32_t address, uint32_t value ) {
+    (void)address ;
     ( (MainWindow *)w )->setUARTdata( value ) ;
 }
 
@@ -73,6 +74,9 @@ uint32_t CC::getValue(uint32_t address) {
 }
 
 void CC::setValue(uint32_t address, uint32_t value) {
+    (void)address ;
+    (void)value ;
+
     if ( pBlaze != NULL ) {
         TimeDelta = pBlaze->CycleCounter - TimeStamp ;
         TimeStamp = pBlaze->CycleCounter ;
@@ -81,6 +85,7 @@ void CC::setValue(uint32_t address, uint32_t value) {
 
 // SBOX, for Rijndael
 uint32_t SBOX::getValue(uint32_t address) {
+    (void)address ;
     static const unsigned char SBox[256] = {
        0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
        0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
@@ -102,8 +107,8 @@ uint32_t SBOX::getValue(uint32_t address) {
     return SBox[ index & 0xFF ] ;
 }
 
-void SBOX::setValue( uint32_t address, uint32_t value )
-{
+void SBOX::setValue( uint32_t address, uint32_t value ) {
+    (void)address ;
     index = value ;
 }
 
@@ -116,24 +121,23 @@ LEDs::LEDs() {
 }
 
 uint32_t LEDs::getValue(uint32_t address) {
+    (void)address ;
     return rack ;
 }
 
 void LEDs::setValue(uint32_t address, uint32_t value ) {
+    (void)address ;
     rack = value ;
 }
 
 void LEDs::update( void ) {
-    for ( int bits = 0 ; bits < 8 ; bits += 1 ) {
+    for ( int bits = 0 ; bits < 8 ; bits += 1 )
         if ( leds[ bits ] != NULL ) {
-            // set or reset the breakpoint at that address
-            if ( ( ( rack >> bits ) & 1 ) != 0 ) {
+            if ( ( ( rack >> bits ) & 1 ) != 0 )
                 leds[ bits ]->setIcon( *greenIcon ) ;
-            } else {
+            else
                 leds[ bits ]->setIcon( *blackIcon ) ;
-            }
         }
-    }
 }
 
 void LEDs::setItem ( uint32_t reg, QStandardItem * item ) {
@@ -158,7 +162,8 @@ void QmtxPicoblaze::updateScratchPad( void ) {
         QStandardItem * item = (QStandardItem *)getScratchpadItem( scr ) ;
         if ( item != NULL ) {
             int n = getScratchpadValue( scr ) ;
-            QString s = QString("%1").arg( n, 2, 16 ).toUpper() ;
+            QString s = QString("%1").arg( n, 0, 16 ).toUpper() ;
+            s = s.rightJustified( 2, '0' ) ;
             item->setData( s, Qt::DisplayRole ) ;
         }
     }
@@ -176,7 +181,7 @@ void QmtxPicoblaze::updateStack( void ) {
                 s = QString("%1").arg( n, 0, 16 ).toUpper() ;
                 s = s.rightJustified( 3, '0' ) ;
             }
-                item->setData( s, Qt::DisplayRole ) ;
+            item->setData( s, Qt::DisplayRole ) ;
         }
     }
 }
@@ -187,13 +192,13 @@ void QmtxPicoblaze::updateRegisters( void ) {
     for ( int reg = 0 ; reg < MAXREG ; reg += 1 ) {
         QStandardItem * item = (QStandardItem *)getRegisterItem( reg ) ;
         if ( item != NULL ) {
+            s = "" ;
             if ( isRegisterDefined( reg ) ) {
                 int n = getRegisterValue( reg ) ;
                 s = QString("%1").arg( n, 0, 16 ).toUpper() ;
                 s = s.rightJustified( 2, '0' ) ;
-                item->setData( s, Qt::DisplayRole ) ;
-            } else
-                item->setData( "", Qt::DisplayRole ) ;
+            }
+            item->setData( s, Qt::DisplayRole ) ;
         }
     }
 }
@@ -248,7 +253,8 @@ void QmtxPicoblaze::setScratchpadValue ( uint32_t cell, uint32_t value ) {
 
     QStandardItem * item = (QStandardItem *)getScratchpadItem( cell ) ;
     if ( item != NULL ) {
-        QString s = QString("%1").arg( value, 2, 16 ).toUpper() ;
+        QString s = QString("%1").arg( value, 0, 16 ).toUpper() ;
+        s = s.rightJustified( 2, '0' ) ;
         item->setData( s, Qt::DisplayRole ) ;
     }
 }
@@ -258,7 +264,8 @@ void QmtxPicoblaze::setRegisterValue ( uint32_t cell, uint32_t value ) {
 
     QStandardItem * item = (QStandardItem *)getRegisterItem( cell ) ;
     if ( item != NULL ) {
-        QString s = QString("%1").arg( value, 2, 16 ).toUpper() ;
+        QString s = QString("%1").arg( value, 0, 16 ).toUpper() ;
+        s = s.rightJustified( 2, '0' ) ;
         item->setData( s, Qt::DisplayRole ) ;
     }
 }

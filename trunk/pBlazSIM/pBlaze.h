@@ -20,6 +20,8 @@
 #ifndef PBLAZE_H
 #define PBLAZE_H
 
+#include <stdint.h>
+
 #define MAXMEM 4096
 #define MAXSCR 256
 #define MAXIO 256
@@ -31,7 +33,7 @@ public:
     virtual ~IODevice(){}
 
     virtual uint32_t getValue ( uint32_t address ) { return address ; }
-    virtual void setValue ( uint32_t address, uint32_t value ) {}
+    virtual void setValue ( uint32_t address, uint32_t value ) { (void)address ; (void)value ; }
     virtual void update( void ) {}
 
     void * w ;
@@ -261,6 +263,10 @@ private:
 
     inline uint32_t SrcReg ( const int code ) {
         return ( code >> 4 ) & 0xF ;
+    }
+
+    inline uint32_t Offset ( const int code ) {
+        return ( code >> 0 ) & 0xF ;
     }
 
     inline uint32_t Constant ( const int code ) {

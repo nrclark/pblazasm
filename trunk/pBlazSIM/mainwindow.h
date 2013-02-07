@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright ï¿½ 2003..2012 : Henk van Kampen <henk@mediatronix.com>
  *
  *  This file is part of pBlazASM.
  *
@@ -50,7 +50,6 @@
 #include <QScriptEngineDebugger>
 
 
-#include "pBlaze.h"
 #include "pBlazeIO.h"
 #include "hexspinbox.h"
 

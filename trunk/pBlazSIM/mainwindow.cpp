@@ -24,16 +24,21 @@
 
 bool KeyPressEater::eventFilter(QObject *obj, QEvent *event) {
     if ( event->type() == QEvent::KeyPress ) {
-        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-        //         qDebug("Ate key press %d", keyEvent->key());
-        QString key = keyEvent->text() ;
-        w->UART_IN->enqueue( key[ 0 ].toAscii() );
+        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event ) ;
+        //         qDebug("Ate key press %d", keyEvent->key() ) ;
+        QString key = keyEvent->text( ) ;
+        w->UART_IN->enqueue( key[ 0 ].toLatin1() ) ;
         return true;
     } else {
         // standard event processing
-        return QObject::eventFilter(obj, event);
+        return QObject::eventFilter(obj, event ) ;
     }
 }
+
+//QScriptValue qs_print ( QScriptContext * sc, QScriptEngine * se ) {
+//    qDebug() << sc->argument( 0 ).toString( ) ;
+//    return QScriptValue( se, 0 ) ;
+//}
 
 // constructor, build all supporting cores, models, devices
 MainWindow::MainWindow(QWidget *parent) :
@@ -48,33 +53,19 @@ MainWindow::MainWindow(QWidget *parent) :
     // font used for all views
     QFont fixedFont( "Consolas [Monaco]", 9 ) ;
 
-    // script engine
-    engine = new QScriptEngine() ;
-    debugger = new QScriptEngineDebugger() ;
-    debugger->attachTo( engine ) ;
-    QFile scriptFile(                           /* qApp->applicationDirPath() + "/" + */
-        ":/files/IO.js"
-    ) ;
-    if ( ! scriptFile.open( QIODevice::ReadOnly ) )
-        qDebug() << "no IO config script file: " << scriptFile.fileName() ;
-    QTextStream stream( &scriptFile ) ;
-    QString program = stream.readAll() ;
-    scriptFile.close() ;
-    engine->evaluate( program ) ;
-
     // terminal support
-    eater = new KeyPressEater() ;
+    eater = new KeyPressEater( ) ;
     eater->w = this ;
     ui->teTerminal->installEventFilter( eater ) ;
     ui->teTerminal->setFont( fixedFont ) ;
 
-    lhsb = new HexSpinBox() ;
+    lhsb = new HexSpinBox( ) ;
     lhsb->setPrefix( "0x" ) ;
     lhsb->setMinimum( 0x00 ) ;
     lhsb->setMaximum( 0xFF ) ;
     ui->verticalLayoutIO->insertWidget( 1, lhsb ) ;
 
-    fhsb = new HexSpinBox() ;
+    fhsb = new HexSpinBox( ) ;
     fhsb->setPrefix( "0x" ) ;
     fhsb->setMinimum( 0x00 ) ;
     fhsb->setMaximum( 0xFF ) ;
@@ -85,142 +76,147 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->twIO->setCurrentIndex( 0 ) ;
 
     // our simulated core
-    pBlaze = new QmtxPicoblaze();
+    pBlaze = new QmtxPicoblaze( ) ;
 
     // icons used for Code view
-    blueIcon = new QIcon(":/images/bullet_ball_glass_blue.png");
-    redIcon = new QIcon(":/images/bullet_ball_glass_red.png");
-    greenIcon = new QIcon(":/images/bullet_ball_glass_red.png");
-    blackIcon = new QIcon(":/images/bullet_ball_glass.png");
+    blueIcon = new QIcon(":/images/bullet_ball_glass_blue.png" ) ;
+    redIcon = new QIcon(":/images/bullet_ball_glass_red.png" ) ;
+    greenIcon = new QIcon(":/images/bullet_ball_glass_red.png" ) ;
+    blackIcon = new QIcon(":/images/bullet_ball_glass.png" ) ;
 
 
     // setop codemodel for codeview
     codeModel = new QStandardItemModel ;
-    codeModel->insertColumns(0,4);
-    codeModel->setHorizontalHeaderLabels((QStringList() << "line" << "bp" << "code" << "source"));
+    codeModel->insertColumns(0,4 ) ;
+    codeModel->setHorizontalHeaderLabels((QStringList() << "line" << "bp" << "code" << "source") ) ;
     ui->tvCode->setModel( codeModel ) ;
-    ui->tvCode->setFont(fixedFont);
-    ui->tvCode->setColumnWidth(0, 40);
-    ui->tvCode->setColumnWidth(1, 25);
-    ui->tvCode->setColumnWidth(2, 90);
-    ui->tvCode->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tvCode->setFont(fixedFont ) ;
+    ui->tvCode->setColumnWidth(0, 40 ) ;
+    ui->tvCode->setColumnWidth(1, 25 ) ;
+    ui->tvCode->setColumnWidth(2, 90 ) ;
+    ui->tvCode->setEditTriggers(QAbstractItemView::NoEditTriggers ) ;
 
     ui->tvCode->setSelectionBehavior( QAbstractItemView::SelectRows ) ;
     ui->tvCode->setSelectionMode( QAbstractItemView::NoSelection ) ;
 
     // setup statemodel for stateview
     stateModel = new QStandardItemModel ;
-    stateModel->insertColumns(0,2);
-    stateModel->setHorizontalHeaderLabels((QStringList() << "state" << "value"));
+    stateModel->insertColumns(0,2 ) ;
+    stateModel->setHorizontalHeaderLabels((QStringList() << "state" << "value") ) ;
     QStandardItem * item ;
 
-    item = new QStandardItem(QString("pc"));
-    stateModel->setItem( 0, 0, item);
+    item = new QStandardItem(QString("pc") ) ;
+    stateModel->setItem( 0, 0, item ) ;
 
-    item = new QStandardItem(QString("sp"));
-    stateModel->setItem( 1, 0, item);
+    item = new QStandardItem(QString("sp") ) ;
+    stateModel->setItem( 1, 0, item ) ;
 
-    item = new QStandardItem(QString("zero"));
-    stateModel->setItem( 2, 0, item);
+    item = new QStandardItem(QString("zero") ) ;
+    stateModel->setItem( 2, 0, item ) ;
 
-    item = new QStandardItem(QString("carry"));
-    stateModel->setItem( 3, 0, item);
+    item = new QStandardItem(QString("carry") ) ;
+    stateModel->setItem( 3, 0, item ) ;
 
-    item = new QStandardItem(QString("enable"));
-    stateModel->setItem( 4, 0, item);
+    item = new QStandardItem(QString("enable") ) ;
+    stateModel->setItem( 4, 0, item ) ;
 
-    item = new QStandardItem(QString("bank"));
-    stateModel->setItem( 5, 0, item);
+    item = new QStandardItem(QString("bank") ) ;
+    stateModel->setItem( 5, 0, item ) ;
 
     for ( int row = 0 ; row < 6 ; row += 1 ) {
         item = new QStandardItem(QString("") ) ;
         item->setTextAlignment( Qt::AlignHCenter ) ;
 
-        stateModel->setItem( row, 1, item);
+        stateModel->setItem( row, 1, item ) ;
         pBlaze->setStateItem( row, item ) ;
     }
 
     ui->tvState->setModel( stateModel ) ;
-    ui->tvState->setFont(fixedFont);
+    ui->tvState->setFont(fixedFont ) ;
     for ( int row = 0 ; row < 16 ; row += 1 )
-        ui->tvState->setRowHeight(row, 16 );
+        ui->tvState->setRowHeight(row, 16 ) ;
     for ( int col = 0 ; col < 2 ; col += 1 )
-        ui->tvState->setColumnWidth(col, 50);
-    ui->tvState->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        ui->tvState->setColumnWidth(col, 50 ) ;
+    ui->tvState->setEditTriggers(QAbstractItemView::NoEditTriggers ) ;
 
 
     // setup registermodel for registerview
     registerModel = new QStandardItemModel ;
-    registerModel->insertColumns(0,2);
-    registerModel->setHorizontalHeaderLabels((QStringList() << "registers" << "value"));
+    registerModel->insertColumns(0,2 ) ;
+    registerModel->setHorizontalHeaderLabels((QStringList() << "registers" << "value") ) ;
     for ( int reg = 0 ; reg < 16 ; reg += 1 ) {
-        QStandardItem * item = new QStandardItem(" s"+QString("%1").arg(reg,1,16).toUpper());
-        registerModel->setItem( reg, 0, item);
+        QStandardItem * item = new QStandardItem(" s"+QString("%1").arg(reg,1,16).toUpper() ) ;
+        item->setTextAlignment( Qt::AlignHCenter ) ;
+        registerModel->setItem( reg, 0, item ) ;
 
         item = new QStandardItem( "" ) ;
         item->setTextAlignment( Qt::AlignHCenter ) ;
         pBlaze->setRegisterItem( reg, item ) ;
-        registerModel->setItem( reg, 1, item );
+        registerModel->setItem( reg, 1, item ) ;
     }
     ui->tvRegisters->setModel( registerModel ) ;
-    ui->tvRegisters->setFont(fixedFont);
+    ui->tvRegisters->setFont(fixedFont ) ;
     for ( int row = 0 ; row < 16 ; row += 1 )
-        ui->tvRegisters->setRowHeight(row, 16 );
+        ui->tvRegisters->setRowHeight(row, 16 ) ;
     for ( int col = 0 ; col < 2 ; col += 1 )
-        ui->tvRegisters->setColumnWidth(col, 50);
-    ui->tvRegisters->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        ui->tvRegisters->setColumnWidth(col, 50 ) ;
+    ui->tvRegisters->setEditTriggers(QAbstractItemView::NoEditTriggers ) ;
 
 
     // setup stackmodel for stackview
     stackModel = new QStandardItemModel ;
     stackModel->insertColumns( 0, 4 ) ;
-    stackModel->setHorizontalHeaderLabels((QStringList() << "stack" << "pc" << "zero" << "carry"));
+    stackModel->setHorizontalHeaderLabels((QStringList() << "stack" << "pc" << "zero" << "carry") ) ;
     for ( int sp = 0 ; sp < 32 ; sp += 1 ) {
         QStandardItem * item = new QStandardItem( QString("%1").arg( sp, 2, 10 ) ) ;
+        item->setTextAlignment( Qt::AlignHCenter ) ;
         stackModel->setItem( sp, 0, item ) ;
+
         item = new QStandardItem( "" ) ;
         item->setTextAlignment( Qt::AlignHCenter ) ;
         pBlaze->setStackItem( sp, item ) ;
         stackModel->setItem( sp, 1, item ) ;
     }
     ui->tvStack->setModel( stackModel ) ;
-    ui->tvStack->setFont(fixedFont);
+    ui->tvStack->setFont(fixedFont ) ;
     for ( int row = 0 ; row < 32 ; row += 1 )
         ui->tvStack->setRowHeight( row, 16 ) ;
     for ( int col = 0 ; col < 4 ; col += 1 )
         ui->tvStack->setColumnWidth( col, 50 ) ;
-    ui->tvStack->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tvStack->setEditTriggers(QAbstractItemView::NoEditTriggers ) ;
 
 
     // setup scratchpadmodel for scratchpadview
     scratchpadModel = new QStandardItemModel ;
-    scratchpadModel->insertColumns(0,16);
-    scratchpadModel->insertRows(0,16);
+    scratchpadModel->insertColumns(0,16 ) ;
+    scratchpadModel->insertRows(0,16 ) ;
     scratchpadModel->setHorizontalHeaderLabels( (QStringList()
         << "X0" << "X1" << "X2" << "X3"
         << "X4" << "X5" << "X6" << "X7"
         << "X8" << "X9" << "XA" << "XB"
         << "XC" << "XD" << "XE" << "XF"
-    ));
+    ) ) ;
     scratchpadModel->setVerticalHeaderLabels( (QStringList()
         << "0X" << "1X" << "2X" << "3X"
         << "4X" << "5X" << "6X" << "7X"
         << "8X" << "9X" << "AX" << "BX"
         << "CX" << "DX" << "EX" << "FX"
-    ));
+    ) ) ;
     for ( int row = 0 ; row < 16 ; row += 1 )
-     for ( int col = 0 ; col < 16 ; col += 1 ) {
-        QStandardItem * item = new QStandardItem(QString("%1").arg(0,2,16).toUpper());
-        pBlaze->setScratchpadItem( row*16+col, item ) ;
-        scratchpadModel->setItem( row, col, item );
-     }
+        for ( int col = 0 ; col < 16 ; col += 1 ) {
+            QStandardItem * item = new QStandardItem(QString("%1").arg(0,2,16).toUpper() ) ;
+            scratchpadModel->setItem( row, col, item ) ;
+
+            item->setTextAlignment( Qt::AlignHCenter ) ;
+            pBlaze->setScratchpadItem( row * 16 + col, item ) ;
+        }
     ui->tvScratchpad->setModel( scratchpadModel ) ;
-    ui->tvScratchpad->setFont(fixedFont);
+    ui->tvScratchpad->setFont(fixedFont ) ;
     for ( int row = 0 ; row < 16 ; row += 1 )
-        ui->tvScratchpad->setRowHeight(row, 16 );
+        ui->tvScratchpad->setRowHeight(row, 16 ) ;
     for ( int col = 0 ; col < 16 ; col += 1 )
-        ui->tvScratchpad->setColumnWidth(col, 28);
-    ui->tvScratchpad->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        ui->tvScratchpad->setColumnWidth(col, 28 ) ;
+    ui->tvScratchpad->setEditTriggers(QAbstractItemView::NoEditTriggers ) ;
 
 
     // emulated IO devices
@@ -230,42 +226,42 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // setup ledsmodel for ledsview
     ledsModel = new QStandardItemModel ;
-    ledsModel->insertColumns(0,4);
-    ledsModel->insertRows(0,8);
+    ledsModel->insertColumns(0,4 ) ;
+    ledsModel->insertRows(0,8 ) ;
     ledsModel->setHorizontalHeaderLabels( (QStringList()
         << "0" << "1" << "2" << "3"
-    ));
+    ) ) ;
     ledsModel->setVerticalHeaderLabels( (QStringList()
         << "0" << "1" << "2" << "3"
         << "4" << "5" << "6" << "7"
-    ));
+    ) ) ;
     for ( int row = 0 ; row < 8 ; row += 1 )
      for ( int col = 0 ; col < 4 ; col += 1 ) {
-        QStandardItem * item = new QStandardItem();
-        ledsModel->setItem( row, col, item );
+        QStandardItem * item = new QStandardItem( ) ;
+        ledsModel->setItem( row, col, item ) ;
      }
     ui->tvIO->setModel( ledsModel ) ;
-    ui->tvScratchpad->setFont(fixedFont);
+    ui->tvIO->setFont(fixedFont ) ;
     for ( int row = 0 ; row < 8 ; row += 1 )
-        ui->tvIO->setRowHeight(row, 16 );
+        ui->tvIO->setRowHeight(row, 16 ) ;
     for ( int col = 0 ; col < 4 ; col += 1 )
-        ui->tvIO->setColumnWidth(col, 28);
-    ui->tvIO->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        ui->tvIO->setColumnWidth(col, 28 ) ;
+    ui->tvIO->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
 
     for ( int io = 0x00 ; io < 0x04 ; io += 1 ) {
-        LEDs * leds = new LEDs() ;
+        LEDs * leds = new LEDs( ) ;
         for ( int bits = 0 ; bits < 8 ; bits += 1 )
             leds->setItem( bits, ledsModel->item( bits, io ) ) ;
-        leds->update();
+        leds->update( ) ;
         pBlaze->setIODevice( this, io, io, leds ) ;
     }
 
     // UART, lives in 2 places
-    UART_IN = new QQueue<uint32_t>() ;
+    UART_IN = new QQueue<uint32_t>( ) ;
     pBlaze->setIODevice( this, 0xEC, 0xED, new UART() ) ;
 
     // CC, lives in 16 places
-    CC * cc = new CC() ;
+    CC * cc = new CC( ) ;
     cc->pBlaze = pBlaze ;
     pBlaze->setIODevice( this, 0xC0, 0xCF, cc ) ;
 
@@ -275,7 +271,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // timer for running code
     timer = new QTimer( this ) ;
-    connect( timer, SIGNAL(timeout()), this, SLOT(oneStep()));
+    connect( timer, SIGNAL(timeout()), this, SLOT(oneStep()) ) ;
 
     // filewatcher, sees .lst file change
     fileWatch = new QFileSystemWatcher( this ) ;
@@ -284,7 +280,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // settings in Registry
     QSettings settings( QSettings::NativeFormat, QSettings::UserScope, "Mediatronix", "pBlazSIM" ) ;
     if ( settings.contains( "files/LST" ) ) {
-        QString s = settings.value("files/LST").toString() ;
+        QString s = settings.value("files/LST").toString( ) ;
         if ( s != "" )
             fileWatch->addPath( settings.value("files/LST").toString() ) ;
         if ( fileWatch->files().size() > 0 )
@@ -303,12 +299,33 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->mainSplitter->setSizes( sizes ) ;
     }
 
+    // script engine
+    engine = new QScriptEngine( ) ;
+    debugger = new QScriptEngineDebugger( ) ;
+    debugger->attachTo( engine ) ;
+
+    QFileInfo fi( settings.value( "files/IO" ).toString(), "." ) ;
+    QFile scriptFile( fi.absolutePath() + "/IO.js" ) ;
+
+    if ( ! scriptFile.open( QIODevice::ReadOnly ) )
+        qDebug() << "no IO config script file:" << scriptFile.fileName( ) ;
+
+    QTextStream stream( &scriptFile ) ;
+    QString program = stream.readAll( ) ;
+    scriptFile.close( ) ;
+    engine->evaluate( program ) ;
+
+//    engine->globalObject().setProperty( "print", engine->newFunction( qs_print, 1 ) ) ;
+
+
     ui->actionRefresh->setEnabled( fileWatch->files().size() > 0 ) ;
+    ui->mainSplitter->setStretchFactor( 0, 20 ) ;
+    ui->mainSplitter->setStretchFactor( 1, 80 ) ;
 }
 
 // destructor
 MainWindow::~MainWindow() {
-    pBlaze->initPB6();
+    pBlaze->initPB6( ) ;
 
     // settings in Registry
     QSettings settings( QSettings::NativeFormat, QSettings::UserScope, "Mediatronix", "pBlazSIM" ) ;
@@ -320,14 +337,14 @@ MainWindow::~MainWindow() {
     settings.beginGroup( "mainwindow" ) ;
     settings.setValue( "state", (int)windowState() ) ;
     settings.setValue( "geometry", geometry() ) ;
-    settings.endGroup();
+    settings.endGroup( ) ;
 
     settings.beginGroup( "mainsplitter" ) ;
     settings.setValue( "size0", ui->mainSplitter->sizes()[ 0 ] ) ;
     settings.setValue( "size1", ui->mainSplitter->sizes()[ 1 ] ) ;
-    settings.endGroup();
+    settings.endGroup( ) ;
 
-    settings.sync() ;
+    settings.sync( ) ;
 
     delete( debugger ) ;
     delete( engine ) ;
@@ -336,11 +353,11 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::closeEvent( QCloseEvent *event ) {
-    event->accept() ;
+    event->accept( ) ;
 }
 
 void MainWindow::on_actionNew_triggered() {
-    removeCode();
+    removeCode( ) ;
 }
 
 // reload LST+SCR files
@@ -362,7 +379,7 @@ void MainWindow::on_action_Open_triggered()
 
     if ( dialog.exec() ) {
         if ( fileWatch->files().count() > 0 )
-            fileWatch->removePaths(fileWatch->files());
+            fileWatch->removePaths(fileWatch->files() ) ;
 
         fileWatch->addPaths( dialog.selectedFiles() ) ;
         loadLSTfile( fileWatch->files()[ 0 ] ) ;
@@ -375,29 +392,29 @@ void MainWindow::fileWatch_fileChanged( const QString &path )
     QMessageBox mb ;
     QFile file( path ) ;
     mb.setStandardButtons( QMessageBox::Yes | QMessageBox::No ) ;
-    mb.setInformativeText( path );
+    mb.setInformativeText( path ) ;
 
     if ( file.exists() ) {
-        mb.setText( "LST file changed; reload?" );
+        mb.setText( "LST file changed; reload?" ) ;
         if ( mb.exec() == QMessageBox::Yes )
             loadLSTfile( path ) ;
     } else {
-        mb.setText( "File doesn't exit anymore, clear simulation?" ) ;
+        mb.setText( "File doesn't exist anymore, clear simulation?" ) ;
         if ( mb.exec() == QMessageBox::Yes )
-            removeCode() ;
+            removeCode( ) ;
     }
 }
 
 void MainWindow::removeCode( void ) {
     // remove any filewatches
     if ( fileWatch->files().count() > 0 )
-        fileWatch->removePaths(fileWatch->files());
+        fileWatch->removePaths(fileWatch->files() ) ;
 
     ui->actionRefresh->setEnabled( fileWatch->files().size() > 0 ) ;
 
     // reset core
-    on_actionReset_triggered() ;
-    pBlaze->initPB6() ;
+    on_actionReset_triggered( ) ;
+    pBlaze->initPB6( ) ;
 
     ui->actionStep->setEnabled( false ) ;
     ui->actionJump->setEnabled( false ) ;
@@ -406,29 +423,29 @@ void MainWindow::removeCode( void ) {
 
     // remove code
     codeModel->setRowCount( 0 ) ;
-    pBlaze->clearCode() ;
+    pBlaze->clearCode( ) ;
 }
 
 // load LST+SCR files, build code model/view
 void MainWindow::loadLSTfile( QString filename ) {
-    removeCode() ;
+    removeCode( ) ;
 
     QFile file( filename ) ;
     if (!file.exists() ) {
         QMessageBox mb ;
         mb.setStandardButtons( QMessageBox::Ok ) ;
-        mb.setInformativeText( filename );
-        mb.setText( "File doesn't exit anymore:" ) ;
-        mb.exec() ;
+        mb.setInformativeText( filename ) ;
+        mb.setText( "File doesn't exist anymore:" ) ;
+        mb.exec( ) ;
         return ;
     }
 
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QMessageBox mb ;
         mb.setStandardButtons( QMessageBox::Ok ) ;
-        mb.setInformativeText( filename );
+        mb.setInformativeText( filename ) ;
         mb.setText( "Could not open file:" ) ;
-        mb.exec() ;
+        mb.exec( ) ;
         return ;
     }
 
@@ -440,15 +457,15 @@ void MainWindow::loadLSTfile( QString filename ) {
     while ( !file.atEnd() ) {
          QStandardItem * item ;
 
-         QByteArray line = file.readLine();
+         QByteArray line = file.readLine( ) ;
          QString str = line ;
-         str.remove(QChar('\n'));
+         str.remove(QChar('\n') ) ;
 
-         codeModel->insertRow(row);
+         codeModel->insertRow(row ) ;
 
-         item = new QStandardItem(QString("%1").arg(row+1));
+         item = new QStandardItem(QString("%1").arg(row+1) ) ;
          item->setSelectable( true ) ;
-         item->setTextAlignment(Qt::AlignRight);
+         item->setTextAlignment(Qt::AlignRight ) ;
          codeModel->setItem( row, 0, item ) ;
 
          if ( str.contains( QRegExp( "^PB3$" ) ) ) {
@@ -456,12 +473,12 @@ void MainWindow::loadLSTfile( QString filename ) {
          } else if ( str.contains( QRegExp( "^PB6$" ) ) ) {
              pBlaze->setCore( false ) ;
          } else if ( str.contains( QRegExp( "^[0-9A-F]{3,3} [0-9A-F]{5,5}" ) ) ) {
-             item = new QStandardItem(*blueIcon, "");
+             item = new QStandardItem( *blueIcon, "" ) ;
              item->setSelectable( true ) ;
 
              bool error ;
-             int address = str.left(3).toInt(&error, 16) ;
-             int code = str.mid(4,5).toInt(&error, 16) ;
+             int address = str.left(3).toInt(&error, 16 ) ;
+             int code = str.mid(4,5).toInt(&error, 16 ) ;
 
              item->setData( QVariant( address ), Qt::UserRole+1 ) ;
              pBlaze->setCodeItem( address, code, row + 1, item ) ;
@@ -475,65 +492,65 @@ void MainWindow::loadLSTfile( QString filename ) {
 
          item = new QStandardItem( str.mid(0, 11) ) ;
          item->setSelectable( true ) ;
-         item->setTextAlignment(Qt::AlignCenter);
+         item->setTextAlignment(Qt::AlignCenter ) ;
          codeModel->setItem( row, 2, item ) ;
 
          item = new QStandardItem( str.mid(11) ) ;
          item->setSelectable( true ) ;
-         codeModel->setItem( row, 3, item );
+         codeModel->setItem( row, 3, item ) ;
          row += 1;
-     }
-    file.close();
+    }
+    file.close( ) ;
 
     QFileInfo fileInfo( fileWatch->files()[ 0 ] ) ;
     QString fp =  fileInfo.absolutePath() + "/" + fileInfo.baseName() + ".scr" ;
     file.setFileName( fp ) ;
 
     // read scratchpad data (.scr) assciated with .lst
-    pBlaze->clearScratchpad();
+    pBlaze->clearScratchpad( ) ;
     if ( file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        for ( int addr = -1 ; addr < MAXMEM && !file.atEnd() ; ) {
+        for ( int addr = -1 ; addr < MAXMEM && !file.atEnd( ) ; ) {
             bool error ;
-            QByteArray line = file.readLine();
+            QByteArray line = file.readLine( ) ;
             QString str = line ;
-            str.remove(QChar('\n'));
+            str.remove(QChar('\n') ) ;
 
             if ( str[ 0 ] == '@' ) {
                 addr = str.mid(1).toInt( &error, 16 ) & 0xFF ;
             } else {
-                int value = str.toInt(&error, 16) ;
+                int value = str.toInt(&error, 16 ) ;
                 pBlaze->setScratchpadData( addr, value ) ;
                 addr += 1 ;
             }
         }
-        file.close();
+        file.close( ) ;
     }
 
-    on_actionReset_triggered();
-    pBlaze->initPB6() ;
+    on_actionReset_triggered( ) ;
+    pBlaze->initPB6( ) ;
     ui->actionStep->setEnabled( true ) ;
     ui->actionJump->setEnabled( true ) ;
     ui->actionRun->setEnabled( true ) ;
     ui->actionReset->setEnabled( true ) ;
 
-    statusBar()->showMessage(tr("Ready"));
+    statusBar()->showMessage(tr("Ready") ) ;
 }
 
 // exit application
 void MainWindow::on_actionExit_triggered()
 {
-    timer->stop();
-    pBlaze->initPB6();
-    qApp->exit();
+    timer->stop( ) ;
+    pBlaze->initPB6( ) ;
+    qApp->exit( ) ;
 }
 
 // select/deselect helper
 void MainWindow::selectLine( QItemSelectionModel::SelectionFlags option ) {
-    QStandardItem * item = (QStandardItem *)pBlaze->getCurrentCodeItem() ;
+    QStandardItem * item = (QStandardItem *)pBlaze->getCurrentCodeItem( ) ;
     if ( item != NULL ) {
-        QItemSelectionModel * selection = ui->tvCode->selectionModel() ;
+        QItemSelectionModel * selection = ui->tvCode->selectionModel( ) ;
         selection->select( item->index(), option | QItemSelectionModel::Rows ) ;
-        ui->tvCode->scrollTo( item->index(), QAbstractItemView::EnsureVisible);
+        ui->tvCode->scrollTo( item->index(), QAbstractItemView::EnsureVisible ) ;
     }
 }
 
@@ -541,9 +558,9 @@ void MainWindow::selectLine( QItemSelectionModel::SelectionFlags option ) {
 void MainWindow::oneStep( void ) {
     // no need to report progress everytime
     if ( span < 0 ) {
-        pBlaze->updateData() ;
-        pBlaze->updateState() ;
-        pBlaze->updateIO() ;
+        pBlaze->updateData( ) ;
+        pBlaze->updateState( ) ;
+        pBlaze->updateIO( ) ;
         span += 256 ;
     }
     span -= 1 ;
@@ -552,11 +569,11 @@ void MainWindow::oneStep( void ) {
     for ( int i = 0 ; i < 256 ; i += 1 ) {
         if ( ! pBlaze->stepPB6() || pBlaze->onBreakpoint() || pBlaze->onBarrier() ) {
             if ( pBlaze->onBarrier() )
-                pBlaze->resetBarrier() ;
-            timer->stop();
-            pBlaze->updateData() ;
-            pBlaze->updateState() ;
-            pBlaze->updateIO() ;
+                pBlaze->resetBarrier( ) ;
+            timer->stop( ) ;
+            pBlaze->updateData( ) ;
+            pBlaze->updateState( ) ;
+            pBlaze->updateIO( ) ;
 
             selectLine( QItemSelectionModel::Select ) ;
 
@@ -565,8 +582,8 @@ void MainWindow::oneStep( void ) {
             ui->actionStep->setEnabled( true ) ;
             ui->actionRun->setEnabled( true ) ;
 
-            ui->tvCode->setFocus();
-            statusBar()->showMessage(tr("Breakpoint") );
+            ui->tvCode->setFocus( ) ;
+            statusBar()->showMessage(tr("Breakpoint") ) ;
             break ;
         }
     }
@@ -578,12 +595,12 @@ void MainWindow::on_actionStep_triggered()
     selectLine( QItemSelectionModel::Clear ) ;
 
     if ( pBlaze->stepPB6() )
-        statusBar()->showMessage(tr("Stepped"));
+        statusBar()->showMessage(tr("Stepped") ) ;
     else
-        statusBar()->showMessage(tr("Breakpoint") );
-    pBlaze->updateData();
-    pBlaze->updateState() ;
-    pBlaze->updateIO() ;
+        statusBar()->showMessage(tr("Breakpoint") ) ;
+    pBlaze->updateData( ) ;
+    pBlaze->updateState( ) ;
+    pBlaze->updateIO( ) ;
 
     selectLine( QItemSelectionModel::Select ) ;
 }
@@ -598,10 +615,10 @@ void MainWindow::on_actionJump_triggered()
     ui->actionRun->setEnabled( false ) ;
     ui->actionStop->setEnabled( true ) ;
 
-    pBlaze->setBarrier() ;
+    pBlaze->setBarrier( ) ;
     span = 0 ;
-    timer->start() ;
-    statusBar()->showMessage(tr("Running"));
+    timer->start( ) ;
+    statusBar()->showMessage(tr("Running") ) ;
 }
 
 // start simulation
@@ -615,8 +632,8 @@ void MainWindow::on_actionRun_triggered()
     ui->actionStop->setEnabled( true ) ;
 
     span = 0 ;
-    timer->start() ;
-    statusBar()->showMessage(tr("Running"));
+    timer->start( ) ;
+    statusBar()->showMessage(tr("Running") ) ;
 }
 
 // reset simulation
@@ -624,11 +641,11 @@ void MainWindow::on_actionReset_triggered()
 {
     selectLine( QItemSelectionModel::Clear ) ;
 
-    timer->stop() ;
-    pBlaze->resetPB6() ;
-    pBlaze->updateData() ;
-    pBlaze->updateState() ;
-    pBlaze->updateIO() ;
+    timer->stop( ) ;
+    pBlaze->resetPB6( ) ;
+    pBlaze->updateData( ) ;
+    pBlaze->updateState( ) ;
+    pBlaze->updateIO( ) ;
 
     selectLine( QItemSelectionModel::Select ) ;
 
@@ -636,15 +653,15 @@ void MainWindow::on_actionReset_triggered()
     ui->actionJump->setEnabled( true ) ;
     ui->actionRun->setEnabled( true ) ;
     ui->actionStop->setEnabled( false ) ;
-    statusBar()->showMessage(tr("Reset"));
+    statusBar()->showMessage(tr("Reset") ) ;
 }
 
 // stop simulation
 void MainWindow::on_actionStop_triggered() {
-    timer->stop() ;
-    pBlaze->updateData() ;
-    pBlaze->updateState() ;
-    pBlaze->updateIO() ;
+    timer->stop( ) ;
+    pBlaze->updateData( ) ;
+    pBlaze->updateState( ) ;
+    pBlaze->updateIO( ) ;
 
     selectLine( QItemSelectionModel::Select ) ;
 
@@ -652,7 +669,7 @@ void MainWindow::on_actionStop_triggered() {
     ui->actionJump->setEnabled( true ) ;
     ui->actionRun->setEnabled( true ) ;
     ui->actionStop->setEnabled( false ) ;
-    statusBar()->showMessage(tr("Stopped"));
+    statusBar()->showMessage(tr("Stopped") ) ;
 }
 
 // modify register
@@ -660,7 +677,7 @@ void MainWindow::on_tvRegisters_doubleClicked(const QModelIndex &index) {
     bool ok ;
     // item we clicked on
     QStandardItem * item = registerModel->itemFromIndex( index ) ;
-    int row = item->row();
+    int row = item->row( ) ;
 
     // get user input
     QString value = QInputDialog::getText(
@@ -675,15 +692,15 @@ void MainWindow::on_tvRegisters_doubleClicked(const QModelIndex &index) {
 
 void MainWindow::on_tvStack_doubleClicked(const QModelIndex &index) {
     QStandardItem * item = stackModel->itemFromIndex( index ) ;
-    int row = item->row();
-    int col = item->column();
+    int row = item->row( ) ;
+    int col = item->column( ) ;
 
     if ( col == 1 ) {
         int retaddr = pBlaze->getStackPcValue( row ) ;
         item = (QStandardItem *)pBlaze->getCodeItem( retaddr ) ;
         if ( item != NULL ) {
-            ui->tvCode->scrollTo( item->index(), QAbstractItemView::EnsureVisible);
-            ui->tvCode->setFocus( Qt::MouseFocusReason );
+            ui->tvCode->scrollTo( item->index(), QAbstractItemView::EnsureVisible ) ;
+            ui->tvCode->setFocus( Qt::MouseFocusReason ) ;
         }
     }
 }
@@ -692,8 +709,8 @@ void MainWindow::on_tvStack_doubleClicked(const QModelIndex &index) {
 void MainWindow::on_tvScratchpad_doubleClicked(const QModelIndex &index) {
     bool ok ;
     QStandardItem * item = scratchpadModel->itemFromIndex( index ) ;
-    int row = item->row();
-    int col = item->column();
+    int row = item->row( ) ;
+    int col = item->column( ) ;
 
     int cell = row*16+col ;
 
@@ -708,15 +725,15 @@ void MainWindow::on_tvScratchpad_doubleClicked(const QModelIndex &index) {
 
 void MainWindow::on_tvState_doubleClicked(const QModelIndex &index) {
     QStandardItem * item = stateModel->itemFromIndex( index ) ;
-    int row = item->row();
-    int col = item->column();
+    int row = item->row( ) ;
+    int col = item->column( ) ;
 
     if ( col == 1 && row == 0 ) {
-        uint32_t pc = pBlaze->getPcValue() ;
+        uint32_t pc = pBlaze->getPcValue( ) ;
         item = (QStandardItem *)pBlaze->getCodeItem( pc ) ;
         if ( item != NULL ) {
-            ui->tvCode->scrollTo( item->index(), QAbstractItemView::EnsureVisible);
-            ui->tvCode->setFocus( Qt::MouseFocusReason );
+            ui->tvCode->scrollTo( item->index(), QAbstractItemView::EnsureVisible ) ;
+            ui->tvCode->setFocus( Qt::MouseFocusReason ) ;
         }
     }
 }
@@ -724,19 +741,19 @@ void MainWindow::on_tvState_doubleClicked(const QModelIndex &index) {
 // toggle LEDs
 void MainWindow::on_tvIO_doubleClicked(const QModelIndex &index) {
     QStandardItem * item = ledsModel->itemFromIndex( index ) ;
-    int row = item->row() ;
-    int col = item->column() ;
+    int row = item->row( ) ;
+    int col = item->column( ) ;
 
     IODevice * dev = pBlaze->getIODevice( col ) ;
     int io = dev->getValue( col ) ;
     dev->setValue( col, io ^ ( 1 << row ) ) ;
-    dev->update() ;
+    dev->update( ) ;
 }
 
 // toggle breakoint
 void MainWindow::on_tvCode_doubleClicked(const QModelIndex &index) {
     // clicked somewhere in the row
-    int row = codeModel->itemFromIndex(index)->row() ;
+    int row = codeModel->itemFromIndex(index)->row( ) ;
     // get the bullit cell
     QStandardItem * item = codeModel->item( row, 1 ) ;
     if ( item == NULL )
@@ -762,7 +779,7 @@ void MainWindow::on_tvCode_doubleClicked(const QModelIndex &index) {
 
 void MainWindow::on_tvCode_clicked(const QModelIndex &index) {
     // clicked somewhere in the row
-    int row = codeModel->itemFromIndex(index)->row() ;
+    int row = codeModel->itemFromIndex(index)->row( ) ;
     // get the bullit cell
     QStandardItem * item = codeModel->item( row, 1 ) ;
     if ( item == NULL )
@@ -806,29 +823,29 @@ uint32_t MainWindow::getUARTstatus( void ) {
 
 uint32_t MainWindow::getUARTdata( void ) {
     // get the character
-    return UART_IN->dequeue() ;
+    return UART_IN->dequeue( ) ;
 }
 
 void MainWindow::setUARTdata( uint32_t c ) {
     // put it on screen (skip new lines)
     if ( (char)c != '\n' ) {
         ui->teTerminal->insertPlainText( QString( QChar(c) ) ) ;
-        ui->teTerminal->ensureCursorVisible();
+        ui->teTerminal->ensureCursorVisible( ) ;
     }
 }
 
-uint32_t MainWindow::getScriptValue(uint32_t address) {
-    QScriptValue global = engine->globalObject() ;
+uint32_t MainWindow::getScriptValue( uint32_t address ) {
+    QScriptValue global = engine->globalObject( ) ;
 
     QScriptValue getData = global.property( "getData" ) ;
     QScriptValueList args ;
     args << address ;
     QScriptValue result = getData.call( QScriptValue(), args ) ;
-    return result.toNumber() ;
+    return result.toNumber( ) ;
 }
 
-void MainWindow::setScriptValue(uint32_t address, uint32_t value) {
-    QScriptValue global = engine->globalObject() ;
+void MainWindow::setScriptValue( uint32_t address, uint32_t value ) {
+    QScriptValue global = engine->globalObject( ) ;
 
     QScriptValue setData = global.property( "setData" ) ;
     QScriptValueList args ;
@@ -855,14 +872,15 @@ void MainWindow::on_pushButton_clicked() {
     data.append( "0x" + QString("%L1").arg(lhsb->value(), 2, 16, QChar('0') ).toUpper() ) ;
     QTreeWidgetItem * item = new QTreeWidgetItem((QTreeWidget*)0, data ) ;
     if ( ui->cbIOEnable->checkState() )
-        item->setIcon( 3, *greenIcon );
+        item->setIcon( 3, *greenIcon ) ;
     else
-        item->setIcon( 3, *blackIcon );
+        item->setIcon( 3, *blackIcon ) ;
 
-    ui->treeWidgetIO->addTopLevelItem(item);
+    ui->treeWidgetIO->addTopLevelItem(item ) ;
 }
 
 void MainWindow::on_treeWidgetIO_doubleClicked(const QModelIndex &index) {
+    (void)index ;
 //    ui->cbIOType->setCurrentIndex( 1 ) ;
 //    fhsb->setText( QString( "0xC0" ) ) ;
 //    lhsb->setText( QString( "0xCF" ) ) ;
