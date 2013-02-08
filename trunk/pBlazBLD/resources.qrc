@@ -32,5 +32,8 @@
         <file>document_into.png</file>
         <file>document_new.png</file>
         <file>document_out.png</file>
+        <file>transform.png</file>
+        <file>recycle.png</file>
+        <file>funnel_down.png</file>
     </qresource>
 </RCC>

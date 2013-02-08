@@ -97,7 +97,7 @@ void VariantManager::setValue(QtProperty *property, const QVariant &val)
     if (theValues.contains(property)) {
         if (val.type() != QVariant::String && !val.canConvert(QVariant::String))
             return;
-        QString str = qVariantValue<QString>(val);
+        QString str = val.value<QString>();
         Data d = theValues[property];
         if (d.value == str)
             return;
@@ -117,7 +117,7 @@ void VariantManager::setAttribute(QtProperty *property,
         if (attribute == QLatin1String("filter")) {
             if (val.type() != QVariant::String && !val.canConvert(QVariant::String))
                 return;
-            QString str = qVariantValue<QString>(val);
+            QString str = val.value<QString>();
             Data d = theValues[property];
             if (d.filter == str)
                 return;

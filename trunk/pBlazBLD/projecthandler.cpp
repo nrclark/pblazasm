@@ -24,13 +24,12 @@ void QmtxProjectHandler::Init() {
     //variantManager->valueChanged();
 
     variantEditor->setFont( *fixedFont ) ;
-    variantEditor->setAlternatingRowColors( true ) ;
+    variantEditor->setAlternatingRowColors( false ) ;
     variantEditor->setFactoryForManager( (QtVariantPropertyManager *)variantManager, variantFactory ) ;
     variantEditor->setPropertiesWithoutValueMarked(true);
     variantEditor->setRootIsDecorated( true ) ;
     variantEditor->setResizeMode( QtTreePropertyBrowser::ResizeToContents ) ;
 
-    QtVariantProperty * item ;
     QtBrowserItem * britem ;
 
     projectItem = variantManager->addProperty(QVariant::String, QLatin1String(" Project Name"));
@@ -39,7 +38,27 @@ void QmtxProjectHandler::Init() {
     projectItem->setValue( "<untitled>" );
 
 
-    editorItem = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(),  QLatin1String(" Editor options"));
+    toolsItem = variantManager->addProperty(VariantManager::groupTypeId(),  QLatin1String(" Tools"));
+    britem = variantEditor->addProperty( toolsItem ) ;
+    variantEditor->setBackgroundColor( britem, QColor( 250, 240, 255, 255 ) ) ;
+
+    toolsASMfile = variantManager->addProperty(VariantManager::filePathTypeId(), QLatin1String("pBlazASM file path"));
+    toolsASMfile->setValue( "./pBlazASM.exe" ) ;
+    toolsASMfile->setAttribute( "filter", "EXE files (*.exe);;All files (*.*)" ) ;
+    toolsItem->addSubProperty( toolsASMfile ) ;
+
+    toolsMEMfile = variantManager->addProperty(VariantManager::filePathTypeId(), QLatin1String("pBlazMEM file path"));
+    toolsMEMfile->setValue( "./pBlazMEM.exe" ) ;
+    toolsMEMfile->setAttribute( "filter", "EXE files (*.exe);;All files (*.*)" ) ;
+    toolsItem->addSubProperty( toolsMEMfile ) ;
+
+    toolsBITfile = variantManager->addProperty(VariantManager::filePathTypeId(), QLatin1String("pBlazBIT file path"));
+    toolsBITfile->setValue( "./pBlazBIT.exe" ) ;
+    toolsBITfile->setAttribute( "filter", "EXE files (*.exe);;All files (*.*)" ) ;
+    toolsItem->addSubProperty( toolsBITfile ) ;
+
+
+    editorItem = variantManager->addProperty(VariantManager::groupTypeId(),  QLatin1String(" Editor options"));
     britem = variantEditor->addProperty( editorItem ) ;
     variantEditor->setBackgroundColor( britem, QColor( 250, 240, 240, 255 ) ) ;
 
@@ -51,83 +70,94 @@ void QmtxProjectHandler::Init() {
     variantEditor->setExpanded( britem, false ) ;
 
     // pBlazASM
-    asmItem = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), QLatin1String(" pBlazASM options"));
+    asmItem = variantManager->addProperty(VariantManager::groupTypeId(), QLatin1String(" pBlazASM options"));
     britem = variantEditor->addProperty( asmItem );
     variantEditor->setBackgroundColor( britem, QColor( 240, 250, 240, 255 ) ) ;
 
-    asmOptions = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), QLatin1String(" Options"));
+    asmOptions = variantManager->addProperty(VariantManager::groupTypeId(), QLatin1String(" Options"));
     asmItem->addSubProperty( asmOptions ) ;
 
     asmOptVerbose = variantManager->addProperty(QVariant::Bool, QLatin1String(" Verbose"));
     asmOptions->addSubProperty( asmOptVerbose ) ;
 
-    asmOptPBx = variantManager->addProperty(QtVariantPropertyManager::enumTypeId(), QLatin1String(" Picoblaze version"));
+    asmOptPBx = variantManager->addProperty(VariantManager::enumTypeId(), QLatin1String(" Picoblaze version"));
     QStringList picoNames ;
     picoNames << "Picoblaze-3" << "Picoblaze-6" ;
     asmOptPBx->setAttribute( QLatin1String( "enumNames" ), picoNames ) ;
     asmOptPBx->setValue( 1 ) ;
     asmOptions->addSubProperty( asmOptPBx ) ;
 
-    item = variantManager->addProperty(VariantManager::filePathTypeId(), "Code (*.mrg) File");
-    item->setValue( "<default>" ) ;
-    item->setAttribute( "filter", "Code files (*.MRG)" ) ;
-    asmOptions->addSubProperty( item ) ;
+    asmFiles = variantManager->addProperty(VariantManager::groupTypeId(), QLatin1String(" Files"));
+    asmItem->addSubProperty( asmFiles ) ;
 
-    item = variantManager->addProperty(VariantManager::filePathTypeId(), "Data (*.scr) File");
-    item->setValue( "<default>" ) ;
-    item->setAttribute( "filter", "Data files (*.SCR)" ) ;
-    asmOptions->addSubProperty( item ) ;
+    asmMEMfile = variantManager->addProperty(VariantManager::filePathTypeId(), QLatin1String("Code (*.mem) file"));
+    asmMEMfile->setValue( "<default>" ) ;
+    asmMEMfile->setAttribute( "filter", "MEM files (*.mem);;All files (*.*)" ) ;
+    asmFiles->addSubProperty( asmMEMfile ) ;
+    asmSCRfile = variantManager->addProperty(VariantManager::filePathTypeId(), QLatin1String("Data (*.scr) file"));
+    asmSCRfile->setValue( "<default>" ) ;
+    asmSCRfile->setAttribute( "filter", "SCR files (*.scr);;All files (*.*)" ) ;
+    asmFiles->addSubProperty( asmSCRfile ) ;
+    asmLSTfile = variantManager->addProperty(VariantManager::filePathTypeId(), QLatin1String("Listing (*.lst) file"));
+    asmLSTfile->setValue( "<default>" ) ;
+    asmLSTfile->setAttribute( "filter", "LST files (*.lst);;All files (*.*)" ) ;
+    asmFiles->addSubProperty( asmLSTfile ) ;
 
-    item = variantManager->addProperty(VariantManager::filePathTypeId(), "List (*.lst) file");
-    item->setValue( "<default>" ) ;
-    item->setAttribute( "filter", "List files (*.LST)" ) ;
-    asmOptions->addSubProperty( item ) ;
-
-    asmSources = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), QLatin1String(" Sources"));
+    asmSources = variantManager->addProperty(VariantManager::groupTypeId(), QLatin1String(" Files"));
     asmItem->addSubProperty( asmSources ) ;
 
     // pBlazMRG
-    mrgItem = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), QLatin1String(" pBlazMRG options"));
+    mrgItem = variantManager->addProperty(VariantManager::groupTypeId(), QLatin1String(" pBlazMRG options"));
     britem = variantEditor->addProperty( mrgItem );
     variantEditor->setBackgroundColor( britem, QColor( 240, 240, 250, 255 ) ) ;
 
-    mrgOptions = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), QLatin1String(" Options"));
+    mrgOptions = variantManager->addProperty(VariantManager::groupTypeId(), QLatin1String(" Options"));
     mrgItem->addSubProperty( mrgOptions ) ;
 
     mrgOptVerbose = variantManager->addProperty(QVariant::Bool, QLatin1String(" Verbose"));
     mrgOptions->addSubProperty( mrgOptVerbose ) ;
 
-    mrgSources = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), QLatin1String(" Sources"));
-    mrgItem->addSubProperty( mrgSources ) ;
+    mrgFiles = variantManager->addProperty(VariantManager::groupTypeId(), QLatin1String(" Files"));
+    mrgItem->addSubProperty( mrgFiles ) ;
 
-    item = variantManager->addProperty(VariantManager::filePathTypeId(), "Template File");
-    item->setValue( "template.vhd" ) ;
-    item->setAttribute( "filter", "Source files (*.vhd *.vhdl)" ) ;
-    mrgSources->addSubProperty( item ) ;
+    mrgMEMfile = variantManager->addProperty(VariantManager::filePathTypeId(), QLatin1String("Code (*.mem) file"));
+    mrgMEMfile->setValue( "<undefined>" ) ;
+    mrgMEMfile->setAttribute( "filter", "MEM files (*.mem);;All files (*.*)" ) ;
+    mrgFiles->addSubProperty( mrgMEMfile ) ;
+
+    mrgSCRfile = variantManager->addProperty(VariantManager::filePathTypeId(), QLatin1String("Data (*.scr) file"));
+    mrgSCRfile->setValue( "<undefined>" ) ;
+    mrgSCRfile->setAttribute( "filter", "SCR files (*.scr);;All files (*.*)" ) ;
+    mrgFiles->addSubProperty( mrgSCRfile ) ;
+
+    mrgTPLfile = variantManager->addProperty(VariantManager::filePathTypeId(), "Template (*.tpl) file");
+    mrgTPLfile->setValue( "<undefined>" ) ;
+    mrgTPLfile->setAttribute( "filter", "Template files (*.tpl *.vhd);;All files (*.*)" ) ;
+    mrgFiles->addSubProperty( mrgTPLfile ) ;
 
     // pBlazBIT
-    bitItem = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), QLatin1String(" pBlazBIT options"));
+    bitItem = variantManager->addProperty(VariantManager::groupTypeId(), QLatin1String(" pBlazBIT options"));
     britem = variantEditor->addProperty( bitItem );
     variantEditor->setBackgroundColor( britem, QColor( 240, 240, 200, 255 ) ) ;
 
-    bitOptions = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), QLatin1String(" Options"));
+    bitOptions = variantManager->addProperty(VariantManager::groupTypeId(), QLatin1String(" Options"));
     bitItem->addSubProperty( bitOptions ) ;
 
     bitOptVerbose = variantManager->addProperty(QVariant::Bool, QLatin1String(" Verbose"));
     bitOptions->addSubProperty( bitOptVerbose ) ;
 
-    bitSources = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), QLatin1String(" Options"));
-    bitItem->addSubProperty( bitSources ) ;
+    bitFiles = variantManager->addProperty(VariantManager::groupTypeId(), QLatin1String(" Options"));
+    bitItem->addSubProperty( bitFiles ) ;
 
-    item = variantManager->addProperty(VariantManager::filePathTypeId(), "Input (*.bit) File");
-    item->setValue( "" ) ;
-    item->setAttribute( "filter", "Config files (*.bit *.bin)" ) ;
-    bitSources->addSubProperty( item ) ;
+    bitINfile = variantManager->addProperty(VariantManager::filePathTypeId(), "Input (*.bit) File");
+    bitINfile->setValue( "<undefined>" ) ;
+    bitINfile->setAttribute( "filter", "Config files (*.bit *.bin);;All files (*.*)" ) ;
+    bitFiles->addSubProperty( bitINfile ) ;
 
-    item = variantManager->addProperty(VariantManager::filePathTypeId(), "Output (*.bit) File");
-    item->setValue( "" ) ;
-    item->setAttribute( "filter", "Config files (*.bit *.bin)" ) ;
-    bitSources->addSubProperty( item ) ;
+    bitOUTfile = variantManager->addProperty(VariantManager::filePathTypeId(), "Output (*.bit) File");
+    bitOUTfile->setValue( "<undefined>" ) ;
+    bitOUTfile->setAttribute( "filter", "Config files (*.bit *.bin);;All files (*.*)" ) ;
+    bitFiles->addSubProperty( bitOUTfile ) ;
 }
 
 QmtxProjectHandler::~QmtxProjectHandler() {
@@ -144,7 +174,7 @@ void QmtxProjectHandler::Load( QString filename ) {
         if ( filename.isEmpty() ) {
             projectFileName = QFileDialog::getOpenFileName(
                 0, "Open Project File", ".", "pBlazBLD project files (*.mtx);;All files (*.*)" ) ;
-            if ( projectFileName.isNull() )
+            if ( projectFileName.isEmpty() )
                 return ;
         } else {
             projectFileName = filename ;
@@ -246,84 +276,100 @@ bool QmtxProjectHandler::save() {
 }
 
 bool QmtxProjectHandler::saveas() {
-    projectFileName = QFileDialog::getSaveFileName( 0 ) ;
+    projectFileName = QFileDialog::getSaveFileName(
+        0, "Open Project File", ".", "pBlazBLD project files (*.mtx);;All files (*.*)" ) ;
+
     if ( projectFileName.isEmpty() )
         return false ;
     return save_file() ;
 }
 
 bool QmtxProjectHandler::load_file() {
+    if ( projectFileName.isEmpty() )
+        return false ;
+
     const QSettings::Format XmlFormat =
             QSettings::registerFormat( "mtx", readXmlFile, writeXmlFile ) ;
 
     QSettings settings( projectFileName, XmlFormat ) ;
-//    if ( ! settings )
-//            return false ;
+    int size ;
 
     Init() ;
-    asmOptVerbose->setValue( settings.value("pBlazASM/options/verbose").toBool() ) ;
-    mrgOptVerbose->setValue( settings.value("pBlazMRG/options/verbose").toBool() ) ;
     bitOptVerbose->setValue( settings.value("pBlazBIT/options/verbose").toBool() ) ;
 
     settings.beginGroup( "pBlazASM" ) ;
+        asmOptVerbose->setValue( settings.value("options/verbose").toBool() ) ;
+        asmMEMfile->setValue( settings.value( "files/MEM" ).toString() ) ;
+        asmSCRfile->setValue( settings.value( "files/SCR" ).toString() ) ;
+        asmLSTfile->setValue( settings.value( "files/LST" ).toString() ) ;
+
         settings.beginGroup( "sources" ) ;
-        int size = settings.value( "size" ).toInt() ;
+        size = settings.value( "size" ).toInt() ;
         for ( int i = 0 ; i < size ; i += 1 ) {
-            QString index = QString( "source-%1" ).arg( i ) ;
+            QString index = QString( "file-%1" ).arg( i ) ;
             QString filename = settings.value( index ).toString() ;
             QtVariantProperty * item = variantManager->addProperty(VariantManager::filePathTypeId(), index ) ;
             item->setValue( filename ) ;
-            item->setAttribute( "filter", "Source files (*.psm *.psh)" ) ;
+            item->setAttribute( "filter", "Source files (*.psm *.psh);;All files (*.*)" ) ;
             asmSources->addSubProperty( item ) ;
         }
         settings.endGroup() ;
+    settings.endGroup() ;
+
+    settings.beginGroup( "pBlazMRG" ) ;
+        mrgOptVerbose->setValue( settings.value("options/verbose").toBool() ) ;
+        mrgMEMfile->setValue( settings.value( "files/MEM" ).toString() ) ;
+        mrgSCRfile->setValue( settings.value( "files/SCR" ).toString() ) ;
+        mrgTPLfile->setValue( settings.value( "files/LST" ).toString() ) ;
+    settings.endGroup() ;
+
+    settings.beginGroup( "pBlazBIT" ) ;
+        bitOptVerbose->setValue( settings.value("options/verbose").toBool() ) ;
+        bitINfile->setValue( settings.value( "files/IN" ).toString() ) ;
+        bitOUTfile->setValue( settings.value( "files/OUT" ).toString() ) ;
     settings.endGroup() ;
 
     return true ;
 }
 
 bool QmtxProjectHandler::save_file() {
+    if ( projectFileName.isEmpty() )
+        return false ;
+
     const QSettings::Format XmlFormat =
             QSettings::registerFormat( "mtx", readXmlFile, writeXmlFile ) ;
 
     QSettings settings( projectFileName, XmlFormat ) ;
-//    if ( ! settings )
-//            return false ;
+    int size = 0 ;
 
     settings.beginGroup( "pBlazASM" ) ;
-        settings.beginGroup( "options" ) ;
-            settings.setValue( "verbose", true ) ;
-            settings.setValue( "core", "pb3" ) ;
-        settings.endGroup() ;
+        settings.setValue( "options/verbose", asmOptVerbose->value() ) ;
+        settings.setValue( "options/core", asmOptPBx->value() ) ;
+        settings.setValue( "files/MEM", asmMEMfile->valueText() ) ;
+        settings.setValue( "files/SCR", asmSCRfile->valueText() ) ;
+        settings.setValue( "files/LST", asmLSTfile->valueText() ) ;
 
         settings.beginGroup( "sources" ) ;
-        int count = asmSources->subProperties().count() ;
-
-        settings.setValue( "size", count ) ;
-        for ( int i = 0 ; i < count ; i += 1 ) {
-            QString index = QString( "source-%1" ).arg( i ) ;
-            settings.setValue( index, asmSources->subProperties()[i]->valueText() ) ;
-        }
+            size = asmSources->subProperties().count() ;
+            settings.setValue( "size", size ) ;
+            for ( int i = 0 ; i < size ; i += 1 ) {
+                QString index = QString( "file-%1" ).arg( i ) ;
+                settings.setValue( index, asmSources->subProperties()[i]->valueText() ) ;
+            }
         settings.endGroup() ;
     settings.endGroup() ;
 
     settings.beginGroup( "pBlazMRG" ) ;
-        settings.beginGroup( "options" ) ;
-            settings.setValue( "verbose", true ) ;
-        settings.endGroup() ;
-        settings.beginGroup( "template" ) ;
-            settings.setValue( "template", "template.vhdl" ) ;
-        settings.endGroup() ;
+        settings.setValue( "options/verbose", mrgOptVerbose->value() ) ;
+        settings.setValue( "files/MEM", mrgMEMfile->valueText() ) ;
+        settings.setValue( "files/SCR", mrgSCRfile->valueText() ) ;
+        settings.setValue( "files/TPL", mrgTPLfile->valueText() ) ;
     settings.endGroup() ;
 
     settings.beginGroup( "pBlazBIT" ) ;
-        settings.beginGroup( "options" ) ;
-            settings.setValue( "verbose", true ) ;
-        settings.endGroup() ;
-        settings.beginGroup( "bitfiles" ) ;
-            settings.setValue( "infile", "infile.bit" ) ;
-            settings.setValue( "outfile", "outfile.bit" ) ;
-        settings.endGroup() ;
+        settings.setValue( "options/verbose", bitOptVerbose->value() ) ;
+        settings.setValue( "files/IN", bitINfile->valueText() ) ;
+        settings.setValue( "files/OUT", bitOUTfile->valueText() ) ;
     settings.endGroup() ;
 
     return true ;
