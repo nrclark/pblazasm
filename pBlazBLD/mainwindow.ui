@@ -110,6 +110,9 @@
    <addaction name="actionPaste"/>
    <addaction name="actionDelete"/>
    <addaction name="separator"/>
+   <addaction name="actionAssemble"/>
+   <addaction name="actionMerge"/>
+   <addaction name="actionBitfile"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionNew">
@@ -212,16 +215,28 @@
    </property>
   </action>
   <action name="actionAssemble">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/recycle.png</normaloff>:/images/recycle.png</iconset>
+   </property>
    <property name="text">
     <string>Assemble</string>
    </property>
   </action>
   <action name="actionMerge">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/transform.png</normaloff>:/images/transform.png</iconset>
+   </property>
    <property name="text">
     <string>Merge Template</string>
    </property>
   </action>
   <action name="actionBitfile">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/funnel_down.png</normaloff>:/images/funnel_down.png</iconset>
+   </property>
    <property name="text">
     <string>Merge Bitfile</string>
    </property>

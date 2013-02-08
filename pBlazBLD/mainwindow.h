@@ -73,6 +73,7 @@ private:
     QsciLexer * lexer ;
     QPlainTextEdit * logBox ;
     QSyntaxHighlighter * highlighter ;
+    QSplitter * splitter ;
 
     QLabel * lbMode ;
     QLabel * lbModified ;
@@ -100,6 +101,26 @@ private:
 
     void readSettings();
     void writeSettings();
+} ;
+
+class Highlighter : public QSyntaxHighlighter { Q_OBJECT
+public:
+    Highlighter( QTextDocument *parent = 0 ) ;
+
+protected:
+    void highlightBlock(const QString &text) ;
+
+private:
+    struct HighlightingRule {
+        QRegExp pattern ;
+        QTextCharFormat format ;
+    } ;
+    QVector<HighlightingRule> highlightingRules ;
+
+    QTextCharFormat keywordFormat ;
+    QTextCharFormat errorFormat ;
+    QTextCharFormat commentFormat ;
+    QTextCharFormat pathFormat ;
 } ;
 
 #endif // MAINWINDOW_H

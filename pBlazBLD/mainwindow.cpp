@@ -1,130 +1,68 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-//class Highlighter : public QSyntaxHighlighter { Q_OBJECT
-//public:
-//    Highlighter(QTextDocument *parent = 0);
 
-//protected:
-//    void highlightBlock(const QString &text);
+Highlighter::Highlighter( QTextDocument * parent ) : QSyntaxHighlighter(parent) {
+    HighlightingRule rule ;
 
-//private:
-//    struct HighlightingRule {
-//        QRegExp pattern;
-//        QTextCharFormat format;
-//    } ;
-//    QVector<HighlightingRule> highlightingRules;
+    keywordFormat.setForeground( Qt::darkBlue ) ;
+    keywordFormat.setFontWeight( QFont::Bold ) ;
+    QStringList keywordPatterns ;
+    keywordPatterns << "\\bpBlazASM\\b" << "\\bpBlazMRG\\b" << "\\bpBlazBIT\\b" << "\\bPicoblaze\\b" ;
+    foreach ( const QString &pattern, keywordPatterns ) {
+        rule.pattern = QRegExp( pattern ) ;
+        rule.format = keywordFormat ;
+        highlightingRules.append( rule ) ;
+    }
 
-//    QRegExp commentStartExpression;
-//    QRegExp commentEndExpression;
+    pathFormat.setFontUnderline( true ) ;
+    pathFormat.setForeground( Qt::blue ) ;
+    rule.pattern = QRegExp("^([a-z]:[^:]+):", Qt::CaseInsensitive ) ;
+    rule.format = pathFormat ;
+    highlightingRules.append( rule ) ;
 
-//    QTextCharFormat keywordFormat;
-//    QTextCharFormat classFormat;
-//    QTextCharFormat singleLineCommentFormat;
-//    QTextCharFormat multiLineCommentFormat;
-//    QTextCharFormat quotationFormat;
-//    QTextCharFormat functionFormat;
-//};
+    commentFormat.setForeground( Qt::darkGreen ) ;
+    rule.pattern = QRegExp("! [^\n]*") ;
+    rule.format = commentFormat ;
+    highlightingRules.append( rule ) ;
 
-//Highlighter::Highlighter( QTextDocument *parent ) : QSyntaxHighlighter(parent) {
-//    HighlightingRule rule;
+    errorFormat.setForeground( Qt::darkRed ) ;
+    rule.pattern = QRegExp("? [^\n]*") ;
+    rule.format = errorFormat ;
+    highlightingRules.append( rule ) ;
+}
 
-//    keywordFormat.setForeground(Qt::darkBlue);
-//    keywordFormat.setFontWeight(QFont::Bold);
-//    QStringList keywordPatterns;
-//    keywordPatterns << "\\bchar\\b" << "\\bclass\\b" << "\\bconst\\b"
-//                    << "\\bdouble\\b" << "\\benum\\b" << "\\bexplicit\\b"
-//                    << "\\bfriend\\b" << "\\binline\\b" << "\\bint\\b"
-//                    << "\\blong\\b" << "\\bnamespace\\b" << "\\boperator\\b"
-//                    << "\\bprivate\\b" << "\\bprotected\\b" << "\\bpublic\\b"
-//                    << "\\bshort\\b" << "\\bsignals\\b" << "\\bsigned\\b"
-//                    << "\\bslots\\b" << "\\bstatic\\b" << "\\bstruct\\b"
-//                    << "\\btemplate\\b" << "\\btypedef\\b" << "\\btypename\\b"
-//                    << "\\bunion\\b" << "\\bunsigned\\b" << "\\bvirtual\\b"
-//                    << "\\bvoid\\b" << "\\bvolatile\\b";
-//    foreach (const QString &pattern, keywordPatterns) {
-//        rule.pattern = QRegExp(pattern);
-//        rule.format = keywordFormat;
-//        highlightingRules.append(rule);
-//    }
-
-//    classFormat.setFontWeight(QFont::Bold);
-//    classFormat.setForeground(Qt::darkMagenta);
-//    rule.pattern = QRegExp("\\bQ[A-Za-z]+\\b");
-//    rule.format = classFormat;
-//    highlightingRules.append(rule);
-
-//    quotationFormat.setForeground(Qt::darkGreen);
-//    rule.pattern = QRegExp("\".*\"");
-//    rule.format = quotationFormat;
-//    highlightingRules.append(rule);
-
-//    functionFormat.setFontItalic(true);
-//    functionFormat.setForeground(Qt::blue);
-//    rule.pattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\()");
-//    rule.format = functionFormat;
-//    highlightingRules.append(rule);
-
-//    singleLineCommentFormat.setForeground(Qt::red);
-//    rule.pattern = QRegExp("//[^\n]*");
-//    rule.format = singleLineCommentFormat;
-//    highlightingRules.append(rule);
-
-//    multiLineCommentFormat.setForeground(Qt::red);
-
-//    commentStartExpression = QRegExp("/\\*");
-//    commentEndExpression = QRegExp("\\*/");
-//}
-
-//void Highlighter::highlightBlock(const QString &text) {
-//     foreach (const HighlightingRule &rule, highlightingRules) {
-//         QRegExp expression(rule.pattern);
-//         int index = expression.indexIn(text);
-//         while (index >= 0) {
-//             int length = expression.matchedLength();
-//             setFormat(index, length, rule.format);
-//             index = expression.indexIn(text, index + length);
-//         }
-//     }
-//    setCurrentBlockState(0);
-
-//    int startIndex = 0;
-//    if (previousBlockState() != 1)
-//        startIndex = commentStartExpression.indexIn(text);
-
-//    while (startIndex >= 0) {
-//        int endIndex = commentEndExpression.indexIn(text, startIndex);
-//        int commentLength;
-//        if (endIndex == -1) {
-//            setCurrentBlockState(1);
-//            commentLength = text.length() - startIndex;
-//        } else {
-//            commentLength = endIndex - startIndex + commentEndExpression.matchedLength();
-//        }
-//        setFormat(startIndex, commentLength, multiLineCommentFormat);
-//        startIndex = commentStartExpression.indexIn(text, startIndex + commentLength);
-//    }
-//}
+void Highlighter::highlightBlock(const QString &text) {
+     foreach (const HighlightingRule &rule, highlightingRules) {
+         QRegExp expression( rule.pattern ) ;
+         int index = expression.indexIn(text) ;
+         while ( index >= 0 ) {
+             int length = expression.matchedLength() ;
+             setFormat(index, length, rule.format) ;
+             index = expression.indexIn(text, index + length) ;
+         }
+     }
+}
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
-    ui->setupUi(this);
+    ui->setupUi(this) ;
 
     QIcon icon ;
     icon.addFile( ":/files/worker.ico" ) ;
     this->setWindowTitle( "pBlazBLD V0.1 (" + QString(QT_VERSION_STR) + ") - http://www.mediatronix.com" ) ;
     this->setWindowIcon( icon ) ;
-    qApp->setApplicationName("pBlazBLD V0.1 (" + QString(QT_VERSION_STR) + ")");
+    qApp->setApplicationName("pBlazBLD V0.1 (" + QString(QT_VERSION_STR) + ")") ;
     qApp->setWindowIcon( icon ) ;
-
-    // main splitter layout
-    QSplitter * vSplitter = new QSplitter() ;
-    vSplitter->setOrientation( Qt::Vertical ) ;
-    setCentralWidget( vSplitter ) ;
 
     // tab widget
     tabWidget = new QTabWidget() ;
-    vSplitter->addWidget( tabWidget ) ;
+    setCentralWidget( tabWidget ) ;
     tabWidget->setTabPosition( QTabWidget::West ) ;
+
+    // splitter layout
+    splitter = new QSplitter() ;
+    splitter->setOrientation( Qt::Horizontal ) ;
+    tabWidget->addTab( splitter, "Project" ) ;
 
     lbMode = new QLabel( tr( "insert" ) ) ;
     ui->statusBar->addWidget( lbMode, 50 ) ;
@@ -136,58 +74,58 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     popup = new QMenu() ;
     popup->addAction( ui->actionAdd_source_file ) ;
     popup->addAction( ui->actionRemove_source_file ) ;
-    popup->addSeparator();
+    popup->addSeparator() ;
     popup->addAction( ui->actionCancel ) ;
 
+
     // create MRU project list
-    for ( int i = 0; i < MAXRECENTFILES; ++i ) {
-        recentProjectActs[i] = new QAction(this);
-        recentProjectActs[i]->setVisible(false);
-        connect(recentProjectActs[i], SIGNAL(triggered()),
-                this, SLOT(openRecentProject()));
+    for ( int i = 0 ; i < MAXRECENTFILES ; ++i ) {
+        recentProjectActs[ i ] = new QAction(this) ;
+        recentProjectActs[ i ]->setVisible(false) ;
+        connect(recentProjectActs[ i ], SIGNAL(triggered()),
+                this, SLOT(openRecentProject())) ;
     }
 
     // create MRU file list
-    for ( int i = 0; i < MAXRECENTFILES; ++i ) {
-        recentFileActs[i] = new QAction(this);
-        recentFileActs[i]->setVisible(false);
-        connect(recentFileActs[i], SIGNAL(triggered()),
-                this, SLOT(openRecentFile()));
+    for ( int i = 0 ; i < MAXRECENTFILES ; ++i ) {
+        recentFileActs[ i ] = new QAction(this) ;
+        recentFileActs[ i ]->setVisible(false) ;
+        connect(recentFileActs[ i ], SIGNAL(triggered()),
+                this, SLOT(openRecentFile())) ;
     }
 
     // add to the file menu
-    separatorProjectAct = ui->menuFile->addSeparator();
-    for ( int i = 0; i < MAXRECENTFILES; ++i )
-        ui->menuFile->addAction( recentProjectActs[i] ) ;
+    separatorProjectAct = ui->menuFile->addSeparator() ;
+    for ( int i = 0 ; i < MAXRECENTFILES ; ++i )
+        ui->menuFile->addAction( recentProjectActs[ i ] ) ;
 
     // add to the file menu
-    separatorFileAct = ui->menuFile->addSeparator();
-    for ( int i = 0; i < MAXRECENTFILES; ++i )
-        ui->menuFile->addAction( recentFileActs[i] ) ;
+    separatorFileAct = ui->menuFile->addSeparator() ;
+    for ( int i = 0 ; i < MAXRECENTFILES ; ++i )
+        ui->menuFile->addAction( recentFileActs[ i ] ) ;
+
 
     // create a project manager
     projectHandler = new QmtxProjectHandler( this ) ;
+    splitter->addWidget( projectHandler->getVariantEditor() ) ;
+
+    // log
+    logBox = new QPlainTextEdit() ;
+    splitter->addWidget( logBox ) ;
+    logBox->setReadOnly( true ) ;
+    logBox->setFont( projectHandler->getFont() ) ;
+    connect( logBox, SIGNAL(cursorPositionChanged()), this, SLOT(highlightLogBox())) ;
+    highlighter = new Highlighter( logBox->document() ) ;
 
 
     // our source editor
     textEdit = new QsciScintilla( this ) ;
-
-    tabWidget->addTab( projectHandler->getVariantEditor(), "Project" ) ;
     tabWidget->addTab( textEdit, "Source" ) ;
 
     // and its lexer for Picoblaze Assembler source
     lexer = new QsciLexerPsm() ;
     textEdit->setLexer( lexer ) ;
     lexer->setFont( projectHandler->getFont() ) ;
-
-    // log
-    logBox = new QPlainTextEdit() ;
-    vSplitter->addWidget( logBox );
-    logBox->setReadOnly( true );
-    logBox->setFont( projectHandler->getFont() ) ;
-    connect( logBox, SIGNAL(cursorPositionChanged()), this, SLOT(highlightLogBox())) ;
-//    highlighter = new Highlighter( logBox->document() ) ;
-
 
     // editor settings
     textEdit->setMarginWidth( 0, QString("00000") ) ;
@@ -199,10 +137,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     textEdit->setMarginWidth( 3, QString("0") ) ;
     textEdit->setMarginType( 3, QsciScintilla::SymbolMargin ) ;
 
-    textEdit->markerDefine( 'M', Qt::ControlModifier ) ;
-    textEdit->setMarginMarkerMask( 1, 0xFFFFFFFF ) ;
-    textEdit->setMarginMarkerMask( 2, 0xFFFFFFFF ) ;
-    textEdit->setMarginMarkerMask( 3, 0xFFFFFFFF ) ;
+    textEdit->markerDefine( 'M', 2 ) ;
+    textEdit->setMarginMarkerMask( 0, 1 ) ;
+    textEdit->setMarginMarkerMask( 1, 2 ) ;
+    textEdit->setMarginMarkerMask( 2, 4 ) ;
 
     // our file object
     currentFile = new QFile() ;
@@ -249,8 +187,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->actionMerge->setEnabled( QFile::exists( "./pBlazMRG.exe" ) ) ;
     ui->actionBitfile->setEnabled( QFile::exists( "./pBlazBIT.exe" ) ) ;
 
-    vSplitter->setStretchFactor( 0, 80 ) ;
-    vSplitter->setStretchFactor( 1, 20 ) ;
+    splitter->setStretchFactor( 0, 40 ) ;
+    splitter->setStretchFactor( 1, 60 ) ;
 
     readSettings() ;
 }
@@ -263,7 +201,7 @@ void MainWindow::highlightLogBox() {
     QTextEdit::ExtraSelection highlight ;
     highlight.cursor = logBox->textCursor() ;
     highlight.format.setProperty(QTextFormat::FullWidthSelection, true ) ;
-    highlight.format.setBackground( Qt::magenta );
+    highlight.format.setBackground( Qt::magenta ) ;
     QList<QTextEdit::ExtraSelection> extras ;
     extras << highlight ;
     logBox->setExtraSelections( extras ) ;
@@ -271,27 +209,30 @@ void MainWindow::highlightLogBox() {
     QTextCursor cursor = logBox->textCursor() ;
     cursor.select( QTextCursor::LineUnderCursor ) ;
     QString text = cursor.selectedText() ;
-//    qDebug() << text ;
 
     QRegExp regexp( QString("^([a-z]:[^:]+):([0-9]+):"), Qt::CaseInsensitive, QRegExp::RegExp ) ;
     regexp.indexIn( text ) ;
     QStringList list ;
     list << regexp.capturedTexts() ;
-//    qDebug() << list ;
 
     if ( list[ 0 ].isEmpty() )
          return ;
 
     loadFile( list[ 1 ] ) ;
-    textEdit->setCursorPosition( list[ 2 ].toInt() - 1, 0 ) ;
-    textEdit->setFocus();
+    tabWidget->setCurrentWidget( textEdit ) ;
+    int line = list[ 2 ].toInt() - 1 ;
+    textEdit->setCursorPosition( line, 0 ) ;
+    textEdit->markerDeleteAll( 2 ) ;
+    textEdit->markerAdd( line, 2 ) ;
+    textEdit->setFocus() ;
 }
 
 
 void MainWindow::readSettings() {
     QSettings settings( "Mediatronix", "pBlazBLD" ) ;
-    QPoint pos = settings.value("pos", QPoint(200, 200)).toPoint();
-    QSize size = settings.value("size", QSize(400, 400)).toSize();
+//    setWindowState( (Qt::WindowStates)settings.value( "state", (int)Qt::WindowNoState ) ) ;
+    QPoint pos = settings.value("pos", QPoint(100, 100)).toPoint() ;
+    QSize size = settings.value("size", QSize(800, 600)).toSize() ;
 
     updateRecentlyUsedActions() ;
 
@@ -301,6 +242,7 @@ void MainWindow::readSettings() {
 
 void MainWindow::writeSettings() {
     QSettings settings( "Mediatronix", "pBlazBLD" ) ;
+    settings.setValue( "state", (int)windowState() ) ;
     settings.setValue( "pos", pos() ) ;
     settings.setValue( "size", size() ) ;
 }
@@ -333,8 +275,8 @@ void MainWindow::onCursorpositionchanged(int line, int index) {
 }
 
 void MainWindow::onTextchanged() {
-    ui->actionUndo->setEnabled(textEdit->isUndoAvailable());
-    ui->actionRedo->setEnabled(textEdit->isRedoAvailable());
+    ui->actionUndo->setEnabled(textEdit->isUndoAvailable()) ;
+    ui->actionRedo->setEnabled(textEdit->isRedoAvailable()) ;
 }
 
 void MainWindow::onMarginClicked( int margin, int line, Qt::KeyboardModifiers state ) {
@@ -349,18 +291,19 @@ void MainWindow::onModificationchanged( bool m ) {
 void MainWindow::openRecentFile() {
     QAction * action = qobject_cast<QAction *>(sender() ) ;
     if ( action )
-        loadFile(action->data().toString());
+        loadFile(action->data().toString()) ;
 }
 
 void MainWindow::openRecentProject() {
     QAction * action = qobject_cast<QAction *>(sender() ) ;
     if ( action )
-        loadProject(action->data().toString());
+        loadProject(action->data().toString()) ;
 }
 
 void MainWindow::loadFile( const QString filename ) {
     if ( filename.isNull() )
         return ;
+
     if ( filename == currentFile->fileName() )
         return ;
     if ( maybeSaveFile() ) {
@@ -369,7 +312,7 @@ void MainWindow::loadFile( const QString filename ) {
         if ( ! currentFile->open(QIODevice::ReadOnly | QIODevice::Text) ) {
             QMessageBox mb ;
             mb.setStandardButtons( QMessageBox::Ok ) ;
-            mb.setInformativeText( filename );
+            mb.setInformativeText( filename ) ;
             mb.setText( "Could not open file:" ) ;
             mb.exec() ;
             return ;
@@ -391,7 +334,7 @@ void MainWindow::loadProject( const QString filename ) {
 
 void MainWindow::on_actionOpen_triggered() {
     QString filename = QFileDialog::getOpenFileName(
-        this, tr("Open Source File"), ".", tr( "Picoblaze source files (*.psm *.psh)" ) ) ;
+        this, tr("Open Source File"), ".", tr( "Picoblaze source files (*.psm *.psh) ; ;All files (*.*)" ) ) ;
     if ( ! filename.isEmpty() )
         loadFile( filename ) ;
 }
@@ -412,7 +355,8 @@ void MainWindow::on_actionSaveAs_triggered() {
 }
 
 bool MainWindow::saveas() {
-    QString fileName = QFileDialog::getSaveFileName( this ) ;
+    QString fileName = QFileDialog::getSaveFileName(
+        this, tr("Open Source File"), ".", tr( "Picoblaze source files (*.psm *.psh) ; ;All files (*.*)" ) ) ;
     if ( fileName.isEmpty() )
         return false ;
     return saveFile( fileName ) ;
@@ -449,18 +393,21 @@ bool MainWindow::maybeSaveFile() {
 }
 
 void MainWindow::on_actionAssemble_triggered() {
+    tabWidget->setCurrentWidget( splitter ) ;
+
     QProcess pBlazASM( this ) ;
     pBlazASM.setProcessChannelMode( QProcess::MergedChannels ) ;
 
     QString program = "./pBlazASM.exe " ;
     QStringList arguments =  projectHandler->asmArguments() ;
-//    qDebug() << program << arguments ;
+    qDebug() << program << arguments ;
 
     pBlazASM.start( program, arguments ) ;
-    if ( ! pBlazASM.waitForStarted( 1000 ) )
-             return ;
+    if ( ! pBlazASM.waitForStarted( 1000 ) ) {
+        logBox->appendPlainText( "pBlazASM failed:\n" + pBlazASM.errorString() ) ;
+        return ;
+    }
     if ( ! pBlazASM.waitForFinished( 2000 ) ) {
-//        logBox->setCurrentCharFormat( ) ;
         logBox->appendPlainText( "pBlazASM failed:\n" + pBlazASM.errorString() ) ;
     } else {
         logBox->appendPlainText( "pBlazASM output:\n" + pBlazASM.readAll() ) ;
@@ -473,46 +420,46 @@ void MainWindow::setCurrentFile(const QString &filename) {
 
     QSettings settings( "Mediatronix", "pBlazBLD" ) ;
 
-    QStringList files = settings.value("recentFileList").toStringList();
+    QStringList files = settings.value("recentFileList").toStringList() ;
     files.removeAll( filename ) ;
-    files.prepend( filename );
+    files.prepend( filename ) ;
     while (files.size() > MAXRECENTFILES)
-        files.removeLast();
+        files.removeLast() ;
 
-    settings.setValue("recentFileList", files);
-    updateRecentlyUsedActions();
+    settings.setValue("recentFileList", files) ;
+    updateRecentlyUsedActions() ;
 }
 
 void MainWindow::updateRecentlyUsedActions() {
     QSettings settings( "Mediatronix", "pBlazBLD" ) ;
 
-    QStringList projects = settings.value( "recentProjectList" ).toStringList();
+    QStringList projects = settings.value( "recentProjectList" ).toStringList() ;
 
-    int numRecentProjects = qMin(projects.size(), (int)MAXRECENTFILES);
+    int numRecentProjects = qMin(projects.size(), (int)MAXRECENTFILES) ;
 
-    for (int i = 0; i < numRecentProjects; ++i) {
-        QString text = QString("&%1 %2").arg(i + 1).arg(strippedName(projects[i]) ) ;
-        recentProjectActs[i]->setText( text ) ;
-        recentProjectActs[i]->setData( projects[i] ) ;
-        recentProjectActs[i]->setVisible( true ) ;
+    for (int i = 0 ; i < numRecentProjects ; ++i) {
+        QString text = QString("&%1 %2").arg(i + 1).arg(strippedName(projects[ i ]) ) ;
+        recentProjectActs[ i ]->setText( text ) ;
+        recentProjectActs[ i ]->setData( projects[ i ] ) ;
+        recentProjectActs[ i ]->setVisible( true ) ;
     }
-    for (int j = numRecentProjects; j < MAXRECENTFILES; ++j)
-        recentProjectActs[j]->setVisible(false);
+    for (int j = numRecentProjects ; j < MAXRECENTFILES ; ++j)
+        recentProjectActs[j]->setVisible(false) ;
 
     separatorProjectAct->setVisible( numRecentProjects > 0 ) ;
 
-    QStringList files = settings.value( "recentFileList" ).toStringList();
+    QStringList files = settings.value( "recentFileList" ).toStringList() ;
 
-    int numRecentFiles = qMin(files.size(), (int)MAXRECENTFILES);
+    int numRecentFiles = qMin(files.size(), (int)MAXRECENTFILES) ;
 
-    for (int i = 0; i < numRecentFiles; ++i) {
-        QString text = QString("&%1 %2").arg(i + 1).arg(strippedName(files[i]) ) ;
-        recentFileActs[i]->setText( text ) ;
-        recentFileActs[i]->setData( files[i] ) ;
-        recentFileActs[i]->setVisible( true ) ;
+    for (int i = 0 ; i < numRecentFiles ; ++i) {
+        QString text = QString("&%1 %2").arg(i + 1).arg(strippedName(files[ i ]) ) ;
+        recentFileActs[ i ]->setText( text ) ;
+        recentFileActs[ i ]->setData( files[ i ] ) ;
+        recentFileActs[ i ]->setVisible( true ) ;
     }
-    for (int j = numRecentFiles; j < MAXRECENTFILES; ++j)
-        recentFileActs[j]->setVisible(false);
+    for (int j = numRecentFiles ; j < MAXRECENTFILES ; ++j)
+        recentFileActs[j]->setVisible(false) ;
 
     separatorFileAct->setVisible( numRecentFiles > 0 ) ;
 }
@@ -545,14 +492,14 @@ void MainWindow::on_actionOpen_Project_triggered() {
 
     QSettings settings( "Mediatronix", "pBlazBLD" ) ;
 
-    QStringList projects = settings.value("recentProjectList").toStringList();
+    QStringList projects = settings.value("recentProjectList").toStringList() ;
     projects.removeAll( projectHandler->fileName() ) ;
     projects.prepend( projectHandler->fileName() ) ;
     while ( projects.size() > MAXRECENTFILES )
         projects.removeLast() ;
 
     settings.setValue("recentProjectList", projects ) ;
-    updateRecentlyUsedActions();
+    updateRecentlyUsedActions() ;
 }
 
 void MainWindow::on_actionSave_Project_triggered() {
@@ -563,5 +510,6 @@ void MainWindow::on_actionSave_Project_triggered() {
 void MainWindow::on_actionClose_triggered() {
     tabWidget->setCurrentWidget( textEdit ) ;
     if ( maybeSaveFile() )
-        textEdit->clear();
+        textEdit->clear() ;
+    textEdit->setModified( false ) ;
 }

@@ -21,7 +21,7 @@ include(extension/extension.pri)
 LIBS += libqscintilla2
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
+    mainwindow.cpp \
     projecthandler.cpp \
     qxmlsettings.cpp
 

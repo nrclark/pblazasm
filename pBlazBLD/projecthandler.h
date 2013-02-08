@@ -26,7 +26,7 @@ public:
 
     bool isModified();
 
-    void Init();
+    void Init() ;
     void New() ;
     void Load(QString filename) ;
     void Save() ;
@@ -52,22 +52,26 @@ private:
     QFont * fixedFont ;
     bool modified ;
 
-    QtVariantProperty * editorItem, * asmItem, * mrgItem, * bitItem ;
-    QtVariantProperty * asmOptions, * asmSources ;
+    QtVariantProperty * toolsItem, * editorItem, * asmItem, * mrgItem, * bitItem ;
+    QtVariantProperty * toolsASMfile, * toolsMEMfile, * toolsBITfile ;
+    QtVariantProperty * asmOptions, * asmFiles, * asmSources ;
+    QtVariantProperty * asmMEMfile, * asmSCRfile, * asmLSTfile ;
     QtVariantProperty * asmOptVerbose, * asmOptPBx ;
 
-    QtVariantProperty * mrgOptions, * mrgSources ;
+    QtVariantProperty * mrgOptions, * mrgFiles ;
     QtVariantProperty * mrgOptVerbose ;
+    QtVariantProperty * mrgMEMfile, * mrgSCRfile, * mrgTPLfile ;
 
-    QtVariantProperty * bitOptions, * bitSources ;
+    QtVariantProperty * bitOptions, * bitFiles ;
     QtVariantProperty * bitOptVerbose ;
+    QtVariantProperty * bitINfile, * bitOUTfile ;
 
     QtVariantProperty * fontItem ;
     QtVariantProperty * projectItem ;
 
-    bool load_file();
-    bool save_file();
-    bool saveas();
+    bool load_file() ;
+    bool save_file() ;
+    bool saveas() ;
     bool save() ;
 } ;
 
