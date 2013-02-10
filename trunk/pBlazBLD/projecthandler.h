@@ -36,6 +36,9 @@ public:
     void removeSourceFile(QString fileName) ;
 
     QStringList asmArguments() ;
+    QStringList mrgArguments();
+    QStringList bitArguments();
+
     QString fileName() ;
 
     QtTreePropertyBrowser * getVariantEditor( void ) ;
@@ -53,7 +56,6 @@ private:
     bool modified ;
 
     QtVariantProperty * toolsItem, * editorItem, * asmItem, * mrgItem, * bitItem ;
-    QtVariantProperty * toolsASMfile, * toolsMEMfile, * toolsBITfile ;
     QtVariantProperty * asmOptions, * asmFiles, * asmSources ;
     QtVariantProperty * asmMEMfile, * asmSCRfile, * asmLSTfile ;
     QtVariantProperty * asmOptVerbose, * asmOptPBx ;

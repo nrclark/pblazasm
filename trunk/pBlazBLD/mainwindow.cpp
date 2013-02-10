@@ -60,9 +60,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     tabWidget->setTabPosition( QTabWidget::West ) ;
 
     // splitter layout
-    splitter = new QSplitter() ;
-    splitter->setOrientation( Qt::Horizontal ) ;
-    tabWidget->addTab( splitter, "Project" ) ;
+    hSplitter = new QSplitter() ;
+    hSplitter->setOrientation( Qt::Horizontal ) ;
+    tabWidget->addTab( hSplitter, "Project" ) ;
+
+    vSplitter = new QSplitter( hSplitter ) ;
+    vSplitter->setOrientation( Qt::Vertical ) ;
 
     lbMode = new QLabel( tr( "insert" ) ) ;
     ui->statusBar->addWidget( lbMode, 50 ) ;
@@ -107,11 +110,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     // create a project manager
     projectHandler = new QmtxProjectHandler( this ) ;
-    splitter->addWidget( projectHandler->getVariantEditor() ) ;
+    vSplitter->addWidget( projectHandler->getVariantEditor() ) ;
+
+    // create a settings manager
+    settingsHandler = new QmtxSettingsHandler( this ) ;
+    vSplitter->addWidget( settingsHandler->getVariantEditor() ) ;
+
 
     // log
     logBox = new QPlainTextEdit() ;
-    splitter->addWidget( logBox ) ;
+    hSplitter->addWidget( logBox ) ;
     logBox->setReadOnly( true ) ;
     logBox->setFont( projectHandler->getFont() ) ;
     connect( logBox, SIGNAL(cursorPositionChanged()), this, SLOT(highlightLogBox())) ;
@@ -182,15 +190,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     // exit
     connect( ui->actionExit, SIGNAL( triggered() ), this, SLOT( close() ) ) ;
 
-    // builders
-    ui->actionAssemble->setEnabled( QFile::exists( "./pBlazASM.exe" ) ) ;
-    ui->actionMerge->setEnabled( QFile::exists( "./pBlazMRG.exe" ) ) ;
-    ui->actionBitfile->setEnabled( QFile::exists( "./pBlazBIT.exe" ) ) ;
-
-    splitter->setStretchFactor( 0, 40 ) ;
-    splitter->setStretchFactor( 1, 60 ) ;
-
     readSettings() ;
+
+    // builders
+    ui->actionAssemble->setEnabled( QFile::exists( settingsHandler->pBlazASM() ) ) ;
+    ui->actionMerge->setEnabled( QFile::exists( settingsHandler->pBlazMRG() ) ) ;
+    ui->actionBitfile->setEnabled( QFile::exists( settingsHandler->pBlazBIT() ) ) ;
+
+    hSplitter->setStretchFactor( 0, 40 ) ;
+    hSplitter->setStretchFactor( 1, 60 ) ;
+
+    vSplitter->setStretchFactor( 0, 80 ) ;
+    vSplitter->setStretchFactor( 1, 20 ) ;
 }
 
 MainWindow::~MainWindow() {
@@ -230,11 +241,14 @@ void MainWindow::highlightLogBox() {
 
 void MainWindow::readSettings() {
     QSettings settings( "Mediatronix", "pBlazBLD" ) ;
+
+    settingsHandler->Read() ;
 //    setWindowState( (Qt::WindowStates)settings.value( "state", (int)Qt::WindowNoState ) ) ;
     QPoint pos = settings.value("pos", QPoint(100, 100)).toPoint() ;
     QSize size = settings.value("size", QSize(800, 600)).toSize() ;
 
     updateRecentlyUsedActions() ;
+
 
     resize( size ) ;
     move( pos ) ;
@@ -242,6 +256,8 @@ void MainWindow::readSettings() {
 
 void MainWindow::writeSettings() {
     QSettings settings( "Mediatronix", "pBlazBLD" ) ;
+
+    settingsHandler->Write() ;
     settings.setValue( "state", (int)windowState() ) ;
     settings.setValue( "pos", pos() ) ;
     settings.setValue( "size", size() ) ;
@@ -306,6 +322,7 @@ void MainWindow::loadFile( const QString filename ) {
 
     if ( filename == currentFile->fileName() )
         return ;
+
     if ( maybeSaveFile() ) {
         setCurrentFile( filename ) ;
 
@@ -345,16 +362,16 @@ void MainWindow::on_actionSave_triggered() {
 
 bool MainWindow::save() {
     if ( currentFile->fileName().isEmpty() )
-        return saveas() ;
+        return saveAs() ;
     else
         return saveFile( currentFile->fileName() ) ;
 }
 
 void MainWindow::on_actionSaveAs_triggered() {
-    saveas() ;
+    saveAs() ;
 }
 
-bool MainWindow::saveas() {
+bool MainWindow::saveAs() {
     QString fileName = QFileDialog::getSaveFileName(
         this, tr("Open Source File"), ".", tr( "Picoblaze source files (*.psm *.psh) ; ;All files (*.*)" ) ) ;
     if ( fileName.isEmpty() )
@@ -390,28 +407,6 @@ bool MainWindow::maybeSaveFile() {
             return false ;
     }
     return true ;
-}
-
-void MainWindow::on_actionAssemble_triggered() {
-    tabWidget->setCurrentWidget( splitter ) ;
-
-    QProcess pBlazASM( this ) ;
-    pBlazASM.setProcessChannelMode( QProcess::MergedChannels ) ;
-
-    QString program = "./pBlazASM.exe " ;
-    QStringList arguments =  projectHandler->asmArguments() ;
-    qDebug() << program << arguments ;
-
-    pBlazASM.start( program, arguments ) ;
-    if ( ! pBlazASM.waitForStarted( 1000 ) ) {
-        logBox->appendPlainText( "pBlazASM failed:\n" + pBlazASM.errorString() ) ;
-        return ;
-    }
-    if ( ! pBlazASM.waitForFinished( 2000 ) ) {
-        logBox->appendPlainText( "pBlazASM failed:\n" + pBlazASM.errorString() ) ;
-    } else {
-        logBox->appendPlainText( "pBlazASM output:\n" + pBlazASM.readAll() ) ;
-    }
 }
 
 void MainWindow::setCurrentFile(const QString &filename) {
@@ -498,7 +493,7 @@ void MainWindow::on_actionOpen_Project_triggered() {
     while ( projects.size() > MAXRECENTFILES )
         projects.removeLast() ;
 
-    settings.setValue("recentProjectList", projects ) ;
+    settings.setValue( "recentProjectList", projects ) ;
     updateRecentlyUsedActions() ;
 }
 
@@ -512,4 +507,76 @@ void MainWindow::on_actionClose_triggered() {
     if ( maybeSaveFile() )
         textEdit->clear() ;
     textEdit->setModified( false ) ;
+}
+
+void MainWindow::on_actionAssemble_triggered() {
+    tabWidget->setCurrentWidget( hSplitter ) ;
+
+    QProcess pBlazASM( this ) ;
+    pBlazASM.setProcessChannelMode( QProcess::MergedChannels ) ;
+
+    QString program = settingsHandler->pBlazASM() ;
+    if ( program.isEmpty() )
+        return ;
+
+    QStringList arguments =  projectHandler->asmArguments() ;
+    qDebug() << program << arguments ;
+
+    pBlazASM.start( program, arguments ) ;
+    if ( ! pBlazASM.waitForStarted( 1000 ) ) {
+        logBox->appendPlainText( "pBlazASM failed:\n" + pBlazASM.errorString() ) ;
+        return ;
+    }
+    if ( ! pBlazASM.waitForFinished( 2000 ) )
+        logBox->appendPlainText( "pBlazASM failed:\n" + pBlazASM.errorString() ) ;
+    else
+        logBox->appendPlainText( "pBlazASM output:\n" + pBlazASM.readAll() ) ;
+}
+
+void MainWindow::on_actionMerge_triggered() {
+    tabWidget->setCurrentWidget( hSplitter ) ;
+
+    QProcess pBlazMRG( this ) ;
+    pBlazMRG.setProcessChannelMode( QProcess::MergedChannels ) ;
+
+    QString program = settingsHandler->pBlazMRG() ;
+    if ( program.isEmpty() )
+        return ;
+
+    QStringList arguments = projectHandler->mrgArguments() ;
+    qDebug() << program << arguments ;
+
+    pBlazMRG.start( program, arguments ) ;
+    if ( ! pBlazMRG.waitForStarted( 1000 ) ) {
+        logBox->appendPlainText( "pBlazMRG failed:\n" + pBlazMRG.errorString() ) ;
+        return ;
+    }
+    if ( ! pBlazMRG.waitForFinished( 2000 ) )
+        logBox->appendPlainText( "pBlazMRG failed:\n" + pBlazMRG.errorString() ) ;
+    else
+        logBox->appendPlainText( "pBlazMRG output:\n" + pBlazMRG.readAll() ) ;
+}
+
+void MainWindow::on_actionBitfile_triggered() {
+    tabWidget->setCurrentWidget( hSplitter ) ;
+
+    QProcess pBlazBIT( this ) ;
+    pBlazBIT.setProcessChannelMode( QProcess::MergedChannels ) ;
+
+    QString program = settingsHandler->pBlazBIT() ;
+    if ( program.isEmpty() )
+        return ;
+
+    QStringList arguments =  projectHandler->bitArguments() ;
+    qDebug() << program << arguments ;
+
+    pBlazBIT.start( program, arguments ) ;
+    if ( ! pBlazBIT.waitForStarted( 1000 ) ) {
+        logBox->appendPlainText( "pBlazBIT failed:\n" + pBlazBIT.errorString() ) ;
+        return ;
+    }
+    if ( ! pBlazBIT.waitForFinished( 2000 ) )
+        logBox->appendPlainText( "pBlazBIT failed:\n" + pBlazBIT.errorString() ) ;
+    else
+        logBox->appendPlainText( "pBlazBIT output:\n" + pBlazBIT.readAll() ) ;
 }

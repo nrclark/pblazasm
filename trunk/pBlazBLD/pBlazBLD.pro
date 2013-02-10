@@ -15,7 +15,7 @@ win32 {
     QMAKE_LFLAGS += -static-libgcc -static-libstdc++
 }
 
-include(../../../qtsolutions/qtpropertybrowser/src/qtpropertybrowser.pri)
+include(qtpropertybrowser/src/qtpropertybrowser.pri)
 include(extension/extension.pri)
 
 LIBS += libqscintilla2
@@ -23,10 +23,12 @@ LIBS += libqscintilla2
 SOURCES += main.cpp\
     mainwindow.cpp \
     projecthandler.cpp \
+    settingshandler.cpp \
     qxmlsettings.cpp
 
 HEADERS  += mainwindow.h \
     projecthandler.h \
+    settingshandler.h \
     qxmlsettings.h
 
 FORMS    += mainwindow.ui

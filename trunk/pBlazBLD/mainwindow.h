@@ -22,6 +22,7 @@
 #include <Qsci/qsciscintilla.h>
 #include <Qsci/qscilexerpsm.h>
 
+#include "settingshandler.h"
 #include "projecthandler.h"
 
 const int MAXRECENTFILES = 8 ;
@@ -65,6 +66,10 @@ private slots:
 
     void on_actionClose_triggered();
 
+    void on_actionMerge_triggered();
+
+    void on_actionBitfile_triggered();
+
 private:
     Ui::MainWindow * ui ;
 
@@ -73,13 +78,14 @@ private:
     QsciLexer * lexer ;
     QPlainTextEdit * logBox ;
     QSyntaxHighlighter * highlighter ;
-    QSplitter * splitter ;
+    QSplitter * hSplitter, * vSplitter ;
 
     QLabel * lbMode ;
     QLabel * lbModified ;
     QLabel * lbPosition ;
 
     QFile * currentFile ;
+    QmtxSettingsHandler * settingsHandler ;
     QmtxProjectHandler * projectHandler ;
 
     QMenu * popup ;
@@ -96,7 +102,7 @@ private:
 
     bool saveFile(const QString fileName ) ;
     bool maybeSaveFile() ;
-    bool saveas() ;
+    bool saveAs() ;
     bool save() ;
 
     void readSettings();
