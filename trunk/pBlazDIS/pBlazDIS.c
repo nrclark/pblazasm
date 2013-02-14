@@ -47,8 +47,17 @@ typedef struct _instr {
 INST_t Code[ MAXMEM ] ;
 uint32_t Data[ MAXSCR ] ;
 
-static void usage ( char * text ) {
+static void print_version( char * text ) {
 	printf ( "\n%s - Picoblaze Disassembler V%ld.%ld.%ld (%s) (c) 2012 Henk van Kampen\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
+}
+
+
+/**
+ * usage prints usage text
+ * @param text application name
+ */
+static void usage ( char * text ) {
+    print_version( text ) ;
 
     printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n"  ) ;
     printf ( "This is free software, and you are welcome to redistribute it\n"  ) ;
@@ -113,6 +122,7 @@ bool loadSCR ( const char * strDatafile, const int offset ) {
     uint32_t data ;
     char line[ 256 ], *p ;
     FILE * infile = NULL ;
+    (void)offset ;
 
     infile = fopen ( strDatafile, "r" ) ;
     if ( infile == NULL ) {
@@ -1144,6 +1154,8 @@ int main ( int argc, char * argv[] ) {
     bool bOptErr = false ;
     bool bKCPSM6 = true ;
     bool bVerbose = false ;
+    bool bMandatory = true ;
+
     bool bMEM = false ;
     bool bSCR = false ;
     bool bXDL = false ;
@@ -1157,16 +1169,16 @@ int main ( int argc, char * argv[] ) {
     opterr = -1 ;
     while ( ( optch = getopt ( argc, argv, "36c:d:hm:n:ps:x:v" ) ) != -1 ) {
         switch ( optch ) {
-        case '3' :
-            bKCPSM6 = false ;
-            if ( bVerbose )
-                printf ( "! PB3 option chosen\n" ) ;
-            break ;
-        case '6' :
-            bKCPSM6 = true ;
-            if ( bVerbose )
-                printf ( "! PB6 option chosen\n" ) ;
-            break ;
+		case '3' :
+			bKCPSM6 = false ;
+            bOptErr = true ;
+			bMandatory = false ;
+			break ;
+		case '6' :
+			bKCPSM6 = true ;
+			bMandatory = false ;
+            bOptErr = true ;
+			break ;
         case 'c' :
         case 'm' :
             if ( bXDL | bNDF ) {
@@ -1230,10 +1242,20 @@ int main ( int argc, char * argv[] ) {
         }
     }
 
-    if ( bOptErr ) {
+    if ( bOptErr || bMandatory ) {
         usage ( basename ( argv[ 0 ] ) ) ;
         exit ( -1 ) ;
     }
+
+    if ( bVerbose ) {
+        print_version( basename ( argv[ 0 ] ) ) ;
+		if ( bKCPSM6 ) {
+			printf ( "! PB6 option chosen\n" ) ;
+		} else {
+			printf ( "! PB3 option chosen\n" ) ;
+		}
+	}
+
 
     if ( * code_filename != 0 ) {
         if ( strrchr ( code_filename, '.' ) == NULL )
