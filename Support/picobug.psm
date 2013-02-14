@@ -203,7 +203,7 @@ main40:
 		JUMP	NZ, main50
 		
 		CALL	putsp
-		CALL	get2hex				// 4 characters as a hex word
+		CALL	get2h ex				// 4 characters as a hex word
 		MOVE	s4, s0
 		CALL	get2hex
 		JUMP	s4, s0				// just go boldly
