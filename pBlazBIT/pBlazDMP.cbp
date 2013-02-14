@@ -2,16 +2,16 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="pBlazBIT" />
+		<Option title="pBlazDMP" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="bin\Debug\pBlazBIT" prefix_auto="1" extension_auto="1" />
+				<Option output="bin\Debug\pBlazDMP" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj\Debug\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="-v -v -6 -b0 -c dump.mem -o test.bit ..\..\Projects\pBlazBIT_VHD\s6_pblazbit.bit &gt;test.log" />
+				<Option parameters="-q -v -3e -b0 -cusbmrom.mem -otest.bit ..\..\Projects\pBlazBIT_VHD\s3_pblazbit.bit &gt;test.log" />
 				<Compiler>
 					<Add option="-pg" />
 					<Add option="-g" />
@@ -45,38 +45,31 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="bsParse.h">
-			<Option target="&lt;{~None~}&gt;" />
+			<Option target="Release" />
 		</Unit>
-		<Unit filename="md5.c">
-			<Option compilerVar="CC" />
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
-		<Unit filename="md5.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
-		<Unit filename="pBlazBS6.c">
+		<Unit filename="pBlazDMP.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="pbCRC32tab.h" />
-		<Unit filename="pbDigests.c">
+		<Unit filename="pbCRC32.c">
 			<Option compilerVar="CC" />
-			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="pbCRC32.h">
+			<Option target="Release" />
 		</Unit>
 		<Unit filename="pbLibgen.c">
 			<Option compilerVar="CC" />
-			<Option target="Debug" />
 		</Unit>
 		<Unit filename="pbLibgen.h">
-			<Option target="&lt;{~None~}&gt;" />
+			<Option target="Release" />
 		</Unit>
 		<Unit filename="pbS3E.h">
-			<Option target="&lt;{~None~}&gt;" />
+			<Option target="Release" />
 		</Unit>
 		<Unit filename="pbTypes.h">
-			<Option target="&lt;{~None~}&gt;" />
+			<Option target="Release" />
 		</Unit>
 		<Unit filename="version.h">
-			<Option target="&lt;{~None~}&gt;" />
+			<Option target="Release" />
 		</Unit>
 		<Extensions>
 			<code_completion />
