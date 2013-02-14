@@ -1,43 +1,43 @@
 
-;//
-;// Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
-;//
-;// This file is part of pBlazASM.
-;//
-;// pBlazASM is free software: you can redistribute it and/or modify
-;// it under the terms of the GNU General Public License as published by
-;// the Free Software Foundation, either version 3 of the License, or
-;// (at your option) any later version.
-;//
-;// pBlazASM is distributed in the hope that it will be useful,
-;// but WITHOUT ANY WARRANTY; without even the implied warranty of
-;// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;// GNU General Public License for more details.
-;//
-;// You should have received a copy of the GNU General Public License
-;// along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
-;//
-;
-;// 
-;// Rijndael (AES-128) block cipher
-;// this code assumes 128b data and a 128b key so: Nk = Nn = Nc = 4
-;// (c) 2003 .. 2012 Henk van Kampen, www.mediatronix.com
-;// 
-;// based on documents by Dr. Brian Gladman,
-;//      http://gladman.plushost.co.uk/oldsite/cryptography_technology/rijndael/aes.spec.v316.pdf
-;// or
-;//	http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf
-;// 
-;// test data from [Gladman]
-;//	PLAINTEXT:    3243f6a8885a308d313198a2e0370734 (pi * 2^124) 
-;//	KEY:          2b7e151628aed2a6abf7158809cf4f3c ( e * 2^124) 
-;// should result in:
-;//	R[10].k_sch   d014f9a8c9ee2589e13f0cc8b6630ca6 
-;//	R[10].output  3925841d02dc09fbdc118597196a0b32 
-;//
-;// to be done:
-;//      decrypt
-;// 
+//
+// Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+//
+// This file is part of pBlazASM.
+//
+// pBlazASM is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// pBlazASM is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
+//
+
+// 
+// Rijndael (AES-128) block cipher
+// this code assumes 128b data and a 128b key so: Nk = Nn = Nc = 4
+// (c) 2003 .. 2012 Henk van Kampen, www.mediatronix.com
+// 
+// based on documents by Dr. Brian Gladman,
+//      http://gladman.plushost.co.uk/oldsite/cryptography_technology/rijndael/aes.spec.v316.pdf
+// or
+//	http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf
+// 
+// test data from [Gladman]
+//	PLAINTEXT:    3243f6a8885a308d313198a2e0370734 (pi * 2^124) 
+//	KEY:          2b7e151628aed2a6abf7158809cf4f3c ( e * 2^124) 
+// should result in:
+//	R[10].k_sch   d014f9a8c9ee2589e13f0cc8b6630ca6 
+//	R[10].output  3925841d02dc09fbdc118597196a0b32 
+//
+// to be done:
+//      decrypt
+// 
 
 // SBOX I/O device, just a look-up ROM
 SBOX_ROM            .EQU       0xF0                 // uSBOX.VHD is instatiated at this port address
@@ -62,9 +62,9 @@ X                   .EQU       0x01
 G                   .EQU       0x1B                 // 0x11B
 b128                .EQU       128 / 8             // 128 bytes of 8 bits 
 
-;// Rijndael encrypt entry
-;// plain  is assumed to be in {plain }, the key in {inkey}
-;// both will be copied, final state will be the result 
+// Rijndael encrypt entry
+// plain  is assumed to be in {plain }, the key in {inkey}
+// both will be copied, final state will be the result 
 Encrypt: 
                     CALL      InkeyToKey
                     CALL      InToState           // state = in
@@ -234,26 +234,26 @@ SBox:
 SBox_Soft: 
                     CALL      MulInverse          // .    x = sbox_affine(mul_inverse(in))//
 SBoxAffine: 
-// for(counter = 1// counter <= 4// counter++) {
-                    MOVE      s8, s9              // s = in//
+// for(counter = 1; counter <= 4; counter++) {
+                    MOVE      s8, s9              // s = in
                     RL        s9                  // s = (s >> (DEGREE - 1)) | (s << 1)// s &= MASK//
-                    XOR       s8, s9              // in ^= s//
+                    XOR       s8, s9              // in ^= s
                     RL        s9
                     XOR       s8, s9
                     RL        s9
                     XOR       s8, s9
                     RL        s9
                     XOR       s8, s9
-                    XOR       s8, 0x63             // in ^= 0x63//
-                    RET                           // return in//
+                    XOR       s8, 0x63             // in ^= 0x63
+                    RET                           // return in
 // }
 
 // MulInverse by trial and error
 MulInverse: 
-                    MOVE      s9, 0               // int result = 0//
+                    MOVE      s9, 0               // int result = 0
                     OR        s8, s8              // if (in == 0)
-                    RET       Z                   // return 0//
-MulInverse1:        ADD       s9, 1               // result = 1// result++
+                    RET       Z                   // return 0
+MulInverse1:        ADD       s9, 1               // result = 1; result++
                     RET       Z                   // result < MOD
                     MOVE      sC, s8              // in
                     MOVE      sD, s9              // result
@@ -273,7 +273,7 @@ GMul1:
 GMul2:              XOR       sE, sC
 GMul3:              SL0       sC
                     JUMP      NC, GMul1
-                    XOR       sC, G               // i1 ^= field//
+                    XOR       sC, G               // i1 ^= field
                     JUMP      GMul1
 
 // ShiftRows( state, Nc )
