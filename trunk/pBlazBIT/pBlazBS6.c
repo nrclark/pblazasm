@@ -43,14 +43,21 @@ uint16_t Data[ MAXMEM * 18 / 16 ] ;
 
 
 static void usage ( char * text ) {
-	printf ( "\n%s - Picoblaze Assembler bitstream update utility V%ld.%ld.%ld (%s) (c) 2012 Henk van Kampen\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
+	printf ( "\n%s - Picoblaze Assembler bitstream update utility V%ld.%ld.%ld (%s) (c) 2012-2013 Henk van Kampen\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
 
     printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n"  ) ;
     printf ( "This is free software, and you are welcome to redistribute it\n"  ) ;
     printf ( "under certain conditions. See <http://www.gnu.org/licenses/>\n"  ) ;
 
     printf ( "\nUSAGE:\n" ) ;
-    printf ( "   pBlazBIT -3|-3a|-3e|-6 [-v] -b<nr_blockram> -c<MEM code inputfile> [-s<MEM data inputfile] -o<BIT outputfile> <BIT inputfile>\n" ) ;
+    printf ( "   pBlazBIT -6 [-v] -b<nr_blockram> -c<MEM code inputfile> [-s<MEM data inputfile] -o<BIT outputfile> <BIT inputfile>\n"
+//    printf ( "   pBlazBIT -3|-3a|-3e|-6 [-v] -b<nr_blockram> -c<MEM code inputfile> [-s<MEM data inputfile] -o<BIT outputfile> <BIT inputfile>\n" ) ;
+             "   where:\n"
+             "         -6      select Spartan-6 bitfile format (only supported format)\n"
+             "         -v      generates verbose reporting\n"
+             "         -c      loads one or more code MEM files\n"
+             "         -s      loads one or more data MEM files\n"
+             "         -o      name of the .bit outputfile\n" ) ;
 }
 
 bool loadMEM ( const char * strCodefile, const char * strDatafile ) {
