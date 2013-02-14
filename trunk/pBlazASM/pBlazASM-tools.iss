@@ -33,6 +33,7 @@ Source: "C:\Users\henk\Google_Drive\SVN\pBlazASM\bin\Release\pBlazASM.exe"; Dest
 Source: "C:\Users\henk\Google_Drive\SVN\pBlazBIT\bin\Release\pBlazBIT.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\henk\Google_Drive\SVN\pBlazDIS\bin\Release\pBlazDIS.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\henk\Google_Drive\SVN\pBlazMRG\bin\Release\pBlazMRG.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\MinGW32\bin\mingwm10.dll"; DestDir: "{app}"; Flags: ignoreversion
 ;Source: "C:\Users\henk\Google_Drive\SVN\pBlazPCR\bin\Release\pBlazPCR.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\henk\Google_Drive\SVN\pBlazMRG\P6_ROM_SCR_7S_2K_5Aug11.tpl"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\henk\Google_Drive\SVN\pBlazMRG\ROM_SCR_1024.tpl"; DestDir: "{app}"; Flags: ignoreversion

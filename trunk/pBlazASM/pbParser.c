@@ -1,4 +1,3 @@
-
 /*
  *  Copyright © 2003..2013 : Henk van Kampen <henk@mediatronix.com>
  *
@@ -72,11 +71,11 @@ static uint32_t gPC = 0 ; // current code counter
 static uint32_t oPC = 0 ;
 
 // data
-static uint32_t gSCR = 0 ; // current scratchpad counter
-static uint32_t gESG[ 256 ] ; // current scratchpad counter backup
-static int pESG = 0 ; // index in backups
-static int32_t gScrLoc = -1 ; // place where scratchpad is in ROM
-static int32_t gScrSize = 0 ; // size of scratchpad
+static uint32_t gSCR = 0 ;      // current scratchpad counter
+static uint32_t gESG[ 256 ] ;   // current scratchpad counter backup
+static int pESG = 0 ;           // index in backups
+static int32_t gScrLoc = -1 ;   // place where scratchpad is in ROM
+static uint32_t gScrSize = 0 ;  // size of scratchpad
 
 /**
  * error strings
@@ -793,7 +792,7 @@ static error_t build ( void ) {
 							return etSYNTAX ;
 						tok_next() ;
 						if ( ( e = expression ( &result ) ) == etNONE ) {
-							if ( (int)result >= gScrSize ) // within data range
+							if ( result >= gScrSize ) // within data range
 								return etSCRRNG ;
 							if ( bActive ) {
                                 if ( pESG >= 255 )
@@ -854,7 +853,7 @@ static error_t build ( void ) {
 									if ( result > 2 * gCodeRange )
 										return etSCRSIZE ;
 									gScrSize = result ;
-									if ( (int)gSCR > gScrSize )  // after the fact
+									if ( gSCR > gScrSize )  // after the fact
 										return etSCRRNG ;
 								}
 							} else
@@ -1050,7 +1049,7 @@ static error_t build ( void ) {
 									gSCR += 1 ;
 								}
 							}
-							if ( (int)gSCR > gScrSize ) {
+							if ( gSCR > gScrSize ) {
 								return etSCRRNG ;
 							}
 						} while ( comma() ) ;
@@ -1069,7 +1068,7 @@ static error_t build ( void ) {
 						if ( ( e = expression ( &result ) ) == etNONE ) {
 							if ( bActive ) {
 								gSCR += result ;
-								if ( (int)gSCR > gScrSize ) {
+								if ( gSCR > gScrSize ) {
 									return etSCRRNG ;
 								}
 							}
@@ -1103,7 +1102,7 @@ static error_t build ( void ) {
 								free ( dup ) ;
 							} else
 								return etEXPR ;
-							if ( (int)gSCR > gScrSize )
+							if ( gSCR > gScrSize )
 								return etSCRRNG ;
 							tok_next() ;
 						} while ( comma() ) ;
@@ -1492,6 +1491,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 					case stADDRESS :
 						if ( !bMode )
 							return etNOTIMPL ;
+						// fallthrough
 					case stORG :
 						if ( state != bsINIT )
 							return etSYNTAX ;
@@ -1521,7 +1521,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 							return etSYNTAX ;
 						if ( ( e = expression ( &result ) ) == etNONE ) {
 							*addr = result ;
-							if ( (int)result >= gScrSize )// within data range
+							if ( result >= gScrSize )// within data range
 								return etSCRRNG ;
 							if ( bActive ) {
                                 if ( pESG >= 255 )
@@ -1596,7 +1596,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 									if ( result > CODESIZE )
 										return etSCRSIZE ;
 									gScrSize = result ;
-									if ( (int)gSCR > gScrSize )
+									if ( gSCR > gScrSize )
 										return etSCRRNG ;
                                     *data = gScrSize ;
 								}
@@ -1686,7 +1686,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 									*data = result ;
 								}
 							}
-							if ( (int)gSCR > gScrSize ) {
+							if ( gSCR > gScrSize ) {
 								return etSCRRNG ;
 							}
 						} while ( comma() ) ;
@@ -1724,7 +1724,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 											*data |= ( result << 0 ) & 0xFF00  ;
 										}
 									}
-									if ( (int)gSCR > gScrSize ) {
+									if ( gSCR > gScrSize ) {
 										return etSCRRNG ;
 									}
 								}
@@ -1777,7 +1777,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 							if ( *data == 0xFFFFFFFF ) {
 								*data = result ;
 							}
-							if ( (int)gSCR > gScrSize ) {
+							if ( gSCR > gScrSize ) {
 								return etSCRRNG ;
 							}
 						} while ( comma() ) ;
@@ -1791,9 +1791,10 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						if ( ( e = expression ( &result ) ) == etNONE ) {
 							if ( bActive ) {
 								*addr = gSCR ;
-								gSCR += result ;
 								*data = result ;
-								if ( (int)gSCR > gScrSize ) {
+								while ( result-- )
+									gData [ gSCR++ ] = 0 ;
+								if ( gSCR > gScrSize ) {
 									return etSCRRNG ;
 								}
 							}
@@ -1827,7 +1828,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 										gData[ gSCR++ ] = dup[ i ] & 0x00FF ;
 								}
 								free ( dup ) ;
-								if ( (int)gSCR > gScrSize )
+								if ( gSCR > gScrSize )
 									return etSCRRNG ;
 							} else
 								return etEXPR ;
@@ -1973,11 +1974,11 @@ static void dump_code ( FILE * f, bool hex, bool zeros ) {
 
 // dump data in mem file format
 static void dump_data ( FILE * f, bool hex ) {
-	int h ;
+	uint32_t h ;
 	if ( ! hex )
         fprintf ( f, "@%08X\n", gScrLoc ) ;
-	for ( h = 0 ; h < (int)gScrSize ; h += 1 ) {
-		fprintf ( f, "%02X\n", gData[ h ] ) ;
+	for ( h = 0 ; h < gScrSize ; h += 1 ) {
+		fprintf ( f, "%02X\n", gData[ h ] & 0xFF ) ;
 	}
 }
 
@@ -1987,7 +1988,7 @@ static void print_line ( FILE * f, error_t e, uint32_t addr, uint32_t code, uint
 	char * s = NULL ;
 
 	if ( f == NULL )
-		return;
+		return ;
 
 	tok_first() ;
 	if ( e != etNONE ) {
@@ -2128,7 +2129,7 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 	char ** Sources = NULL ;
 	char line[ 4096 ] ;
 	error_t e = etNONE ;
-	int h = 0 ;
+	uint32_t h = 0 ;
 	bool result = true ;
 	uint32_t addr, code, data ;
 
@@ -2203,16 +2204,16 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 			goto finally ;
 		}
 		if ( flist != NULL ) {
-		fprintf ( flist, "---------- source file: %-75s\n", gSource ) ;
+			fprintf ( flist, "---------- source file: %-75s\n", gSource ) ;
 		}
 		// pass 2, build code and scratchpad
 		for ( gLinenr = 0 ; file_gets ( line, sizeof ( line ), fsrc ) != NULL ; ) {
 			if ( lex ( line, mode ) ) {
 				result &= error ( e = assemble ( &addr, &code, &data, b6 ) ) ;
-					print_line ( flist, e, addr, code, data ) ;
+				print_line ( flist, e, addr, code, data ) ;
 			} else {
 				result &= error ( etLEX ) ;
-					print_line ( flist, etLEX, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF ) ;
+				print_line ( flist, etLEX, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF ) ;
 			}
 			tok_free() ;
 		}

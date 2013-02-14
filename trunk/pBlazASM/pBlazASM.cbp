@@ -11,7 +11,7 @@
 				<Option object_output="obj\Debug\" />
 				<Option type="1" />
 				<Option compiler="clang_compiler" />
-				<Option parameters="-6 -l test.psm" />
+				<Option parameters="-6 -v" />
 				<Compiler>
 					<Add option="-Winline" />
 					<Add option="-Wswitch-default" />
