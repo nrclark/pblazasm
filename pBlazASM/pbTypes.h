@@ -22,6 +22,10 @@ typedef unsigned char bool ;
 #define true (1)
 #define false (0)
 
+#ifdef _MSC_VER
+#define inline
+#endif
+
 // token types
 typedef enum _TYPE {
 	tNONE = 0,
