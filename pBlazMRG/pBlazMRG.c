@@ -41,7 +41,7 @@
 uint32_t Code[ MAXMEM ] ;
 
 static void usage( char * text ) {
-	printf ( "\n%s - Picoblaze Assembler merge utility V%ld.%ld.%ld (%s) (c) 2012 Henk van Kampen\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
+	printf ( "\n%s - Picoblaze Assembler merge utility V%ld.%ld.%ld (%s) (c) 2003-2013 Henk van Kampen\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
 
     printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n"  ) ;
     printf ( "This is free software, and you are welcome to redistribute it\n"  ) ;
@@ -54,7 +54,7 @@ static void usage( char * text ) {
              "         -v      generates verbose reporting\n"
              "         -s      loads one or more data MEM files\n"
              "         -c      loads one or more code MEM files\n"
-             "         -e      name of the entity name in the HDL output file\n"
+             "         -e      the entity name in the HDL output file\n"
              "         -t      HDL template file for the code or data rom\n" ) ;
 }
 
@@ -344,7 +344,7 @@ int main( int argc, char * argv[] ) {
 
 	opterr = -1 ;
     err = -1 ;
-	while ( ( optch = getopt( argc, argv, ":c:e:hm:s:t:v" ) ) != -1 ) {
+	while ( ( optch = getopt( argc, argv, ":c:d:e:hm:s:t:v" ) ) != -1 ) {
 		switch ( optch ) {
 		case 'e' :
 			if ( optarg != NULL )
@@ -369,6 +369,7 @@ int main( int argc, char * argv[] ) {
 			} else
 				bOptErr = true ;
 			break ;
+        case 'd' :
 		case 's' :
 			if ( optarg != NULL ) {
 			    if ( iDataFileIdx >= MAXFILES ) {
@@ -421,6 +422,8 @@ int main( int argc, char * argv[] ) {
     err = -2 ;
 	if ( ! tpl_filename ) {
         fprintf( stderr, "? missing template file\n" ) ;
+		usage( basename( argv[ 0 ] ) ) ;
+        err = 0 ;
 		goto finally ;
     }
 

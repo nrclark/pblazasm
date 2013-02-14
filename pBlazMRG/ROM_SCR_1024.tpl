@@ -43,7 +43,7 @@ entity {name} is
 		address : in std_logic_vector( 11 downto 0 ) ;
 		instruction : out std_logic_vector( 17 downto 0 ) ;
 
-		scrpad_address : in std_logic_vector( 7 downto 0 ) ;
+		scrpad_address : in std_logic_vector( 12 downto 0 ) ;
 		scrpad_rdata : out std_logic_vector( 7 downto 0 ) ;
 		scrpad_wdata : in std_logic_vector( 7 downto 0 ) ;
 		scr_pad_we : in std_logic
@@ -64,15 +64,16 @@ architecture structural of {name} is
 	signal       we_b : std_logic_vector(  3 downto 0 ) ;
 begin
 
-	-- code map
+-- code map
   address_a    <= address( 9 downto 0 ) & B"0000" ;
   instruction  <= data_out_a( 33 downto 32 ) & data_out_a( 15 downto 0 ) ;
   data_in_a    <= B"00_0000_0000_0000_0000_0000_0000_0000_0000" & address( 11 downto 10 ) ;
       ena_a    <= enable ;
        we_a    <= B"0000" ;
 
-   -- scratchpad map at 0x380 in the code map ( would be 0x700 for data map )
-  address_b    <= B"111" & scrpad_address & B"000" ;
+-- scratchpad map at 0x380 in the code map ( would be 0x700 for data map )
+  address_b    <= '1' & scrpad_address( 9 downto 0 ) & B"000" ;
+-- address_b    <= B"111" & scrpad_address & B"000" ;
   data_in_b    <= B"0000_0000_0000_0000_0000_0000_0000" & scrpad_wdata( 7 downto 0 ) ;
   scrpad_rdata <= data_out_b( 7 downto 0 ) ;
       ena_b    <= not enable ;
