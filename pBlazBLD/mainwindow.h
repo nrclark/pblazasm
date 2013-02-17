@@ -19,9 +19,6 @@
 #include <QSyntaxHighlighter>
 
 
-#include <Qsci/qsciscintilla.h>
-#include <Qsci/qscilexerpsm.h>
-
 #include "settingshandler.h"
 #include "projecthandler.h"
 
@@ -45,7 +42,7 @@ private slots:
     void onModificationchanged(bool m) ;
     void onTextchanged();
     void onMarginClicked(int margin, int line, Qt::KeyboardModifiers state);
-    void onCursorpositionchanged(int line, int index);
+    void onCursorpositionchanged();
 
     void on_actionAbout_triggered();
     void on_actionOpen_triggered();
@@ -74,8 +71,7 @@ private:
     Ui::MainWindow * ui ;
 
     QTabWidget * tabWidget ;
-    QsciScintilla * textEdit ;
-    QsciLexer * lexer ;
+    QPlainTextEdit * textEdit ;
     QPlainTextEdit * logBox ;
     QSyntaxHighlighter * highlighter ;
     QSplitter * hSplitter, * vSplitter ;
@@ -109,9 +105,9 @@ private:
     void writeSettings();
 } ;
 
-class Highlighter : public QSyntaxHighlighter { Q_OBJECT
+class logHighlighter : public QSyntaxHighlighter { Q_OBJECT
 public:
-    Highlighter( QTextDocument *parent = 0 ) ;
+    logHighlighter( QTextDocument *parent = 0 ) ;
 
 protected:
     void highlightBlock(const QString &text) ;

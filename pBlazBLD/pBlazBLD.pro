@@ -18,8 +18,6 @@ win32 {
 include(qtpropertybrowser/src/qtpropertybrowser.pri)
 include(extension/extension.pri)
 
-LIBS += libqscintilla2
-
 SOURCES += main.cpp\
     mainwindow.cpp \
     projecthandler.cpp \
