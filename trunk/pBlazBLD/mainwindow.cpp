@@ -2,7 +2,7 @@
 #include "ui_mainwindow.h"
 
 
-Highlighter::Highlighter( QTextDocument * parent ) : QSyntaxHighlighter(parent) {
+logHighlighter::logHighlighter( QTextDocument * parent ) : QSyntaxHighlighter(parent) {
     HighlightingRule rule ;
 
     keywordFormat.setForeground( Qt::darkBlue ) ;
@@ -32,7 +32,7 @@ Highlighter::Highlighter( QTextDocument * parent ) : QSyntaxHighlighter(parent) 
     highlightingRules.append( rule ) ;
 }
 
-void Highlighter::highlightBlock(const QString &text) {
+void logHighlighter::highlightBlock(const QString &text) {
      foreach (const HighlightingRule &rule, highlightingRules) {
          QRegExp expression( rule.pattern ) ;
          int index = expression.indexIn(text) ;
@@ -123,33 +123,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     logBox->setReadOnly( true ) ;
     logBox->setFont( projectHandler->getFont() ) ;
     connect( logBox, SIGNAL(cursorPositionChanged()), this, SLOT(highlightLogBox())) ;
-    highlighter = new Highlighter( logBox->document() ) ;
+    highlighter = new logHighlighter( logBox->document() ) ;
 
 
     // our source editor
-    textEdit = new QsciScintilla( this ) ;
+    textEdit = new QPlainTextEdit( this ) ;
     tabWidget->addTab( textEdit, "Source" ) ;
+    textEdit->document()->setDefaultFont( projectHandler->getFont() );
 
     // and its lexer for Picoblaze Assembler source
-    lexer = new QsciLexerPsm() ;
-    textEdit->setLexer( lexer ) ;
-    lexer->setFont( projectHandler->getFont() ) ;
-
-    // editor settings
-    textEdit->setMarginWidth( 0, QString("00000") ) ;
-    textEdit->setMarginType( 0, QsciScintilla::NumberMargin ) ;
-    textEdit->setMarginWidth( 1, QString("0") ) ;
-    textEdit->setMarginType( 1, QsciScintilla::SymbolMargin ) ;
-    textEdit->setMarginWidth( 2, QString("0") ) ;
-    textEdit->setMarginType( 2, QsciScintilla::SymbolMargin ) ;
-    textEdit->setMarginWidth( 3, QString("0") ) ;
-    textEdit->setMarginType( 3, QsciScintilla::SymbolMargin ) ;
-
-    textEdit->markerDefine( 'M', 2 ) ;
-    textEdit->setMarginMarkerMask( 0, 1 ) ;
-    textEdit->setMarginMarkerMask( 1, 2 ) ;
-    textEdit->setMarginMarkerMask( 2, 4 ) ;
-
+//
     // our file object
     currentFile = new QFile() ;
 
@@ -162,7 +145,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->actionDelete->setEnabled( false ) ;
     connect( ui->actionCut, SIGNAL( triggered() ), textEdit, SLOT( cut() ) ) ;
     connect( ui->actionCopy, SIGNAL( triggered() ), textEdit, SLOT( copy() ) ) ;
-    connect( ui->actionDelete, SIGNAL (triggered() ), textEdit, SLOT( delete_selection() ) ) ;
+//    connect( ui->actionDelete, SIGNAL (triggered() ), textEdit, SLOT( delete_selection() ) ) ;
     connect( textEdit, SIGNAL( copyAvailable(bool) ), ui->actionCut, SLOT( setEnabled(bool) ) ) ;
     connect( textEdit, SIGNAL( copyAvailable(bool) ), ui->actionCopy, SLOT( setEnabled(bool) ) ) ;
     connect( textEdit, SIGNAL( copyAvailable(bool) ), ui->actionDelete, SLOT( setEnabled(bool) ) ) ;
@@ -176,11 +159,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect( ui->actionRedo, SIGNAL( triggered() ), textEdit, SLOT( redo() ) ) ;
 
     // markers
-    connect( textEdit, SIGNAL( marginClicked(int, int, Qt::KeyboardModifiers) ),
-        this, SLOT( onMarginClicked(int, int, Qt::KeyboardModifiers) ) ) ;
+//    connect( textEdit, SIGNAL( marginClicked(int, int, Qt::KeyboardModifiers) ),
+//        this, SLOT( onMarginClicked(int, int, Qt::KeyboardModifiers) ) ) ;
 
     // editor status
-    connect( textEdit, SIGNAL( cursorPositionChanged(int, int) ), this, SLOT( onCursorpositionchanged(int, int) ) ) ;
+    connect( textEdit, SIGNAL( cursorPositionChanged() ), this, SLOT( onCursorpositionchanged() ) ) ;
     connect( textEdit, SIGNAL( modificationChanged(bool) ), this, SLOT( onModificationchanged(bool) ) ) ;
     connect( textEdit, SIGNAL( textChanged() ), this, SLOT( onTextchanged() ) ) ;
 
@@ -232,9 +215,8 @@ void MainWindow::highlightLogBox() {
     loadFile( list[ 1 ] ) ;
     tabWidget->setCurrentWidget( textEdit ) ;
     int line = list[ 2 ].toInt() - 1 ;
-    textEdit->setCursorPosition( line, 0 ) ;
-    textEdit->markerDeleteAll( 2 ) ;
-    textEdit->markerAdd( line, 2 ) ;
+ //   textEdit->document()->set
+ //           setCursorPosition( line, 0 ) ;
     textEdit->setFocus() ;
 }
 
@@ -282,22 +264,24 @@ void MainWindow::on_actionAbout_triggered() {
 void MainWindow::on_actionNew_triggered() {
     if ( maybeSaveFile() ) {
         textEdit->clear() ;
-        textEdit->setModified( false ) ;
+        textEdit->document()->setModified( false ) ;
         setCurrentFile( "" ) ;
     }
 }
-void MainWindow::onCursorpositionchanged(int line, int index) {
-    lbPosition->setText( QString( "%1 : %2" ).arg( line + 1 ).arg( index + 1 ) ) ;
+void MainWindow::onCursorpositionchanged() {
+//    int line = textEdit->textCursor()->row ;
+//    int column = textEdit->textCursor()->columnNumber() ;
+//    lbPosition->setText( QString( "%1 : %2" ).arg( line + 1 ).arg( column + 1 ) ) ;
 }
 
 void MainWindow::onTextchanged() {
-    ui->actionUndo->setEnabled(textEdit->isUndoAvailable()) ;
-    ui->actionRedo->setEnabled(textEdit->isRedoAvailable()) ;
+    ui->actionUndo->setEnabled(textEdit->document()->isUndoAvailable()) ;
+    ui->actionRedo->setEnabled(textEdit->document()->isRedoAvailable()) ;
 }
 
 void MainWindow::onMarginClicked( int margin, int line, Qt::KeyboardModifiers state ) {
     Q_UNUSED(line ) ;
-    textEdit->markerAdd( margin, state ) ;
+//    textEdit->markerAdd( margin, state ) ;
 }
 
 void MainWindow::onModificationchanged( bool m ) {
@@ -335,8 +319,8 @@ void MainWindow::loadFile( const QString filename ) {
             return ;
         }
         tabWidget->setCurrentWidget( textEdit ) ;
-        textEdit->read( currentFile ) ;
-        textEdit->setModified( false ) ;
+//        textEdit->document()->( currentFile ) ;
+        textEdit->document()->setModified( false ) ;
         currentFile->close() ;
     }
 }
@@ -388,15 +372,15 @@ bool MainWindow::saveFile(const QString fileName) {
         return false ;
     }
 
-    textEdit->write( &file ) ;
-    textEdit->setModified( false ) ;
+//    textEdit->write( &file ) ;
+    textEdit->document()->setModified( false ) ;
     currentFile->setFileName( fileName ) ;
     statusBar()->showMessage (tr("File saved"), 2000 ) ;
     return true ;
 }
 
 bool MainWindow::maybeSaveFile() {
-    if ( textEdit->isModified() ) {
+//    if ( textEdit->isModified() ) {
         int ret = QMessageBox::warning(this, tr("pBlazBLD"),
              "The document has been modified.\nDo you want to save your changes?",
              QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Cancel
@@ -405,7 +389,7 @@ bool MainWindow::maybeSaveFile() {
             return save() ;
         else if ( ret == QMessageBox::Cancel )
             return false ;
-    }
+//    }
     return true ;
 }
 
@@ -506,7 +490,7 @@ void MainWindow::on_actionClose_triggered() {
     tabWidget->setCurrentWidget( textEdit ) ;
     if ( maybeSaveFile() )
         textEdit->clear() ;
-    textEdit->setModified( false ) ;
+//    textEdit->setModified( false ) ;
 }
 
 void MainWindow::on_actionAssemble_triggered() {
