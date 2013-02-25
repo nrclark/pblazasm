@@ -1,49 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-
-logHighlighter::logHighlighter( QTextDocument * parent ) : QSyntaxHighlighter(parent) {
-    HighlightingRule rule ;
-
-    keywordFormat.setForeground( Qt::darkBlue ) ;
-    keywordFormat.setFontWeight( QFont::Bold ) ;
-    QStringList keywordPatterns ;
-    keywordPatterns << "\\bpBlazASM\\b" << "\\bpBlazMRG\\b" << "\\bpBlazBIT\\b" << "\\bPicoblaze\\b" ;
-    foreach ( const QString &pattern, keywordPatterns ) {
-        rule.pattern = QRegExp( pattern ) ;
-        rule.format = keywordFormat ;
-        highlightingRules.append( rule ) ;
-    }
-
-    pathFormat.setFontUnderline( true ) ;
-    pathFormat.setForeground( Qt::blue ) ;
-    rule.pattern = QRegExp("^([a-z]:[^:]+):", Qt::CaseInsensitive ) ;
-    rule.format = pathFormat ;
-    highlightingRules.append( rule ) ;
-
-    commentFormat.setForeground( Qt::darkGreen ) ;
-    rule.pattern = QRegExp("! [^\n]*") ;
-    rule.format = commentFormat ;
-    highlightingRules.append( rule ) ;
-
-    errorFormat.setForeground( Qt::darkRed ) ;
-    rule.pattern = QRegExp("? [^\n]*") ;
-    rule.format = errorFormat ;
-    highlightingRules.append( rule ) ;
-}
-
-void logHighlighter::highlightBlock(const QString &text) {
-     foreach (const HighlightingRule &rule, highlightingRules) {
-         QRegExp expression( rule.pattern ) ;
-         int index = expression.indexIn(text) ;
-         while ( index >= 0 ) {
-             int length = expression.matchedLength() ;
-             setFormat(index, length, rule.format) ;
-             index = expression.indexIn(text, index + length) ;
-         }
-     }
-}
-
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this) ;
 
@@ -89,23 +46,36 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 this, SLOT(openRecentProject())) ;
     }
 
+    deleteRecentProjectsAct = new QAction( "Remove List", this ) ;
+    deleteRecentProjectsAct->setVisible(false) ;
+    connect( deleteRecentProjectsAct, SIGNAL(triggered()), this, SLOT(deleteRecentProjects()) ) ;
+
     // create MRU file list
     for ( int i = 0 ; i < MAXRECENTFILES ; ++i ) {
         recentFileActs[ i ] = new QAction(this) ;
         recentFileActs[ i ]->setVisible(false) ;
-        connect(recentFileActs[ i ], SIGNAL(triggered()),
-                this, SLOT(openRecentFile())) ;
+        connect( recentFileActs[ i ], SIGNAL(triggered()), this, SLOT(openRecentFile()) ) ;
     }
 
-    // add to the file menu
-    separatorProjectAct = ui->menuFile->addSeparator() ;
-    for ( int i = 0 ; i < MAXRECENTFILES ; ++i )
-        ui->menuFile->addAction( recentProjectActs[ i ] ) ;
+    deleteRecentFilesAct = new QAction( "Remove List", this ) ;
+    deleteRecentFilesAct->setVisible( true ) ;
+    connect( deleteRecentFilesAct, SIGNAL(triggered()), this, SLOT(deleteRecentFiles()) ) ;
 
     // add to the file menu
-    separatorFileAct = ui->menuFile->addSeparator() ;
+    recentProjectMenu = ui->menuFile->addMenu( "Recent Projects" ) ;
     for ( int i = 0 ; i < MAXRECENTFILES ; ++i )
-        ui->menuFile->addAction( recentFileActs[ i ] ) ;
+        recentProjectMenu->addAction( recentProjectActs[ i ] ) ;
+    recentProjectMenu->addSeparator() ;
+    recentProjectMenu->addAction( deleteRecentProjectsAct ) ;
+    //setVisible( true ) ;
+
+    // add to the file menu
+    recentFileMenu = ui->menuFile->addMenu( "Recent Files" ) ;
+    for ( int i = 0 ; i < MAXRECENTFILES ; ++i )
+        recentFileMenu->addAction( recentFileActs[ i ] ) ;
+    recentFileMenu->addSeparator() ;
+    recentFileMenu->addAction( deleteRecentFilesAct ) ;
+    //setVisible( true ) ;
 
 
     // create a project manager
@@ -121,18 +91,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     logBox = new QPlainTextEdit() ;
     hSplitter->addWidget( logBox ) ;
     logBox->setReadOnly( true ) ;
-    logBox->setFont( projectHandler->getFont() ) ;
     connect( logBox, SIGNAL(cursorPositionChanged()), this, SLOT(highlightLogBox())) ;
-    highlighter = new logHighlighter( logBox->document() ) ;
+    logHighlighter = new LogHighlighter( logBox->document() ) ;
 
 
     // our source editor
-    textEdit = new QPlainTextEdit( this ) ;
+    textEdit = new CodeEditor( this ) ;
     tabWidget->addTab( textEdit, "Source" ) ;
-    textEdit->document()->setDefaultFont( projectHandler->getFont() );
 
     // and its lexer for Picoblaze Assembler source
-//
+    psmHighlighter = new PsmHighlighter( textEdit->document() ) ;
+
     // our file object
     currentFile = new QFile() ;
 
@@ -145,7 +114,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->actionDelete->setEnabled( false ) ;
     connect( ui->actionCut, SIGNAL( triggered() ), textEdit, SLOT( cut() ) ) ;
     connect( ui->actionCopy, SIGNAL( triggered() ), textEdit, SLOT( copy() ) ) ;
-//    connect( ui->actionDelete, SIGNAL (triggered() ), textEdit, SLOT( delete_selection() ) ) ;
+    connect( ui->actionDelete, SIGNAL (triggered() ), this, SLOT( removeSelectedText() ) ) ;
     connect( textEdit, SIGNAL( copyAvailable(bool) ), ui->actionCut, SLOT( setEnabled(bool) ) ) ;
     connect( textEdit, SIGNAL( copyAvailable(bool) ), ui->actionCopy, SLOT( setEnabled(bool) ) ) ;
     connect( textEdit, SIGNAL( copyAvailable(bool) ), ui->actionDelete, SLOT( setEnabled(bool) ) ) ;
@@ -158,10 +127,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect( ui->actionUndo, SIGNAL( triggered() ), textEdit, SLOT( undo() ) ) ;
     connect( ui->actionRedo, SIGNAL( triggered() ), textEdit, SLOT( redo() ) ) ;
 
-    // markers
-//    connect( textEdit, SIGNAL( marginClicked(int, int, Qt::KeyboardModifiers) ),
-//        this, SLOT( onMarginClicked(int, int, Qt::KeyboardModifiers) ) ) ;
-
     // editor status
     connect( textEdit, SIGNAL( cursorPositionChanged() ), this, SLOT( onCursorpositionchanged() ) ) ;
     connect( textEdit, SIGNAL( modificationChanged(bool) ), this, SLOT( onModificationchanged(bool) ) ) ;
@@ -173,7 +138,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     // exit
     connect( ui->actionExit, SIGNAL( triggered() ), this, SLOT( close() ) ) ;
 
+    // settings
     readSettings() ;
+
+    textEdit->setFont( settingsHandler->getFont() ) ;
+    logBox->setFont( settingsHandler->getFont() ) ;
+    projectHandler->setFont( settingsHandler->getFont() ) ;
 
     // builders
     ui->actionAssemble->setEnabled( QFile::exists( settingsHandler->pBlazASM() ) ) ;
@@ -209,14 +179,15 @@ void MainWindow::highlightLogBox() {
     QStringList list ;
     list << regexp.capturedTexts() ;
 
-    if ( list[ 0 ].isEmpty() )
+    if ( list.count() < 3 || list[ 0 ].isEmpty() || list[ 1 ].isEmpty() || list[ 2 ].isEmpty() )
          return ;
 
     loadFile( list[ 1 ] ) ;
     tabWidget->setCurrentWidget( textEdit ) ;
     int line = list[ 2 ].toInt() - 1 ;
- //   textEdit->document()->set
- //           setCursorPosition( line, 0 ) ;
+    textEdit->moveCursor( QTextCursor::Start ) ;
+    for ( int i = 0 ; i < line ; i += 1 )
+        textEdit->moveCursor( QTextCursor::NextBlock ) ;
     textEdit->setFocus() ;
 }
 
@@ -225,12 +196,12 @@ void MainWindow::readSettings() {
     QSettings settings( "Mediatronix", "pBlazBLD" ) ;
 
     settingsHandler->Read() ;
+
 //    setWindowState( (Qt::WindowStates)settings.value( "state", (int)Qt::WindowNoState ) ) ;
     QPoint pos = settings.value("pos", QPoint(100, 100)).toPoint() ;
     QSize size = settings.value("size", QSize(800, 600)).toSize() ;
 
     updateRecentlyUsedActions() ;
-
 
     resize( size ) ;
     move( pos ) ;
@@ -268,20 +239,28 @@ void MainWindow::on_actionNew_triggered() {
         setCurrentFile( "" ) ;
     }
 }
+
 void MainWindow::onCursorpositionchanged() {
-//    int line = textEdit->textCursor()->row ;
-//    int column = textEdit->textCursor()->columnNumber() ;
-//    lbPosition->setText( QString( "%1 : %2" ).arg( line + 1 ).arg( column + 1 ) ) ;
+    QTextCursor cursor = textEdit->textCursor() ;
+    int line = cursor.block().blockNumber() ;
+    int column = cursor.positionInBlock() ;
+    lbPosition->setText( QString( "%1 : %2" ).arg( line + 1 ).arg( column + 1 ) ) ;
+}
+
+void MainWindow::removeSelectedText() {
+    QTextCursor cursor = textEdit->textCursor() ;
+    cursor.removeSelectedText() ;
+}
+
+void MainWindow::deleteRecentProjects() {
+}
+
+void MainWindow::deleteRecentFiles() {
 }
 
 void MainWindow::onTextchanged() {
     ui->actionUndo->setEnabled(textEdit->document()->isUndoAvailable()) ;
     ui->actionRedo->setEnabled(textEdit->document()->isRedoAvailable()) ;
-}
-
-void MainWindow::onMarginClicked( int margin, int line, Qt::KeyboardModifiers state ) {
-    Q_UNUSED(line ) ;
-//    textEdit->markerAdd( margin, state ) ;
 }
 
 void MainWindow::onModificationchanged( bool m ) {
@@ -318,10 +297,11 @@ void MainWindow::loadFile( const QString filename ) {
             mb.exec() ;
             return ;
         }
-        tabWidget->setCurrentWidget( textEdit ) ;
-//        textEdit->document()->( currentFile ) ;
+        QByteArray data = currentFile->readAll() ;
+        textEdit->setPlainText( QString::fromLocal8Bit( data ) ) ;
         textEdit->document()->setModified( false ) ;
         currentFile->close() ;
+        tabWidget->setCurrentWidget( textEdit ) ;
     }
 }
 
@@ -335,7 +315,7 @@ void MainWindow::loadProject( const QString filename ) {
 
 void MainWindow::on_actionOpen_triggered() {
     QString filename = QFileDialog::getOpenFileName(
-        this, tr("Open Source File"), ".", tr( "Picoblaze source files (*.psm *.psh) ; ;All files (*.*)" ) ) ;
+        this, tr("Open Source File"), ".", tr( "Picoblaze source files (*.psm *.psh);;All files (*.*)" ) ) ;
     if ( ! filename.isEmpty() )
         loadFile( filename ) ;
 }
@@ -357,30 +337,35 @@ void MainWindow::on_actionSaveAs_triggered() {
 
 bool MainWindow::saveAs() {
     QString fileName = QFileDialog::getSaveFileName(
-        this, tr("Open Source File"), ".", tr( "Picoblaze source files (*.psm *.psh) ; ;All files (*.*)" ) ) ;
+        this, tr("Open Source File"), ".", tr( "Picoblaze source files (*.psm *.psh);;All files (*.*)" ) ) ;
     if ( fileName.isEmpty() )
         return false ;
     return saveFile( fileName ) ;
 }
 
-bool MainWindow::saveFile(const QString fileName) {
+bool MainWindow::saveFile( const QString fileName ) {
     QFile file( fileName ) ;
 
     if ( !file.open( QFile::WriteOnly ) ) {
         QMessageBox::warning(this, tr("Application"),
-            tr("Cannot write file %1:\n%2.").arg(fileName).arg(file.errorString() ) ) ;
+            tr( "Cannot write file %1:\n%2.").arg(fileName).arg(file.errorString() ) ) ;
         return false ;
     }
 
-//    textEdit->write( &file ) ;
     textEdit->document()->setModified( false ) ;
-    currentFile->setFileName( fileName ) ;
-    statusBar()->showMessage (tr("File saved"), 2000 ) ;
-    return true ;
+    QByteArray data = textEdit->toPlainText().toLocal8Bit() ;
+    bool success = file.write( data, data.size() ) > -1 ;
+    if ( success ) {
+        statusBar()->showMessage (tr("File saved"), 2000 ) ;
+        currentFile->setFileName( fileName ) ;
+    }
+
+    file.close() ;
+    return success ;
 }
 
 bool MainWindow::maybeSaveFile() {
-//    if ( textEdit->isModified() ) {
+    if ( textEdit->document()->isModified() ) {
         int ret = QMessageBox::warning(this, tr("pBlazBLD"),
              "The document has been modified.\nDo you want to save your changes?",
              QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Cancel
@@ -389,11 +374,11 @@ bool MainWindow::maybeSaveFile() {
             return save() ;
         else if ( ret == QMessageBox::Cancel )
             return false ;
-//    }
+    }
     return true ;
 }
 
-void MainWindow::setCurrentFile(const QString &filename) {
+void MainWindow::setCurrentFile( const QString &filename ) {
     currentFile->setFileName ( filename ) ;
     setWindowFilePath( filename ) ;
 
@@ -402,10 +387,10 @@ void MainWindow::setCurrentFile(const QString &filename) {
     QStringList files = settings.value("recentFileList").toStringList() ;
     files.removeAll( filename ) ;
     files.prepend( filename ) ;
-    while (files.size() > MAXRECENTFILES)
+    while ( files.size() > MAXRECENTFILES )
         files.removeLast() ;
 
-    settings.setValue("recentFileList", files) ;
+    settings.setValue( "recentFileList", files ) ;
     updateRecentlyUsedActions() ;
 }
 
@@ -416,31 +401,37 @@ void MainWindow::updateRecentlyUsedActions() {
 
     int numRecentProjects = qMin(projects.size(), (int)MAXRECENTFILES) ;
 
-    for (int i = 0 ; i < numRecentProjects ; ++i) {
-        QString text = QString("&%1 %2").arg(i + 1).arg(strippedName(projects[ i ]) ) ;
-        recentProjectActs[ i ]->setText( text ) ;
-        recentProjectActs[ i ]->setData( projects[ i ] ) ;
-        recentProjectActs[ i ]->setVisible( true ) ;
+    for ( int i = 0, n = 0 ; i < numRecentProjects ; ++i ) {
+        if ( QFile::exists( projects[ i ] ) ) {
+            QString text = QString( "&%1 %2" ).arg( i + 1 ).arg( strippedName( projects[ i ] ) ) ;
+            recentProjectActs[ n ]->setText( text ) ;
+            recentProjectActs[ n ]->setData( projects[ i ] ) ;
+            recentProjectActs[ n ]->setVisible( true ) ;
+            n += 1 ;
+        }
     }
-    for (int j = numRecentProjects ; j < MAXRECENTFILES ; ++j)
-        recentProjectActs[j]->setVisible(false) ;
+    for ( int i = numRecentProjects ; i < MAXRECENTFILES ; ++i )
+        recentProjectActs[ i ]->setVisible(false) ;
 
-    separatorProjectAct->setVisible( numRecentProjects > 0 ) ;
+    recentProjectMenu->setVisible( numRecentProjects > 0 ) ;
 
     QStringList files = settings.value( "recentFileList" ).toStringList() ;
 
-    int numRecentFiles = qMin(files.size(), (int)MAXRECENTFILES) ;
+    int numRecentFiles = qMin( files.size(), (int)MAXRECENTFILES ) ;
 
-    for (int i = 0 ; i < numRecentFiles ; ++i) {
-        QString text = QString("&%1 %2").arg(i + 1).arg(strippedName(files[ i ]) ) ;
-        recentFileActs[ i ]->setText( text ) ;
-        recentFileActs[ i ]->setData( files[ i ] ) ;
-        recentFileActs[ i ]->setVisible( true ) ;
+    for ( int i = 0, n = 0 ; i < numRecentFiles ; ++i ) {
+        if ( QFile::exists( files[ i ] ) ) {
+            QString text = QString( "&%1 %2" ).arg( i + 1 ).arg( strippedName( files[ i ] ) ) ;
+            recentFileActs[ n ]->setText( text ) ;
+            recentFileActs[ n ]->setData( files[ i ] ) ;
+            recentFileActs[ n ]->setVisible( true ) ;
+            n += 1 ;
+        }
     }
-    for (int j = numRecentFiles ; j < MAXRECENTFILES ; ++j)
-        recentFileActs[j]->setVisible(false) ;
+    for  (int i = numRecentFiles ; i < MAXRECENTFILES ; ++i )
+        recentFileActs[ i ]->setVisible( false ) ;
 
-    separatorFileAct->setVisible( numRecentFiles > 0 ) ;
+    recentFileMenu->setVisible( numRecentFiles > 0 ) ;
 }
 
 QString MainWindow::strippedName(const QString &fullFileName) {
@@ -471,7 +462,7 @@ void MainWindow::on_actionOpen_Project_triggered() {
 
     QSettings settings( "Mediatronix", "pBlazBLD" ) ;
 
-    QStringList projects = settings.value("recentProjectList").toStringList() ;
+    QStringList projects = settings.value( "recentProjectList" ).toStringList() ;
     projects.removeAll( projectHandler->fileName() ) ;
     projects.prepend( projectHandler->fileName() ) ;
     while ( projects.size() > MAXRECENTFILES )
@@ -490,7 +481,7 @@ void MainWindow::on_actionClose_triggered() {
     tabWidget->setCurrentWidget( textEdit ) ;
     if ( maybeSaveFile() )
         textEdit->clear() ;
-//    textEdit->setModified( false ) ;
+    textEdit->document()->setModified( false ) ;
 }
 
 void MainWindow::on_actionAssemble_triggered() {

@@ -18,9 +18,11 @@
 #include <QPlainTextEdit>
 #include <QSyntaxHighlighter>
 
-
 #include "settingshandler.h"
 #include "projecthandler.h"
+#include "loghighlighter.h"
+#include "psmhighlighter.h"
+#include "codeeditor.h"
 
 const int MAXRECENTFILES = 8 ;
 
@@ -41,8 +43,11 @@ public:
 private slots:
     void onModificationchanged(bool m) ;
     void onTextchanged();
-    void onMarginClicked(int margin, int line, Qt::KeyboardModifiers state);
     void onCursorpositionchanged();
+    void removeSelectedText() ;
+
+    void deleteRecentProjects() ;
+    void deleteRecentFiles() ;
 
     void on_actionAbout_triggered();
     void on_actionOpen_triggered();
@@ -62,18 +67,17 @@ private slots:
     void highlightLogBox() ;
 
     void on_actionClose_triggered();
-
     void on_actionMerge_triggered();
-
     void on_actionBitfile_triggered();
 
 private:
     Ui::MainWindow * ui ;
 
     QTabWidget * tabWidget ;
-    QPlainTextEdit * textEdit ;
+    CodeEditor * textEdit ;
     QPlainTextEdit * logBox ;
-    QSyntaxHighlighter * highlighter ;
+    QSyntaxHighlighter * logHighlighter ;
+    QSyntaxHighlighter * psmHighlighter ;
     QSplitter * hSplitter, * vSplitter ;
 
     QLabel * lbMode ;
@@ -86,9 +90,11 @@ private:
 
     QMenu * popup ;
     QAction * recentProjectActs[ MAXRECENTFILES ] ;
+    QAction * deleteRecentProjectsAct ;
     QAction * recentFileActs[ MAXRECENTFILES ] ;
-    QAction * separatorProjectAct ;
-    QAction * separatorFileAct ;
+    QAction * deleteRecentFilesAct ;
+    QMenu * recentProjectMenu ;
+    QMenu * recentFileMenu ;
 
     void loadFile(const QString filename) ;
     void loadProject(const QString filename);
@@ -103,26 +109,6 @@ private:
 
     void readSettings();
     void writeSettings();
-} ;
-
-class logHighlighter : public QSyntaxHighlighter { Q_OBJECT
-public:
-    logHighlighter( QTextDocument *parent = 0 ) ;
-
-protected:
-    void highlightBlock(const QString &text) ;
-
-private:
-    struct HighlightingRule {
-        QRegExp pattern ;
-        QTextCharFormat format ;
-    } ;
-    QVector<HighlightingRule> highlightingRules ;
-
-    QTextCharFormat keywordFormat ;
-    QTextCharFormat errorFormat ;
-    QTextCharFormat commentFormat ;
-    QTextCharFormat pathFormat ;
 } ;
 
 #endif // MAINWINDOW_H
