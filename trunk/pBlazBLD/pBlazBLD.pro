@@ -22,12 +22,18 @@ SOURCES += main.cpp\
     mainwindow.cpp \
     projecthandler.cpp \
     settingshandler.cpp \
-    qxmlsettings.cpp
+    qxmlsettings.cpp \
+    psmhighlighter.cpp \
+    loghighlighter.cpp \
+    codeeditor.cpp
 
 HEADERS  += mainwindow.h \
     projecthandler.h \
     settingshandler.h \
-    qxmlsettings.h
+    qxmlsettings.h \
+    psmhighlighter.h \
+    loghighlighter.h \
+    codeeditor.h
 
 FORMS    += mainwindow.ui
 

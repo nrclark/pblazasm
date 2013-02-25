@@ -25,6 +25,7 @@ public:
     virtual ~QmtxProjectHandler() ;
 
     bool isModified();
+    void setFont(QFont font);
 
     void Init() ;
     void New() ;
@@ -42,7 +43,6 @@ public:
     QString fileName() ;
 
     QtTreePropertyBrowser * getVariantEditor( void ) ;
-    QFont getFont() ;
 
 public Q_SLOTS:
     void setModified(QtProperty * prop, const QVariant &var ) ;
@@ -52,7 +52,6 @@ private:
     VariantManager * variantManager ;
     VariantFactory * variantFactory ;
     QtTreePropertyBrowser * variantEditor ;
-    QFont * fixedFont ;
     bool modified ;
 
     QtVariantProperty * toolsItem, * editorItem, * asmItem, * mrgItem, * bitItem ;
@@ -62,7 +61,7 @@ private:
 
     QtVariantProperty * mrgOptions, * mrgFiles ;
     QtVariantProperty * mrgOptVerbose ;
-    QtVariantProperty * mrgMEMfile, * mrgSCRfile, * mrgTPLfile ;
+    QtVariantProperty * mrgTPLfile ;
 
     QtVariantProperty * bitOptions, * bitFiles ;
     QtVariantProperty * bitOptVerbose ;

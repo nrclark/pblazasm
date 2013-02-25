@@ -9,7 +9,6 @@ QmtxProjectHandler::QmtxProjectHandler( QObject * parent ) {
     variantManager = new VariantManager() ;
     variantFactory = new VariantFactory() ;
     variantEditor = new QtTreePropertyBrowser(  ) ;
-    fixedFont = new QFont( "Consolas [Monaco]", 9 ) ;
 
 //    QObject::connect( (QtVariantPropertyManager *)variantManager, SIGNAL( valueChanged(QtProperty *, const QVariant &) ),
 //                      (QObject *)this, SLOT( setModified(QtProperty *, const QVariant &) ) ) ;
@@ -25,7 +24,6 @@ void QmtxProjectHandler::Init() {
 
     // variantManager->valueChanged();
 
-    variantEditor->setFont( * fixedFont ) ;
     variantEditor->setAlternatingRowColors( false ) ;
     variantEditor->setFactoryForManager( (QtVariantPropertyManager *)variantManager, variantFactory ) ;
     variantEditor->setPropertiesWithoutValueMarked(true);
@@ -71,7 +69,7 @@ void QmtxProjectHandler::Init() {
     asmLSTfile->setAttribute( "filter", "LST files (*.lst);;All files (*.*)" ) ;
     asmFiles->addSubProperty( asmLSTfile ) ;
 
-    asmSources = variantManager->addProperty(VariantManager::groupTypeId(), QLatin1String(" Files"));
+    asmSources = variantManager->addProperty(VariantManager::groupTypeId(), QLatin1String(" Sources"));
     asmItem->addSubProperty( asmSources ) ;
 
     // pBlazMRG
@@ -87,16 +85,6 @@ void QmtxProjectHandler::Init() {
 
     mrgFiles = variantManager->addProperty(VariantManager::groupTypeId(), QLatin1String(" Files"));
     mrgItem->addSubProperty( mrgFiles ) ;
-
-    mrgMEMfile = variantManager->addProperty(VariantManager::filePathTypeId(), QLatin1String("Code (*.mem) file"));
-    mrgMEMfile->setValue( "<undefined>" ) ;
-    mrgMEMfile->setAttribute( "filter", "MEM files (*.mem);;All files (*.*)" ) ;
-    mrgFiles->addSubProperty( mrgMEMfile ) ;
-
-    mrgSCRfile = variantManager->addProperty(VariantManager::filePathTypeId(), QLatin1String("Data (*.scr) file"));
-    mrgSCRfile->setValue( "<undefined>" ) ;
-    mrgSCRfile->setAttribute( "filter", "SCR files (*.scr);;All files (*.*)" ) ;
-    mrgFiles->addSubProperty( mrgSCRfile ) ;
 
     mrgTPLfile = variantManager->addProperty(VariantManager::filePathTypeId(), "Template (*.tpl) file");
     mrgTPLfile->setValue( "<undefined>" ) ;
@@ -195,9 +183,16 @@ QStringList QmtxProjectHandler::asmArguments() {
     if ( asmOptVerbose->value().toBool() )
         args << "-v" ;
 
+    if ( ! asmLSTfile->value().toString().isEmpty() ) {
+        if ( asmLSTfile->value().toString() == "<default>" )
+            args << "-l" ;
+        else
+            args << "-l" << QDir::toNativeSeparators ( asmLSTfile->value().toString() ) ;
+    }
+
     int count = asmSources->subProperties().count() ;
     for ( int i = 0 ; i < count ; i += 1 )
-        args << asmSources->subProperties()[i]->valueText() ;
+        args << QDir::toNativeSeparators ( asmSources->subProperties()[i]->valueText() ) ;
 
     return args ;
 }
@@ -228,15 +223,10 @@ QtTreePropertyBrowser * QmtxProjectHandler::getVariantEditor() {
     return variantEditor ;
 }
 
-QFont QmtxProjectHandler::getFont() {
-    return *fixedFont ;
-}
-
 void QmtxProjectHandler::setModified( QtProperty *prop, const QVariant &var ) {
     Q_UNUSED( prop ) ;
     Q_UNUSED( var ) ;
     modified = true ;
-    qDebug() << "modified" ;
 }
 
 bool QmtxProjectHandler::maybeSave() {
@@ -306,8 +296,6 @@ bool QmtxProjectHandler::load_file() {
 
     settings.beginGroup( "pBlazMRG" ) ;
         mrgOptVerbose->setValue( settings.value("options/verbose").toBool() ) ;
-        mrgMEMfile->setValue( settings.value( "files/MEM" ).toString() ) ;
-        mrgSCRfile->setValue( settings.value( "files/SCR" ).toString() ) ;
         mrgTPLfile->setValue( settings.value( "files/LST" ).toString() ) ;
     settings.endGroup() ;
 
@@ -349,8 +337,6 @@ bool QmtxProjectHandler::save_file() {
 
     settings.beginGroup( "pBlazMRG" ) ;
         settings.setValue( "options/verbose", mrgOptVerbose->value() ) ;
-        settings.setValue( "files/MEM", mrgMEMfile->valueText() ) ;
-        settings.setValue( "files/SCR", mrgSCRfile->valueText() ) ;
         settings.setValue( "files/TPL", mrgTPLfile->valueText() ) ;
     settings.endGroup() ;
 
@@ -366,6 +352,11 @@ bool QmtxProjectHandler::save_file() {
 
 bool QmtxProjectHandler::isModified() {
     return modified ;
+}
+
+
+void QmtxProjectHandler::setFont( QFont font ) {
+    variantEditor->setFont( font ) ;
 }
 
 

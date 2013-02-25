@@ -9,12 +9,14 @@ QmtxSettingsHandler::QmtxSettingsHandler( QObject * parent ) {
     variantManager = new VariantManager() ;
     variantFactory = new VariantFactory() ;
     variantEditor = new QtTreePropertyBrowser(  ) ;
-    fixedFont = new QFont( "Consolas [Monaco]", 9 ) ;
+
+    fixedFont = new QFont( "Consolas", 9 ) ;
 
 //    QObject::connect( (QtVariantPropertyManager *)variantManager, SIGNAL( valueChanged(QtProperty *, const QVariant &) ),
 //                      (QObject *)this, SLOT( setModified(QtProperty *, const QVariant &) ) ) ;
 
-    Init();
+    Init() ;
+    Read() ;
 }
 
 void QmtxSettingsHandler::Init() {
@@ -56,7 +58,7 @@ void QmtxSettingsHandler::Init() {
     variantEditor->setBackgroundColor( britem, QColor( 250, 240, 240, 255 ) ) ;
 
     fontItem = variantManager->addProperty( QVariant::Font, QLatin1String(" Font Property") ) ;
-    variantManager->setValue( fontItem, *fixedFont ) ;
+    variantManager->setValue( fontItem, * fixedFont ) ;
     editorItem->addSubProperty( fontItem ) ;
     fontItem = variantManager->addProperty(QVariant::SizePolicy, QLatin1String(" SizePolicy Property" ) ) ;
     editorItem->addSubProperty( fontItem ) ;
@@ -65,6 +67,8 @@ void QmtxSettingsHandler::Init() {
 
 void QmtxSettingsHandler::Read() {
     QSettings settings( "Mediatronix", "pBlazBLD" ) ;
+
+    fixedFont->fromString( settings.value( "font", "Consolas,9,-1,5,50,0,0,0,0,0" ).toString() ) ;
     setPBlazASM( settings.value( "pBlazASM", "./pBlazASM" ).toString() ) ;
     setPBlazMRG( settings.value( "pBlazMRG", "./pBlazMRG" ).toString() ) ;
     setPBlazBIT( settings.value( "pBlazBIT", "./pBlazBIT" ).toString() ) ;
@@ -72,6 +76,8 @@ void QmtxSettingsHandler::Read() {
 
 void QmtxSettingsHandler::Write() {
     QSettings settings( "Mediatronix", "pBlazBLD" ) ;
+
+    settings.setValue( "font", fixedFont->toString() ) ;
     settings.setValue( "pBlazASM", pBlazASM() ) ;
     settings.setValue( "pBlazMRG", pBlazMRG() ) ;
     settings.setValue( "pBlazBIT", pBlazBIT() ) ;
