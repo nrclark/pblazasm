@@ -3,8 +3,6 @@
 #include <QDebug>
 
 PsmHighlighter::PsmHighlighter( QTextDocument * parent ) : QSyntaxHighlighter( parent ) {
-    HighlightingRule rule ;
-
     keywordFormat.setForeground( Qt::darkBlue ) ;
     keywordFormat.setFontWeight( QFont::Bold ) ;
     keywords
@@ -32,13 +30,20 @@ PsmHighlighter::PsmHighlighter( QTextDocument * parent ) : QSyntaxHighlighter( p
 
     registerFormat.setForeground( Qt::darkMagenta ) ;
     registerFormat.setFontWeight( QFont::Bold ) ;
+
     stringFormat.setForeground( Qt::darkYellow ) ;
-    stringFormat.setFontWeight( QFont::Bold ) ;
+    stringFormat.setFontItalic( true ) ;
+
     numberFormat.setForeground( Qt::darkGreen ) ;
     numberFormat.setFontWeight( QFont::Bold ) ;
+
     commentFormat.setForeground( Qt::darkGray ) ;
-    commentFormat.setFontWeight( QFont::Bold ) ;
+    commentFormat.setFontItalic( true ) ;
+
+    operatorFormat.setForeground( Qt::blue ) ;
+
     errorFormat.setForeground( Qt::red ) ;
+    errorFormat.setFontItalic( true ) ;
 }
 
 void PsmHighlighter::highlightBlock( const QString &text ) {
@@ -46,7 +51,6 @@ void PsmHighlighter::highlightBlock( const QString &text ) {
         return ;
 
     QByteArray b = text.toAscii().toLower() + '\n' ;
-
     enum _STATE state = stINIT ;
 
     for ( int s = 0, p = 0 ; p < b.size() ; ) {
@@ -54,13 +58,19 @@ void PsmHighlighter::highlightBlock( const QString &text ) {
         case stINIT :
             if ( b[ p ] == ' ' || iscntrl( b[ p ] ) ) {
                 p++ ;
-            } else if ( b[ p ] == ',' || b[ p ] == ':' ) {
+            } else if ( b[ p ] == ',' || b[ p ] == ':' || b[ p ] == '(' || b[ p ] == ')' ) {
                 p++ ;
             } else if (
                 b[ p ] == '*' || b[ p ] == '%' || b[ p ] == '+' || b[ p ] == '-' ||
-                b[ p ] == '|' || b[ p ] == '&' || b[ p ] == '^' || b[ p ] == '~' || b[ p ] == '%'
+                b[ p ] == '|' || b[ p ] == '&' || b[ p ] == '^' || b[ p ] == '~' ||
+                b[ p ] == '%' || b[ p ] == '@'
             ) {
-                p++ ;
+                s = p++ ;
+                state = stSINGLE ;
+            } else if ( b[ p ] == '<' || b[ p ] == '>' ) {
+                // double char operators
+                s = p++ ;
+                state = stDOUBLE ;
             } else if ( b[ p ] == '/' ) {
                 s = p++ ;
                 state = stCOMMENT1 ;
@@ -76,7 +86,7 @@ void PsmHighlighter::highlightBlock( const QString &text ) {
             } else if ( b[ p ] == 's' ) {
                 s = p++ ;
                 state = stREG ;
-            } else if ( isalpha( b[ p ] || b[ p ] == '_' || b[ p ] == '.' ) ) {
+            } else if ( isalpha( b[ p ] ) || b[ p ] == '_' || b[ p ] == '.' ) {
                 s = p++ ;
                 state = stIDENT ;
             } else if ( b[ p ] == '0' ) {
@@ -128,6 +138,20 @@ void PsmHighlighter::highlightBlock( const QString &text ) {
                 }
             } else
                 state = stIDENT ;
+            break ;
+
+        case stSINGLE :
+            setFormat( s, p - s, operatorFormat ) ;
+            state = stWHITE ;
+            break ;
+
+        case stDOUBLE :
+            if ( b[ p ] == b[ s ] ) {
+                p++ ;
+                setFormat( s, p - s, operatorFormat ) ;
+                state = stWHITE ;
+            } else
+                state = stSKIP ;
             break ;
 
         case stNUM :
@@ -213,8 +237,12 @@ void PsmHighlighter::highlightBlock( const QString &text ) {
             break ;
 
         case stSKIP :
-            while ( p < b.size() )
-                p++ ;
+            while ( p < b.size() ) {
+                if ( b[ p ] == '/' || b[ p ] == ';' || b[ p ] == '"' )
+                    break ;
+                else
+                    p++ ;
+            }
             setFormat( s, p - s, errorFormat ) ;
             state = stINIT ;
             break ;

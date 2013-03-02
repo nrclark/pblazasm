@@ -12,7 +12,7 @@ protected:
 
 private:
     enum _STATE {
-        stINIT, stWHITE, stIDENT, stREG,
+        stINIT, stWHITE, stIDENT, stREG, stSINGLE, stDOUBLE,
         stNUM, stHEX, stBIN, stOCT, stDEC, stCHAR,
         stSTRING, stCOMMENT1, stCOMMENT2, stSKIP
     } ;
@@ -30,6 +30,7 @@ private:
     QStringList directives ;
 
     QTextCharFormat registerFormat ;
+    QTextCharFormat operatorFormat ;
     QTextCharFormat numberFormat ;
     QTextCharFormat stringFormat ;
     QTextCharFormat commentFormat ;
