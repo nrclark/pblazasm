@@ -41,9 +41,9 @@ uint16_t Data[ MAXMEM * 18 / 16 ] ;
 
 
 static void usage ( char * text ) {
-    printf ( "\n%s - %s\n", text, "Picoblaze Assembler bitstream dump utility V0.0" ) ;
-    printf ( "\nUSAGE:\n" ) ;
-    printf ( "   pBlazDMP [-3|-6] [-v] [-d<data_stream>]* -o<MEM outputfile> <BIT inputfile>\\n" ) ;
+    fprintf( stdout,"\n%s - %s\n", text, "Picoblaze Assembler bitstream dump utility V0.0" ) ;
+    fprintf( stdout,"\nUSAGE:\n" ) ;
+    fprintf( stdout,"   pBlazDMP [-3|-6] [-v] [-d<data_stream>]* -o<MEM outputfile> <BIT inputfile>\\n" ) ;
 }
 
 bool save_MEM ( const char * strCodefile ) {
@@ -66,13 +66,13 @@ bool save_MEM ( const char * strCodefile ) {
     if ( strlen ( strCodefile ) > 0 ) {
         outfile = fopen ( strCodefile, "w" ) ;
         if ( outfile == NULL ) {
-            fprintf ( stderr, "? Unable to open MEM file '%s'", strCodefile ) ;
+            fprintf( stderr, "? Unable to open MEM file '%s'", strCodefile ) ;
             return false ;
         }
 
-        fprintf ( outfile, "@%08X\n", 0 ) ;
+        fprintf( outfile, "@%08X\n", 0 ) ;
         for ( addr = 0 ; addr < MAXMEM ; addr += 1 )
-            fprintf ( outfile, "%08X\n", Code[ addr ] ) ;
+            fprintf( outfile, "%08X\n", Code[ addr ] ) ;
 
         fclose ( outfile ) ;
     }
@@ -122,11 +122,11 @@ int main ( int argc, char * argv[] ) {
             bSpartan6 = true ;
             break ;
         case ':' :
-            fprintf ( stderr, "? missing option: -%c\n", optopt ) ;
+            fprintf( stderr, "? missing option: -%c\n", optopt ) ;
             bOptErr = true ;
             break ;
         default :
-            fprintf ( stderr, "? unknown option: -%c\n", optopt ) ;
+            fprintf( stderr, "? unknown option: -%c\n", optopt ) ;
             bOptErr = true ;
             break ;
         }
@@ -139,7 +139,7 @@ int main ( int argc, char * argv[] ) {
 
     // bitstream filename
     if ( argv[ optind ] == NULL ) {
-        fprintf ( stderr, "? bitstream file missing\n" ) ;
+        fprintf( stderr, "? bitstream file missing\n" ) ;
         usage ( basename ( argv[ 0 ] ) ) ;
         exit ( -1 ) ;
     }
@@ -149,21 +149,21 @@ int main ( int argc, char * argv[] ) {
         if ( strrchr ( bit_filename, '.' ) == NULL )
             strcat ( bit_filename, ".bit" ) ;
         if ( bVerbose )
-            printf ( "! bitstream file: %s\n", bit_filename ) ;
+            fprintf( stdout, "! bitstream file: %s\n", bit_filename ) ;
     }
 
     if ( strlen ( code_filename ) > 0 ) {
         if ( strrchr ( code_filename, '.' ) == NULL )
             strcat ( code_filename, ".mem" ) ;
         if ( bVerbose )
-            printf ( "! code MEM file: %s\n", code_filename ) ;
+            fprintf( stdout, "! code MEM file: %s\n", code_filename ) ;
     }
 
-    if ( !parse_file ( bit_filename, bSpartan6, bVerbose ) )
+    if ( ! parse_file ( bit_filename, bSpartan6, bVerbose ) )
         exit ( -3 ) ;
-    if ( !get_code ( Data, data, len ) )
+    if ( ! get_code ( Data, data, len ) )
         exit ( -3 ) ;
-    if ( !save_MEM ( code_filename ) )
+    if ( ! save_MEM ( code_filename ) )
         exit ( -4 ) ;
     exit ( 0 ) ;
 }

@@ -26,7 +26,7 @@
 
 #include "pbTypes.h"
 #include "pbLibgen.h"
-#include "pbCRC32.h"
+//#include "pbCRC32.h"
 
 #if defined TCC || defined _MSC_VER
 #include "getopt.h"
@@ -250,6 +250,12 @@ int main ( int argc, char * argv[] ) {
             printf ( "! source bitstream file: %s\n", source_filename ) ;
     }
 
+    if ( bVerbose > 1 ) {
+        if ( ! parse_file ( source_filename, bsType, bVerbose ) )
+            exit ( -3 ) ;
+        exit( 0 ) ;
+    }
+
     if ( strlen ( dest_filename ) > 0 ) {
         if ( strrchr ( dest_filename, '.' ) == NULL )
             strcat ( dest_filename, ".bit" ) ;
@@ -275,11 +281,11 @@ int main ( int argc, char * argv[] ) {
     if ( !loadMEM ( code_filename, data_filename ) )
         exit ( -2 ) ;
 
-    if ( !parse_file ( source_filename, bsType, bVerbose ) )
+    if ( ! parse_file ( source_filename, bsType, bVerbose ) )
         exit ( -3 ) ;
     if ( ! merge_code ( Data, MAXMEM, nr, bVerbose ) )
         exit ( -4 ) ;
-    if ( !write_file ( dest_filename ) )
+    if ( ! write_file ( dest_filename ) )
         exit ( -5 ) ;
     exit ( 0 ) ;
 }

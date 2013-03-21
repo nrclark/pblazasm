@@ -532,15 +532,15 @@ bool parse_packets6 ( void ) {
 	return result ;
 }
 
-//#define CRC_POLY 0x1EDC6F41
-//#define CRC_SIZE 32
-//#define CRC_MASK 0xFFFFFFFF
+#define CRC_POLY 0x1EDC6F41
+#define CRC_SIZE 32
+#define CRC_MASK 0xFFFFFFFF
 
-#define CRC_POLY 0x5d6dcb
+//#define CRC_POLY 0x5d6dcb
 //#define CRC_POLY 0x864cfb
 //#define CRC_POLY 0xbe64c3
-#define CRC_SIZE 24
-#define CRC_MASK 0xFFFFFF
+//#define CRC_SIZE 24
+//#define CRC_MASK 0xFFFFFF
 
 
 static uint32_t crc = 0 ;
@@ -570,10 +570,10 @@ static void one_bit ( uint32_t data ) {
 static void one_word ( uint16_t word, uint8_t reg ) {
 	int i ;
 
-	for ( i = 0 ; i < 16 ; i += 1 )
-		one_bit ( word >> i ) ;
-	for ( i = 0 ; i < 6 ; i += 1 )
-		one_bit ( reg >> i ) ;
+    uint32_t cat = ( reg << 16 ) | word ;
+
+	for ( i = 0 ; i < 16 + 6 ; i += 1 )
+		one_bit ( cat >> i ) ;
 }
 
 
@@ -581,85 +581,85 @@ void show_file ( void ) {
 	int i, j, k ;
 	FILE * outfile ;
 
-	outfile = fopen ( "dump.bin", "wb" ) ;
+	outfile = fopen ( "log.txt", "w" ) ;
 	if ( outfile == NULL ) {
-		fprintf ( stderr, "? Unable to open or create output dump file '%s'\n", "dump.bin" ) ;
+		fprintf( stderr, "? Unable to open or create output dump file '%s'\n", "log.txt" ) ;
 		return ;
 	}
 
 	if ( bit_file.header.bBit ) {
-		printf ( "! header:\n" ) ;
-		printf ( "! info: %s\n", bit_file.header.info ) ;
-		printf ( "! part: %s\n", bit_file.header.part ) ;
-		printf ( "! date: %s\n", bit_file.header.date ) ;
-		printf ( "! time: %s\n", bit_file.header.time ) ;
+		fprintf( outfile, "! header:\n" ) ;
+		fprintf( outfile, "! info: %s\n", bit_file.header.info ) ;
+		fprintf( outfile, "! part: %s\n", bit_file.header.part ) ;
+		fprintf( outfile, "! date: %s\n", bit_file.header.date ) ;
+		fprintf( outfile, "! time: %s\n", bit_file.header.time ) ;
 	}
 
-	printf ( "! number of packets: %d\n", bit_file.count ) ;
+	fprintf( outfile, "! number of packets: %d\n", bit_file.count ) ;
 	for ( i = 0 ; i < ( int ) bit_file.count ; i += 1 ) {
 		switch ( bit_file.type ) {
 		case bstSpartan3:
-			printf ( "! %4d: 0x%08X", i, bit_file.packets3[ i ].header ) ;
-			printf ( " %5s", sOpcodeNames[ ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ] ) ;
+			fprintf( outfile, "! %4d: 0x%08X", i, bit_file.packets3[ i ].header ) ;
+			fprintf( outfile, " %5s", sOpcodeNames[ ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ] ) ;
 			if ( ( ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ) != 0 ) {
 				if ( ( ( bit_file.packets3[ i ].header >> 29 ) & 0x0003 ) == 1 ) {
-					printf ( " %6s," , sRegisterNames_S3[ ( bit_file.packets3[ i ].header >> 13 ) & 0x003FFF ] ) ;
+					fprintf( outfile, " %6s," , sRegisterNames_S3[ ( bit_file.packets3[ i ].header >> 13 ) & 0x003FFF ] ) ;
 				} else {
-					printf ( "            " ) ;
+					fprintf( outfile, "            " ) ;
 				}
-				printf ( " count: %6d : ", bit_file.packets3[ i ].count ) ;
+				fprintf( outfile, " count: %6d : ", bit_file.packets3[ i ].count ) ;
 			}
 			if ( bit_file.packets3[ i ].count > 0 )
 				for ( j = 0 ; j < 37 && j < ( int ) bit_file.packets3[ i ].count ; j += 1 ) {
-					printf ( "%08X", bit_file.packets3[ i ].data[ j ] ) ;
+					fprintf( outfile, "%08X", bit_file.packets3[ i ].data[ j ] ) ;
 				}
 			if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 2 ) {
-				printf ( " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
+				fprintf( outfile, " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
 			} else if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 8 ) {
 				int n = bit_file.packets3[ i ].data[ 0 ] ; // XAPP452.pdf, v1.1 : Figure 2
-				printf ( " : block %d major %d minor %d\n", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
+				fprintf( outfile, " : block %d major %d minor %d\n", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
 			} else {
-				printf ( "\n" ) ;
+				fprintf( outfile, "\n" ) ;
 			}
 			break;
 
 		case bstSpartan3a:
-			printf ( "! %4d: 0x%08X", i, bit_file.packets3[ i ].header ) ;
-			printf ( " %5s", sOpcodeNames[ ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ] ) ;
+			fprintf( outfile, "! %4d: 0x%08X", i, bit_file.packets3[ i ].header ) ;
+			fprintf( outfile, " %5s", sOpcodeNames[ ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ] ) ;
 			if ( ( ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ) != 0 ) {
 				if ( ( ( bit_file.packets3[ i ].header >> 29 ) & 0x0003 ) == 1 ) {
-					printf ( " %6s," , sRegisterNames_S3[ ( bit_file.packets3[ i ].header >> 13 ) & 0x003FFF ] ) ;
+					fprintf( outfile, " %6s," , sRegisterNames_S3[ ( bit_file.packets3[ i ].header >> 13 ) & 0x003FFF ] ) ;
 				} else {
-					printf ( "            " ) ;
+					fprintf( outfile, "            " ) ;
 				}
-				printf ( " count: %6d : ", bit_file.packets3[ i ].count ) ;
+				fprintf( outfile, " count: %6d : ", bit_file.packets3[ i ].count ) ;
 			}
 			if ( bit_file.packets3[ i ].count > 0 )
 				for ( j = 0 ; j < 37 && j < ( int ) bit_file.packets3[ i ].count ; j += 1 ) {
-					printf ( "%08X", bit_file.packets3[ i ].data[ j ] ) ;
+					fprintf( outfile, "%08X", bit_file.packets3[ i ].data[ j ] ) ;
 				}
 			if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 2 ) {
-				printf ( " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
+				fprintf( outfile, " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
 			} else if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0xF ) == 8 ) {
 				int n = bit_file.packets3[ i ].data[ 0 ] ; // XAPP452.pdf, v1.1 : Figure 2
-				printf ( " : block %d major %d minor %d\n", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
+				fprintf( outfile, " : block %d major %d minor %d\n", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
 			} else {
-				printf ( "\n" ) ;
+				fprintf( outfile, "\n" ) ;
 			}
 			break;
 
 		case bstSpartan3e: {
 			FPGAType_e FPGAType = tyXC3S500E ;
 
-			printf ( "! %4d: 0x%08X", i, bit_file.packets3[ i ].header ) ;
-			printf ( " %5s", sOpcodeNames[ ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ] ) ;
+			fprintf( outfile, "! %4d: 0x%08X", i, bit_file.packets3[ i ].header ) ;
+			fprintf( outfile, " %5s", sOpcodeNames[ ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ] ) ;
 			if ( ( ( bit_file.packets3[ i ].header >> 27 ) & 0x0003 ) != 0 ) {
 				if ( ( ( bit_file.packets3[ i ].header >> 29 ) & 0x0003 ) == 1 ) {
-					printf ( " %6s," , sRegisterNames_S3[ ( bit_file.packets3[ i ].header >> 13 ) & 0x003FFF ] ) ;
+					fprintf( outfile, " %6s," , sRegisterNames_S3[ ( bit_file.packets3[ i ].header >> 13 ) & 0x003FFF ] ) ;
 				} else {
-					printf ( "            " ) ;
+					fprintf( outfile, "            " ) ;
 				}
-				printf ( " count: %6d : ", bit_file.packets3[ i ].count ) ;
+				fprintf( outfile, " count: %6d : ", bit_file.packets3[ i ].count ) ;
 			}
 			if ( bit_file.packets3[ i ].count > 0 ) {
 				int col = 0, coldef = 0, blk = 0, maj = 0, min = 0 ;
@@ -667,12 +667,12 @@ void show_file ( void ) {
 
 				for ( k = 0 ; k < ( int ) bit_file.packets3[ i ].count ; ) {
 					if ( ( ( bit_file.packets3[ i ].header >> 29 ) & 0x0003 ) == 2 ) { // FDRI type 2
-						printf ( "\nblk %2d, maj %2d, min %2d : ", blk, maj, min ) ;
+						fprintf( outfile, "\nblk %2d, maj %2d, min %2d : ", blk, maj, min ) ;
 					} else if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0x3fff ) == 2 ) { // FDRI type 1
-						printf ( "blk %2d, maj %2d, min %2d : ", blk, maj, min ) ;
+						fprintf( outfile, "blk %2d, maj %2d, min %2d : ", blk, maj, min ) ;
 					} else if ( ( ( bit_file.packets3[ i ].header >> 13 ) & 0x3fff ) == 8 ) { // LOUT debugging
 						int n = bit_file.packets3[ i ].data[ k ] ; // XAPP452.pdf, v1.1 : Figure 2
-						printf ( " - blk %2d, maj %2d, min %2d : ", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
+						fprintf( outfile, " - blk %2d, maj %2d, min %2d : ", ( n >> 25 ) & 0x3, ( n >> 17 ) & 0xFF, ( n >> 9 ) & 0xFF ) ;
 					}
 					// 12:00008102 13:04081020 14:40810204 15:08102040 16:81002040 17:81020408 18:10204081 19:02040810 20:20400000
 					// 80:00008102 81:04081020 82:40810204 83:08102040 84:81002040 85:81020408 86:10204081 87:02040810 88:20400000
@@ -685,14 +685,14 @@ void show_file ( void ) {
 					for ( j = 0 ; j < FPGAInfo[ FPGAType ].fl && k < ( int ) bit_file.packets3[ i ].count ; j += 1, k += 1 ) {
 //                       if ( 0 <= j && j <= FPGAInfo[ FPGAType ].fl )
 						if ( FPGAInfo[ FPGAType ].bs <= j && j <= FPGAInfo[ FPGAType ].be ) {
-							printf ( "%2d:%08X ", j, bit_file.packets3[ i ].data[ k ] ) ;
+							fprintf( outfile, "%2d:%08X ", j, bit_file.packets3[ i ].data[ k ] ) ;
 							if ( maj == 1 )
 								fwrite ( &bit_file.packets3[ i ].data[ k ], sizeof ( uint32_t ), 1, outfile ) ;
 						}
 					}
 					min += 1 ;
 					if ( min >= coldef ) {
-						printf ( "\n" ) ;
+						fprintf( outfile, "\n" ) ;
 						min = 0 ;
 						col += 1 ;
 						coldef = abs ( ColumnDefs[ FPGAType ][ col ] ) ;
@@ -706,72 +706,72 @@ void show_file ( void ) {
 				}
 			}
 			if ( ( bit_file.packets3[ i ].header >> 29 ) == 1 ) {
-				printf ( "\n" ) ;
+				fprintf( outfile, "\n" ) ;
 			} else if ( ( bit_file.packets3[ i ].header >> 29 ) == 2 ) {
-				printf ( " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
+				fprintf( outfile, " : autocrc: 0x%08X\n", bit_file.packets3[ i ].autocrc ) ;
 			} else {
-				printf ( "\n" ) ;
+				fprintf( outfile, "\n" ) ;
 			}
 		}
 		break;
 
 		case bstSpartan6:
-			printf ( "! %4d: 0x%04X", i, bit_file.packets6[ i ].header ) ;
-			printf ( " %6s " , sOpcodeNames[ ( bit_file.packets6[ i ].header >> 11 ) & 0x0003 ] ) ;
+			fprintf( outfile, "! %4d: 0x%04X", i, bit_file.packets6[ i ].header ) ;
+			fprintf( outfile, " %6s " , sOpcodeNames[ ( bit_file.packets6[ i ].header >> 11 ) & 0x0003 ] ) ;
 			if ( ( ( bit_file.packets6[ i ].header >> 11 ) & 0x0003 ) != 0 ) {
-				printf ( " %8s," , sRegisterNames_S6[ ( bit_file.packets6[ i ].header >> 5 ) & 0x003F ] ) ;
-				printf ( "  count:  %d", bit_file.packets6[ i ].count ) ;
+				fprintf( outfile, " %8s," , sRegisterNames_S6[ ( bit_file.packets6[ i ].header >> 5 ) & 0x003F ] ) ;
+				fprintf( outfile, "  count:  %d", bit_file.packets6[ i ].count ) ;
 				switch ( bit_file.packets6[ i ].header >> 13 ) {
 				case 1 :
 					switch ( ( bit_file.packets6[ i ].header >> 5 ) & 0x003F ) {
                     case 0 :
-                        printf ( " crc = %06X\n", crc ) ;
+                        fprintf( outfile, " crc = %06X\n", crc ) ;
                         break;
 					}
                     for ( j = 0, k = 0 ; j < ( int ) bit_file.packets6[ i ].count ; j += 1, k = ( k + 1 ) & 31 ) {
                         if ( k == 0 )
-                            printf ( "\n" ) ;
-                        printf ( "%04X ", bit_file.packets6[ i ].data[ j ] ) ;
+                            fprintf( outfile, "\n" ) ;
+                        fprintf( outfile, "%04X ", bit_file.packets6[ i ].data[ j ] ) ;
                         one_word ( bit_file.packets6[ i ].data[ j ], ( bit_file.packets6[ i ].header >> 5 ) & 0x003F ) ;
                     }
 					switch ( ( bit_file.packets6[ i ].header >> 5 ) & 0x003F ) {
                     case 0 :
-                        printf ( " crc = %06X\n", crc ) ;
+                        fprintf( outfile, " crc = %06X\n", crc ) ;
                         break;
 					case 5 :
 						switch ( bit_file.packets6[ i ].data[ 0 ] ) {
                         case 7 :
 							crc = 0 ;
-							printf ( ": crc cleared" ) ;
-                            printf ( " crc = %06X\n", crc ) ;
+							fprintf( outfile, ": crc cleared" ) ;
+                            fprintf( outfile, " crc = %06X\n", crc ) ;
 							break ;
 						}
                         break ;
                     case 13 :
-                        printf ( ": frame length = %d", bit_file.packets6[ i ].data[ 0 ] ) ;
+                        fprintf( outfile, ": frame length = %d", bit_file.packets6[ i ].data[ 0 ] ) ;
                         break ;
 					}
 					break ;
 				case 2 :
 					for ( j = 0, k = 0 ; j < ( int ) bit_file.packets6[ i ].count ; j += 1, k = ( k + 1 ) & 31 ) {
 						if ( k == 0 )
-							printf ( "\n" ) ;
-						printf ( "%04X ", bit_file.packets6[ i ].data[ j ] ) ;
+							fprintf( outfile, "\n" ) ;
+						fprintf( outfile, "%04X ", bit_file.packets6[ i ].data[ j ] ) ;
 						one_word ( bit_file.packets6[ i ].data[ j ], ( bit_file.packets6[ i ].header >> 5 ) & 0x003F ) ;
 					}
-					printf ( "\n" ) ;
+					fprintf( outfile, "\n" ) ;
 
-					printf ( "%06X\n", bit_file.packets6[ i ].autocrc ) ;
-					printf ( "%06X\n", reflect( bit_file.packets6[ i ].autocrc, 24 ) ) ;
+					fprintf( outfile, "%06X\n", crc ) ;
+					fprintf( outfile, "%06X\n", bit_file.packets6[ i ].autocrc ) ;
+					fprintf( outfile, "%06X\n", reflect( bit_file.packets6[ i ].autocrc, 24 ) ) ;
 
 //                        one_word( bit_file.packets6[ i ].autocrc >> 16, ( bit_file.packets6[ i ].header >> 5 ) & 0x003F ) ;
 //                        one_word( bit_file.packets6[ i ].autocrc & 0xFFFF, ( bit_file.packets6[ i ].header >> 5 ) & 0x003F ) ;
 
-					printf ( "%06X\n", crc ) ;
 					break ;
 				}
 			}
-			printf ( "\n" ) ;
+			fprintf( outfile, "\n" ) ;
 			break;
 		}
 	}

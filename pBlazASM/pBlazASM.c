@@ -90,6 +90,7 @@ int main ( int argc, char ** argv ) {
 	bool bKCPSM_mode = false ; // KCPSM mode, accepts 'NAMEREG' etc
 	bool bList_mode = true ;
 	bool bOptErr = false ;
+	bool bGlobals = false ;
 	bool bWantMEM = false ;
 	bool bWantHEX = false ;
 	bool bWantSCR = false ;
@@ -101,7 +102,7 @@ int main ( int argc, char ** argv ) {
 	extern int optind, optopt ;
 	int optch ;
 
-	while ( ( optch = getopt ( argc, argv, "36c::C::fhkl::m::M::s::S::vx::X::" ) ) != -1 ) {
+	while ( ( optch = getopt ( argc, argv, "36c::C::fghkl::m::M::s::S::vx::X::" ) ) != -1 ) {
 		switch ( optch ) {
 		case '3' :
 			bKCPSM6 = false ;
@@ -119,6 +120,9 @@ int main ( int argc, char ** argv ) {
 			break ;
 		case 'f' :
 			bList_mode = false ;
+			break ;
+		case 'g' :
+			bGlobals = true ;
 			break ;
 		case 'h' :
 			bOptErr = true ;
@@ -229,6 +233,10 @@ int main ( int argc, char ** argv ) {
 		fprintf ( stdout, "! KCPSM compatible mode selected\n" ) ;
 	}
 
+	if ( bVerbose && bGlobals ) {
+		fprintf ( stdout, "! Global label definition selected\n" ) ;
+	}
+
 	if ( argv[ optind ] == NULL ) {
 		fprintf ( stderr, "? source file(s) missing\n" ) ;
 		usage ( basename ( argv[ 0 ] ) ) ;
@@ -243,9 +251,8 @@ int main ( int argc, char ** argv ) {
 		if ( strrchr ( src_filenames[ nInputfile ], '.' ) == NULL ) {
 			strcat ( src_filenames[ nInputfile ], ".psm" ) ;
 		}
-		if ( bVerbose ) {
+		if ( bVerbose )
 			fprintf ( stdout, "! Sourcefile: %s\n", src_filenames[ nInputfile ] ) ;
-		}
 	}
 
 	if ( bWantMEM || bWantHEX ) {
@@ -253,18 +260,20 @@ int main ( int argc, char ** argv ) {
 			pfile = filename ( src_filenames[ nInputfile - 1 ] ) ;
 			ppath = dirname ( src_filenames[ nInputfile - 1 ] ) ;
 			strcpy ( code_filename, ppath ) ;
+#ifdef __MINGW32__
+			strcat ( code_filename, "\\" ) ;
+#else
 			strcat ( code_filename, "/" ) ;
+#endif
 			strcat ( code_filename, pfile ) ;
 			strcat ( code_filename, bWantHEX ? ".hex" : ".mem" ) ;
 			free ( ppath ) ;
 			free ( pfile ) ;
 		}
-		if ( strrchr ( code_filename, '.' ) == NULL ) {
+		if ( strrchr ( code_filename, '.' ) == NULL )
 			strcat ( code_filename, bWantHEX ? ".hex" : ".mem" ) ;
-		}
-		if ( bVerbose ) {
+		if ( bVerbose )
 			fprintf ( stdout, "! MEM file: %s\n", code_filename ) ;
-		}
 	}
 
 	if ( bWantSCR ) {
@@ -272,18 +281,20 @@ int main ( int argc, char ** argv ) {
 			pfile = filename ( src_filenames[ nInputfile - 1 ] ) ;
 			ppath = dirname ( src_filenames[ nInputfile - 1 ] ) ;
 			strcpy ( data_filename, ppath ) ;
+#ifdef __MINGW32__
+			strcat ( data_filename, "\\" ) ;
+#else
 			strcat ( data_filename, "/" ) ;
+#endif
 			strcat ( data_filename, pfile ) ;
 			strcat ( data_filename, ".scr" ) ;
 			free ( ppath ) ;
 			free ( pfile ) ;
 		}
-		if ( strrchr ( data_filename, '.' ) == NULL ) {
+		if ( strrchr ( data_filename, '.' ) == NULL )
 			strcat ( data_filename, ".scr" ) ;
-		}
-		if ( bVerbose ) {
+		if ( bVerbose )
 			fprintf ( stdout, "! SCR file: %s\n", data_filename ) ;
-		}
 	}
 
 	if ( bWantLST ) {
@@ -291,32 +302,32 @@ int main ( int argc, char ** argv ) {
 			pfile = filename ( src_filenames[ nInputfile - 1 ] ) ;
 			ppath = dirname ( src_filenames[ nInputfile - 1 ] ) ;
 			strcpy ( list_filename, ppath ) ;
+#ifdef __MINGW32__
+			strcat ( list_filename, "\\" ) ;
+#else
 			strcat ( list_filename, "/" ) ;
+#endif
 			strcat ( list_filename, pfile ) ;
 			strcat ( list_filename, ".lst" ) ;
 			free ( ppath ) ;
 			free ( pfile ) ;
 		}
-		if ( strrchr ( list_filename, '.' ) == NULL ) {
+		if ( strrchr ( list_filename, '.' ) == NULL )
 			strcat ( list_filename, ".lst" ) ;
-		}
-		if ( bVerbose ) {
+		if ( bVerbose )
 			fprintf ( stdout, "! LST file: %s\n", list_filename ) ;
-		}
 	}
 
-	if ( assembler ( src_filenames, code_filename, data_filename, list_filename, bKCPSM_mode, bKCPSM6, bList_mode, bWantHEX, bWantZEROs ) ) {
+	if ( assembler ( src_filenames, code_filename, data_filename, list_filename, bKCPSM_mode, bKCPSM6, bList_mode, bWantHEX, bWantZEROs, bGlobals ) )
 		result = 0 ;
-	} else {
+	else
 		result = -1 ;
-	}
 
 finally: {
 		int i ;
 
-		for ( i = 0 ; i < nInputfile ; i += 1 ) {
+		for ( i = 0 ; i < nInputfile ; i += 1 )
 			free ( src_filenames[ i ] ) ;
-		}
 	}
-	exit ( result ) ;
+	exit( result ) ;
 }

@@ -29,6 +29,7 @@
 typedef enum _LEX_STATE {
     lsBin,
     lsChar,
+    lsColon,
     lsComment,
     lsCStyleComment,
     lsDec,
@@ -152,10 +153,14 @@ bool lex( char * line, const bool mode ) {
                 // directives, indexing, local labels, etc
                 start = s++ ;
                 state = lsIndex ;
-            } else if ( *s == ':' || *s == ',' || *s == '(' || *s == ')' ) {
+            } else if ( *s == ',' || *s == '(' || *s == ')' ) {
                 // punctuation ',', ':', '(', ')', '[', ']'
                 start = s++ ;
                 state = lsPunct ;
+            } else if ( *s == ':' ) {
+                // colon, maybe double colon
+                start = s++ ;
+                state = lsColon ;
             } else if ( *s == '@' ) {
                 // params '@'
                 start = s++ ;
@@ -187,6 +192,15 @@ bool lex( char * line, const bool mode ) {
                 state = lsComment ;
             } else
                 state = lsOperator ;
+            break ;
+
+        case lsColon :
+            if ( *s == ':' ) {
+                end = ++s ;
+                ptok->type = tDCOLON ;
+                state = lsCopy ;
+          } else
+                state = lsPunct ;
             break ;
 
         case lsComment :

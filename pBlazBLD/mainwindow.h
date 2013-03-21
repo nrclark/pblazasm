@@ -70,6 +70,8 @@ private slots:
     void on_actionMerge_triggered();
     void on_actionBitfile_triggered();
 
+    void on_actionAbout_Qt_triggered();
+
 private:
     Ui::MainWindow * ui ;
 

@@ -19,8 +19,8 @@
  */
 
 void init_symbol( bool b6 ) ;
-symbol_t * find_symbol( const char * text, bool bUpper ) ;
-bool add_symbol( const type_e type, const subtype_e subtype, const char * text, const value_t value ) ;
+symbol_t * find_symbol( const char * text, bool bUpper, int file_nbr ) ;
+bool add_symbol( const type_e type, const subtype_e subtype, const char * text, const value_t value, int file_nbr ) ;
 void free_symbol( void ) ;
 
 void dump_map( void ) ;

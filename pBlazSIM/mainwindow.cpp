@@ -51,7 +51,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setWindowIcon( QIcon( ":/files/bug_red.ico" ) ) ;
 
     // font used for all views
-    QFont fixedFont( "Consolas [Monaco]", 9 ) ;
+    QFont fixedFont( "Consolas", 9 ) ;
 
     // terminal support
     eater = new KeyPressEater( ) ;
@@ -145,7 +145,7 @@ MainWindow::MainWindow(QWidget *parent) :
     registerModel->insertColumns(0,2 ) ;
     registerModel->setHorizontalHeaderLabels((QStringList() << "registers" << "value") ) ;
     for ( int reg = 0 ; reg < 16 ; reg += 1 ) {
-        QStandardItem * item = new QStandardItem(" s"+QString("%1").arg(reg,1,16).toUpper() ) ;
+        QStandardItem * item = new QStandardItem(" s" + QString("%1").arg(reg,1,16).toUpper() ) ;
         item->setTextAlignment( Qt::AlignHCenter ) ;
         registerModel->setItem( reg, 0, item ) ;
 
@@ -160,13 +160,13 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->tvRegisters->setRowHeight(row, 16 ) ;
     for ( int col = 0 ; col < 2 ; col += 1 )
         ui->tvRegisters->setColumnWidth(col, 50 ) ;
-    ui->tvRegisters->setEditTriggers(QAbstractItemView::NoEditTriggers ) ;
+    ui->tvRegisters->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
 
 
     // setup stackmodel for stackview
     stackModel = new QStandardItemModel ;
     stackModel->insertColumns( 0, 4 ) ;
-    stackModel->setHorizontalHeaderLabels((QStringList() << "stack" << "pc" << "zero" << "carry") ) ;
+    stackModel->setHorizontalHeaderLabels( QStringList() << "stack" << "pc" << "zero" << "carry" ) ;
     for ( int sp = 0 ; sp < 32 ; sp += 1 ) {
         QStandardItem * item = new QStandardItem( QString("%1").arg( sp, 2, 10 ) ) ;
         item->setTextAlignment( Qt::AlignHCenter ) ;
@@ -183,7 +183,7 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->tvStack->setRowHeight( row, 16 ) ;
     for ( int col = 0 ; col < 4 ; col += 1 )
         ui->tvStack->setColumnWidth( col, 50 ) ;
-    ui->tvStack->setEditTriggers(QAbstractItemView::NoEditTriggers ) ;
+    ui->tvStack->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
 
 
     // setup scratchpadmodel for scratchpadview
@@ -204,7 +204,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ) ) ;
     for ( int row = 0 ; row < 16 ; row += 1 )
         for ( int col = 0 ; col < 16 ; col += 1 ) {
-            QStandardItem * item = new QStandardItem(QString("%1").arg(0,2,16).toUpper() ) ;
+            QStandardItem * item = new QStandardItem( QString("%1").arg(0,2,16).toUpper() ) ;
             scratchpadModel->setItem( row, col, item ) ;
 
             item->setTextAlignment( Qt::AlignHCenter ) ;
@@ -216,7 +216,7 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->tvScratchpad->setRowHeight(row, 16 ) ;
     for ( int col = 0 ; col < 16 ; col += 1 )
         ui->tvScratchpad->setColumnWidth(col, 28 ) ;
-    ui->tvScratchpad->setEditTriggers(QAbstractItemView::NoEditTriggers ) ;
+    ui->tvScratchpad->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
 
 
     // emulated IO devices
