@@ -1,8 +1,3 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2012-05-11T15:12:40
-#
-#-------------------------------------------------
 
 QT       += core gui script scripttools
 
@@ -11,10 +6,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = pBlazSIM
 TEMPLATE = app
 
-CONFIG += static
-
 win32: {
-    QMAKE_LFLAGS += -static -static-libgcc -static-libstdc++
+    QMAKE_LFLAGS += -static-libgcc -static-libstdc++
 }
 
 SOURCES  += \
