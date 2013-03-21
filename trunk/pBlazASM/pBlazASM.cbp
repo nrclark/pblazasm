@@ -4,14 +4,14 @@
 	<Project>
 		<Option title="pBlazASM" />
 		<Option pch_mode="2" />
-		<Option compiler="clang_compiler" />
+		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="bin\Debug\pBlazASM" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj\Debug\" />
+				<Option output="bin/Debug/pBlazASM" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
 				<Option type="1" />
-				<Option compiler="clang_compiler" />
-				<Option parameters="-6 -v" />
+				<Option compiler="gcc" />
+				<Option parameters="-6 -v -g -l  test.psm ..\Support\rijndael.psm" />
 				<Compiler>
 					<Add option="-Winline" />
 					<Add option="-Wswitch-default" />
@@ -26,10 +26,10 @@
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="bin\Release\pBlazASM" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj\Release\" />
+				<Option output="bin/Release/pBlazASM" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
 				<Option type="1" />
-				<Option compiler="clang_compiler" />
+				<Option compiler="gcc" />
 				<Option parameters="-h" />
 				<Compiler>
 					<Add option="-Wextra" />
@@ -100,7 +100,7 @@
 			<envvars />
 			<AutoVersioning>
 				<Scheme minor_max="10" build_max="0" rev_max="0" rev_rand_max="10" build_times_to_increment_minor="100" />
-				<Settings autoincrement="1" date_declarations="1" do_auto_increment="0" ask_to_increment="1" language="C" svn="0" svn_directory="" header_path="version.h" />
+				<Settings autoincrement="1" date_declarations="1" update_manifest="1" do_auto_increment="0" ask_to_increment="1" language="C" svn="0" svn_directory="" header_path="version.h" />
 				<Changes_Log show_changes_editor="0" app_title="released version %M.%m.%b of %p" changeslog_path="ChangesLog.txt" />
 				<Code header_guard="VERSION_H" namespace="AutoVersion" prefix="" />
 			</AutoVersioning>

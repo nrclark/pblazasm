@@ -338,7 +338,7 @@ void MainWindow::on_actionSaveAs_triggered() {
 
 bool MainWindow::saveAs() {
     QString fileName = QFileDialog::getSaveFileName(
-        this, tr("Open Source File"), ".", tr( "Picoblaze source files (*.psm *.psh);;All files (*.*)" ) ) ;
+        this, tr("Save Source File"), ".", tr( "Picoblaze source files (*.psm *.psh);;All files (*.*)" ) ) ;
     if ( fileName.isEmpty() )
         return false ;
     return saveFile( fileName ) ;
@@ -555,4 +555,8 @@ void MainWindow::on_actionBitfile_triggered() {
         logBox->appendPlainText( "pBlazBIT failed:\n" + pBlazBIT.errorString() ) ;
     else
         logBox->appendPlainText( "pBlazBIT output:\n" + pBlazBIT.readAll() ) ;
+}
+
+void MainWindow::on_actionAbout_Qt_triggered() {
+
 }

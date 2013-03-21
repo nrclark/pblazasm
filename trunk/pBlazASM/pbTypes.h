@@ -35,6 +35,7 @@ typedef enum _TYPE {
 	tRPAREN,
 	tCOMMA,
 	tCOLON,
+	tDCOLON,
 	tOPERATOR,
 	tREGISTER,
 	tOPERAND,
@@ -42,6 +43,7 @@ typedef enum _TYPE {
 	tCONDITION,
 	tIDENT,
 	tLABEL,
+	tGLABEL,
 	tDIRECTIVE,
 	tINDEX,
 	tVALUE,
@@ -172,4 +174,5 @@ typedef struct _SYMBOL {
 	subtype_e subtype ;
 	char * text ;
 	union _VALUE value ;
+    int filenbr ;
 } symbol_t ;

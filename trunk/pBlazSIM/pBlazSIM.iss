@@ -15,29 +15,36 @@ AppSupportURL=http://www.mediatronix.com
 AppUpdatesURL=http://www.mediatronix.com
 DefaultDirName={pf}\Mediatronix\pBlazSIM
 DefaultGroupName=pBlazSIM  
-LicenseFile=C:\Users\henk\Google_Drive\SVN\pBlazASM\gpl-3.0.txt
-OutputBaseFilename=Install_pBlazSIM
+LicenseFile=C:\Users\henk\Projects\pblazasm\trunk\gpl-3.0.txt
+OutputBaseFilename=pBlazSIM_Qt501_Install
 Compression=lzma
 SolidCompression=yes
 
 [Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"          
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1
 
 [Files]
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM-build-QT4_8-Release\release\pBlazSIM.exe"; DestDir: "{app}"; Flags: ignoreversion
-; Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM\pBlazSIM_zip\libgcc_s_dw2-1.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM\pBlazSIM_zip\mingwm10.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM\pBlazSIM_zip\pblazbit.lst"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM\pBlazSIM_zip\pblazbit.scr"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM\pBlazSIM_zip\pBlazSIM.mtx"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM\pBlazSIM_zip\QtCore4.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM\pBlazSIM_zip\QtGui4.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM\pBlazSIM_zip\QtScript4.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazSIM\pBlazSIM\pBlazSIM_zip\QtScriptTools4.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\henk\Projects\pblazasm\trunk\build-pBlazSIM-Qt_5_0_1_mingw47_32-Release\release\pBlazSIM.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qt\Qt5.0.1\5.0.1\mingw47_32\bin\icudt49.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qt\Qt5.0.1\5.0.1\mingw47_32\bin\icuin49.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qt\Qt5.0.1\5.0.1\mingw47_32\bin\icuuc49.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qt\Qt5.0.1\5.0.1\mingw47_32\bin\libEGL.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qt\Qt5.0.1\5.0.1\mingw47_32\bin\libGLESv2.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qt\Qt5.0.1\5.0.1\mingw47_32\bin\libstdc++-6.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qt\Qt5.0.1\5.0.1\mingw47_32\bin\libgcc_s_sjlj-1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qt\Qt5.0.1\5.0.1\mingw47_32\bin\libwinpthread-1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qt\Qt5.0.1\5.0.1\mingw47_32\bin\D3DCompiler_43.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qt\Qt5.0.1\5.0.1\mingw47_32\bin\Qt5Core.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qt\Qt5.0.1\5.0.1\mingw47_32\bin\Qt5Gui.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qt\Qt5.0.1\5.0.1\mingw47_32\bin\Qt5Script.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qt\Qt5.0.1\5.0.1\mingw47_32\bin\Qt5ScriptTools.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qt\Qt5.0.1\5.0.1\mingw47_32\bin\Qt5Widgets.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\henk\Projects\Projects\PBSupport\pblazbit.lst"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\henk\Projects\Projects\PBSupport\pblazbit.scr"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

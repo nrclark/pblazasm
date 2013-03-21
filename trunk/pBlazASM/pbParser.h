@@ -17,4 +17,4 @@
  *  along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-bool assembler( char ** sourcefilenames, char * codefilename, char * datafilename, char * listfilename, bool mode, bool b6, bool listcode, bool hex, bool zeros ) ;
+bool assembler( char ** sourcefilenames, char * codefilename, char * datafilename, char * listfilename, bool mode, bool b6, bool listcode, bool hex, bool zeros, bool globals ) ;

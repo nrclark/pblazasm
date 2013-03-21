@@ -11,8 +11,10 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = pBlazSIM
 TEMPLATE = app
 
-win32 {
-    QMAKE_LFLAGS += -static-libgcc -static-libstdc++
+CONFIG += static
+
+win32: {
+    QMAKE_LFLAGS += -static -static-libgcc -static-libstdc++
 }
 
 SOURCES  += \
@@ -34,4 +36,3 @@ FORMS    += \
 RESOURCES += \
     resources.qrc
 
-OTHER_FILES +=

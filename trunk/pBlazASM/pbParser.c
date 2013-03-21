@@ -87,8 +87,8 @@ static const char * s_errors[] = {
 	"expression expected", "out of code space", "wrong scratchpad size", "out of scratchpad range", "<not-implemented>", "<internal error>", "syntax error in macro parameter"
 } ;
 
-static error_t expr ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*next)() ) ;
-static error_t expression ( uint32_t * result ) ;
+static error_t expr ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*next)(), int file_nbr ) ;
+static error_t expression ( uint32_t * result, int file_nbr ) ;
 
 /**
  * processOperator
@@ -261,9 +261,9 @@ static symbol_t * eval_next( void ) {
  * @param symbol with string value
  * @result evaluated value
  */
-static uint32_t eval( uint32_t * result, symbol_t * h ) {
+static uint32_t eval( uint32_t * result, symbol_t * h, int file_nbr  ) {
     eval_ptok = h->value.tokens ;
-	return expr ( result, eval_current, eval_next ) ;
+	return expr ( result, eval_current, eval_next, file_nbr ) ;
 }
 
 
@@ -272,7 +272,7 @@ static uint32_t eval( uint32_t * result, symbol_t * h ) {
  * @param resulting value of term
  * @result error code
  */
-static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*next)() ) {
+static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*next)(), int file_nbr ) {
 	symbol_t * oper = NULL ;
 	const char * p = NULL ;
 	symbol_t * h = NULL ;
@@ -390,17 +390,17 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 		}
 		break ;
 	case tIDENT :
-		h = find_symbol ( s, false ) ;
+		h = find_symbol ( s, false, file_nbr ) ;
 		if ( h == NULL )
 			return etUNDEF ;
-		if ( h->type != tVALUE && h->type != tLABEL )
+		if ( h->type != tVALUE && h->type != tLABEL && h->type != tGLABEL )
 			return etVALUE ;
 		// label as a moving target
 		if ( h->subtype == stDOT && strlen ( h->text ) == 1 )
 			val = oPC ;
 		else if ( h->subtype == stTOKENS ) {
 		    next() ;
-            e = eval( &val, h ) ;
+            e = eval( &val, h, file_nbr ) ;
             if ( e != etNONE )
                 return e ;
 		} else
@@ -410,7 +410,7 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
         // evaluate expression in the calling line
         if ( tok_current()->type == tLPAREN ) {
             tok_next() ;
-            e = expr( &val, tok_current, tok_next ) ;
+            e = expr( &val, tok_current, tok_next, file_nbr ) ;
             if ( e != etNONE )
                 return e ;
             if ( tok_current()->type != tRPAREN )
@@ -420,7 +420,7 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
         break ;
 	case tLPAREN :
 		next() ;
-		e = expr ( &val, current, next ) ;
+		e = expr ( &val, current, next, file_nbr ) ;
 		if ( e != etNONE )
 			return e ;
 		if ( current()->type != tRPAREN )
@@ -452,7 +452,7 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
  * @param result resulting value of expression
  * @return error code
  */
-static error_t expr ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*next)() ) {
+static error_t expr ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*next)(), int file_nbr ) {
 	symbol_t * h = NULL ;
 	char * s = NULL ;
 	symbol_t * oper = NULL ;
@@ -464,7 +464,7 @@ static error_t expr ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 		switch ( current()->type ) {
 		case tLPAREN :
 			next() ;
-			e = expr( &val, current, next ) ;
+			e = expr( &val, current, next, file_nbr ) ;
 			if ( e != etNONE )
 				return e ;
 			if ( ! processOperator ( result, val, &oper ) )
@@ -476,7 +476,7 @@ static error_t expr ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 			return etNONE ;
 		case tIDENT :
 			s = current()->text ;
-			h = find_symbol ( s, false ) ;
+			h = find_symbol ( s, false, file_nbr ) ;
 			if ( h != NULL )
 				val = h->value.integer ;
 			else if ( sscanf ( s, "%X", &val ) != 1 )
@@ -495,7 +495,7 @@ static error_t expr ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 		switch ( current()->type ) {
 		case tLPAREN :
 			next() ;
-			e = expr( &val, current, next ) ;
+			e = expr( &val, current, next, file_nbr ) ;
 			if ( e != etNONE )
 				return e ;
 			if ( current()->type == tRPAREN )
@@ -511,7 +511,7 @@ static error_t expr ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 		case tHEX :
 		case tIDENT :
         case tAT :
-			e = term( &val, current, next ) ;
+			e = term( &val, current, next, file_nbr ) ;
 			if ( e != etNONE )
 				return e ;
 			break ;
@@ -538,8 +538,8 @@ static error_t expr ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
  * @param result resulting value of expression
  * @return error code
  */
-static error_t expression ( uint32_t * result ) {
-    return expr( result, tok_current, tok_next ) ;
+static error_t expression ( uint32_t * result, int file_nbr  ) {
+    return expr( result, tok_current, tok_next, file_nbr  ) ;
 }
 
 /**
@@ -553,7 +553,7 @@ static bool destreg ( uint32_t * result ) {
 		return false ;
 	}
 	*result = 0 ;
-	h = find_symbol ( tok_current()->text, false ) ;
+	h = find_symbol ( tok_current()->text, false, -1 ) ;
 	if ( h != NULL && h->type == tREGISTER ) {
 		tok_next() ;
 		*result = h->value.integer << 8 ;
@@ -582,7 +582,7 @@ static bool srcreg ( uint32_t * result ) {
 		tok_next() ;
 	}
 
-	h = find_symbol ( tok_current()->text, false ) ;
+	h = find_symbol ( tok_current()->text, false, -1 ) ;
 	if ( h == NULL || h->type != tREGISTER )
 		goto finally ;
 
@@ -629,7 +629,7 @@ static bool condition ( uint32_t * result ) {
 	}
 	*result = 0 ;
 	if ( tok_current()->type != tNONE ) {
-		h = find_symbol ( tok_current()->text, true ) ;
+		h = find_symbol ( tok_current()->text, true, -1 ) ;
 		if ( h != NULL && h->type == tCONDITION ) {
 			tok_next() ;
 			*result = h->value.integer ;
@@ -650,7 +650,7 @@ static bool enadis ( uint32_t * result ) {
 		return false ;
 	}
 	*result = 0 ;
-	h = find_symbol ( tok_current()->text, true ) ;
+	h = find_symbol ( tok_current()->text, true, -1 ) ;
 	if ( h != NULL && h->type == tOPCODE && h->subtype == stINTI ) {
 		tok_next() ;
 		*result = h->value.integer & 1 ;
@@ -671,7 +671,7 @@ static bool indexed ( uint32_t * result ) {
 	}
 	*result = 0 ;
 	if ( tok_current()->type != tNONE ) {
-		h = find_symbol ( tok_current()->text, true ) ;
+		h = find_symbol ( tok_current()->text, true, -1 ) ;
 		if ( h != NULL && h->type == tINDEX ) {
 			tok_next() ;
 			*result = h->value.integer ;
@@ -688,7 +688,7 @@ static bool indexed ( uint32_t * result ) {
  * @param core type
  * @return error code
  */
-static error_t build ( void ) {
+static error_t build ( int file_nbr ) {
 	build_state_e state = bsINIT ;
 	symbol_t * symtok = NULL ;
 	symbol_t * h = NULL ;
@@ -696,6 +696,7 @@ static error_t build ( void ) {
 	uint32_t result = 0 ;
 	error_t e = etNONE ;
 	value_t value ;
+
 	// process statement
 	for ( tok_first(), state = bsINIT ; state != bsEND && state != bsDIS ; tok_next() ) {
 		oPC = gPC ;
@@ -710,9 +711,9 @@ static error_t build ( void ) {
         // opcode or symbol definition
 		case tIDENT :
 			// opcode or directive?
-			h = find_symbol ( tok_current()->text, false ) ;
+			h = find_symbol ( tok_current()->text, false, file_nbr ) ;
 			if ( h == NULL ) {
-				h = find_symbol ( tok_current()->text, true ) ;
+				h = find_symbol ( tok_current()->text, true, file_nbr ) ;
 				if ( h == NULL || h->type != tOPCODE )
 					h = NULL ;
 			}
@@ -723,7 +724,7 @@ static error_t build ( void ) {
 						return etSYNTAX ;
 					if ( h->subtype != stDOT )
 						return etSYNTAX ;
-					h->value.integer = oPC ;
+					h->value.integer = oPC ;    // change label address to current address
 					symtok = tok_current() ;
 					state = bsLABEL ;
 					break ;
@@ -745,11 +746,10 @@ static error_t build ( void ) {
 							return etSYNTAX ;
 						}
 						tok_next() ;
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE )
 							bActive = result != 0 ;
-						} else {
+						else
 							return e ;
-						}
 						break ;
 					case stPAGE :
 						state = bsEND ;
@@ -760,7 +760,7 @@ static error_t build ( void ) {
 						if ( state != bsINIT )
 							return etSYNTAX ;
 						tok_next() ;
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( result >= gCodeRange )   // within code range
 								return etRANGE ;
 							if ( bActive )
@@ -776,7 +776,7 @@ static error_t build ( void ) {
 						tok_next() ;
                         if ( symtok != NULL ) {
                             value.integer = gSCR ;
-                            if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) )
+                            if ( !add_symbol ( tVALUE, stINT, symtok->text, value, file_nbr ) )
                                 return etDOUBLE ;
                         }
                         if ( bActive ) {
@@ -791,7 +791,7 @@ static error_t build ( void ) {
                         if ( state != bsINIT )
 							return etSYNTAX ;
 						tok_next() ;
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( result >= gScrSize ) // within data range
 								return etSCRRNG ;
 							if ( bActive ) {
@@ -808,7 +808,7 @@ static error_t build ( void ) {
 						if ( state != bsINIT )
 							return etSYNTAX ;
 						tok_next() ;
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( result <= 0 )
 								return etRANGE ;
 							if ( bActive ) {
@@ -825,7 +825,7 @@ static error_t build ( void ) {
 						if ( state != bsINIT )
 							return etSYNTAX ;
 						tok_next() ;
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( result >= CODESIZE * 2 )     // within possible code range
 								return etRANGE ;
 							if ( bActive )
@@ -839,7 +839,7 @@ static error_t build ( void ) {
 						if ( state != bsINIT )
 							return etSYNTAX ;
 						tok_next() ;
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( bActive ) {
 								if ( result >= gCodeRange )    // within possible code range
 									return etRANGE ;
@@ -848,7 +848,7 @@ static error_t build ( void ) {
 						} else
 							return e ;
 						if ( comma() ) {
-							if ( ( e = expression ( &result ) ) == etNONE ) {
+							if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 								if ( bActive ) {
 									if ( result > 2 * gCodeRange )
 										return etSCRSIZE ;
@@ -882,7 +882,7 @@ static error_t build ( void ) {
                                 value.tokens[ i ].text = strdup( tok[ i ].text ) ;
                             }
 
-                            if ( !add_symbol ( tVALUE, stTOKENS, symtok->text, value ) )
+                            if ( !add_symbol ( tVALUE, stTOKENS, symtok->text, value, file_nbr ) )
                                 return etDOUBLE ;
 						} else
 							return etMISSING ;
@@ -898,23 +898,23 @@ static error_t build ( void ) {
 							if ( tok_current()->type == tSTRING ) {
 								// string value?
 								value.string = strdup ( tok_current()->text ) ;
-								if ( !add_symbol ( tVALUE, stSTRING, symtok->text, value ) )
+								if ( !add_symbol ( tVALUE, stSTRING, symtok->text, value, file_nbr ) )
 									return etDOUBLE ;
 							} else {
-								r = find_symbol ( tok_current()->text, false ) ;
+								r = find_symbol ( tok_current()->text, false, -1 ) ;
 								if ( r != NULL && r->type == tREGISTER ) {
 									// register clone?
 									value = r->value ;
-									if ( !add_symbol ( tREGISTER, stCLONE, symtok->text, value ) )
+									if ( !add_symbol ( tREGISTER, stCLONE, symtok->text, value, file_nbr ) )
 										return etDOUBLE ;
-								} else if ( ( e = expression ( &result ) ) == etNONE ) {
+								} else if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 									// normal expression?
 									value.integer = result ;
                                     if ( h->subtype == stSET ) {
-                                        if ( !add_symbol ( tVALUE, stSET, symtok->text, value ) )
+                                        if ( !add_symbol ( tVALUE, stSET, symtok->text, value, file_nbr ) )
                                             return etSYNTAX ;
                                     } else {
-                                        if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) )
+                                        if ( !add_symbol ( tVALUE, stINT, symtok->text, value, file_nbr ) )
                                             return etDOUBLE ;
 									}
 								} else
@@ -930,10 +930,10 @@ static error_t build ( void ) {
 							return etSYNTAX ;
 						tok_next() ;
 						if ( symtok != NULL ) {
-                            if ( ( e = expression ( &result ) ) == etNONE ) {
+                            if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
                                 // normal expression?
                                 value.integer = result ;
-                                if ( !add_symbol ( tVALUE, stSET, symtok->text, value ) )
+                                if ( !add_symbol ( tVALUE, stSET, symtok->text, value, file_nbr ) )
                                     return etSYNTAX ;
                             } else
                                 return e ;
@@ -947,15 +947,14 @@ static error_t build ( void ) {
 						}
 						tok_next() ;
 						symtok = tok_next() ;
-						if ( symtok->type != tIDENT ) {
+						if ( symtok->type != tIDENT )
 							return etSYNTAX ;
-						}
 						if ( !comma() )
 							return etCOMMA ;
 						// normal expression?
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							value.integer = result ;
-							if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) )
+							if ( !add_symbol ( tVALUE, stINT, symtok->text, value, file_nbr ) )
 								return etDOUBLE ;
 						} else
 							return e ;
@@ -970,21 +969,19 @@ static error_t build ( void ) {
 						if ( symtok->type != tIDENT ) {
 							return etSYNTAX ;
 						}
-						r = find_symbol ( symtok->text, true ) ;
+						r = find_symbol ( symtok->text, true, -1 ) ;
 						if ( r == NULL || r->type != tREGISTER ) {
 							return etREGISTER ;
 						}
-						if ( !comma() ) {
+						if ( !comma() )
 							return etCOMMA ;
-						}
 						if ( tok_current()->type == tIDENT ) {
 							value = r->value ;
-							if ( !add_symbol ( tREGISTER, stCLONE, tok_current()->text, value ) ) {
+							if ( !add_symbol ( tREGISTER, stCLONE, tok_current()->text, value, file_nbr ) ) {
 								return etDOUBLE ;
 							}
-						} else {
+						} else
 							return etSYNTAX ;
-						}
 						state = bsEND ;
 						break ;
                     // DS, pBlazIDE support
@@ -999,19 +996,17 @@ static error_t build ( void ) {
 						}
 						tok_next() ;
 						if ( symtok != NULL ) {
-							if ( ( e = expression ( &result ) ) == etNONE ) {
+							if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 								if ( bActive ) {
 									value.integer = result ;
-									if ( !add_symbol ( tVALUE, stINT, symtok->text, value ) ) {
+									if ( !add_symbol ( tVALUE, stINT, symtok->text, value, file_nbr ) ) {
 										return etDOUBLE ;
 									}
 								}
-							} else {
+							} else
 								return e ;
-							}
-						} else {
+						} else
 							return etMISSING ;
-						}
 						state = bsEND ;
 						break ;
 						// .BYT etc
@@ -1025,14 +1020,14 @@ static error_t build ( void ) {
 						}
 						tok_next() ;
 						value.integer = gSCR ;
-						if ( symtok != NULL && !add_symbol ( tVALUE, stINT, symtok->text, value ) ) {
+						if ( symtok != NULL && !add_symbol ( tVALUE, stINT, symtok->text, value, file_nbr ) ) {
 							return etDOUBLE ;
 						}
 						do {
-							if ( ( e = expression ( &result ) ) != etNONE ) {
-								if ( e == etEMPTY ) {
+							if ( ( e = expression ( &result, file_nbr ) ) != etNONE ) {
+								if ( e == etEMPTY )
 									break ;    // allow an empty expression list for generating a symbol only
-								} else
+								else
 									return e ;
 							}
 							if ( bActive ) {
@@ -1049,9 +1044,8 @@ static error_t build ( void ) {
 									gSCR += 1 ;
 								}
 							}
-							if ( gSCR > gScrSize ) {
+							if ( gSCR > gScrSize )
 								return etSCRRNG ;
-							}
 						} while ( comma() ) ;
 						state = bsEND ;
 						break ;
@@ -1062,19 +1056,18 @@ static error_t build ( void ) {
 						}
 						tok_next() ;
 						value.integer = gSCR & 0xFF ;
-						if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value ) ) {
+						if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value, file_nbr ) ) {
 							return etDOUBLE ;
 						}
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( bActive ) {
 								gSCR += result ;
 								if ( gSCR > gScrSize ) {
 									return etSCRRNG ;
 								}
 							}
-						} else {
+						} else
 							return e ;
-						}
 						state = bsEND ;
 						break ;
 						// .TXT
@@ -1083,7 +1076,7 @@ static error_t build ( void ) {
 							return etSYNTAX ;
 						tok_next() ;
 						value.integer = gSCR & 0xFF ;
-						if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value ) )
+						if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value, file_nbr ) )
 							return etDOUBLE ;
 						do {
 							if ( tok_current()->type == tSTRING ) {
@@ -1093,7 +1086,7 @@ static error_t build ( void ) {
 								free ( dup ) ;
 							} else if ( tok_current()->type == tIDENT ) {
 								char * dup = NULL ;
-								h = find_symbol ( tok_current()->text, false ) ;
+								h = find_symbol ( tok_current()->text, false, -1 ) ;
 								if ( h == NULL || h->type != tVALUE || h->subtype != stSTRING )
 									return etSYNTAX ;
 								dup = convert_string ( h->value.string ) ;
@@ -1135,7 +1128,7 @@ static error_t build ( void ) {
 				state = bsSYMBOL ;
 			} else {
 				// maybe opcode mnemonic in lower/mixed case?
-				h = find_symbol ( tok_current()->text, true ) ;
+				h = find_symbol ( tok_current()->text, true, -1 ) ;
 				if ( h != NULL && h->type == tOPCODE ) {
 					if ( state != bsINIT && state != bsLABELED ) {
 						return etSYNTAX ;
@@ -1145,16 +1138,25 @@ static error_t build ( void ) {
 				}
 			}
 			break ;
+		case tDCOLON :
+			value.integer = oPC ;
+			if ( state == bsLABEL ) {
+			} else if ( state != bsSYMBOL )
+				return etSYNTAX ;
+			else {
+				if ( ! add_symbol ( tGLABEL, symtok->subtype, symtok->text, value, file_nbr ) )
+					return etDOUBLE ;
+			}
+			state = bsLABELED ;
+			break ;
 		case tCOLON :
 			value.integer = oPC ;
 			if ( state == bsLABEL ) {
-				;
-			} else if ( state != bsSYMBOL ) {
+			} else if ( state != bsSYMBOL )
 				return etSYNTAX ;
-			} else {
-				if ( !add_symbol ( tLABEL, symtok->subtype, symtok->text, value ) ) {
+			else {
+				if ( ! add_symbol ( tLABEL, symtok->subtype, symtok->text, value, file_nbr ) )
 					return etDOUBLE ;
-				}
 			}
 			state = bsLABELED ;
 			break ;
@@ -1174,7 +1176,7 @@ static error_t build ( void ) {
  * @param core type
  * @return error code
  */
-static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, bool b6 ) {
+static error_t assemble ( int file_nbr, uint32_t * addr, uint32_t * code, uint32_t * data, bool b6 ) {
 	build_state_e state = bsINIT ;
 	symbol_t * h = NULL ;
 	symbol_t * symtok = NULL ;
@@ -1184,32 +1186,33 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 	uint32_t opcode = 0 ;
 	error_t e = etNONE ;
 	bool bInParen = false ;
+
 	*addr = 0xFFFFFFFF ;
 	*code = 0xFFFFFFFF ;
 	*data = 0xFFFFFFFF ;
+
 	// process statement
 	for ( tok_first(), state = bsINIT ; state != bsEND && state != bsDIS ; ) {
 		oPC = gPC ;
 		switch ( tok_current()->type ) {
 		case tNONE :
 			// empty line?
-			if ( state != bsINIT && state != bsLABELED ) {
+			if ( state != bsINIT && state != bsLABELED )
 				return etSYNTAX ;
-			}
 			state = bsEND ;
 			break ;
 		case tIDENT :
-			h = find_symbol ( tok_current()->text, false ) ;
+			h = find_symbol ( tok_current()->text, false, file_nbr ) ;
 			// opcode mnemonic in lower/mixed case?
 			if ( h == NULL ) {
-				h = find_symbol ( tok_current()->text, true ) ;
+				h = find_symbol ( tok_current()->text, true, -1 ) ;
 				if ( h == NULL || h->type != tOPCODE ) {
 					h = NULL ;
 				}
 			}
 			if ( h != NULL ) {
 				switch ( h->type ) {
-					// opcodes
+                // opcodes
 				case tOPCODE :
 					if ( state != bsINIT && state != bsLABELED ) {
 						return etSYNTAX ;
@@ -1218,51 +1221,41 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 					opcode = 0xFFFFFFFF ;
 					operand1 = 0 ;
 					operand2 = 0 ;
-					if ( bActive ) {
+					if ( bActive )
 						gPC += 1 ;
-					}
 					switch ( h->subtype ) {
 					case stMOVE3 :
-						if ( !destreg ( &operand1 ) ) {
+						if ( !destreg ( &operand1 ) )
 							return etREGISTER ;
-						}
 						if ( !comma() ) {
 							return etCOMMA ;
 						}
 						if ( !srcreg ( &operand2 ) ) {
-							if ( ( e = expression ( &operand2 ) ) != etNONE ) {
+							if ( ( e = expression ( &operand2, file_nbr ) ) != etNONE )
 								return e ;
-							}
 							opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) ;
-						} else {
+						} else
 							opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) | 0x01000 ;
-						}
 						break ;
 					case stMOVE6 :
-						if ( !destreg ( &operand1 ) ) {
+						if ( !destreg ( &operand1 ) )
 							return etREGISTER ;
-						}
-						if ( !comma() ) {
+						if ( !comma() )
 							return etCOMMA ;
-						}
 						if ( !srcreg ( &operand2 ) ) {
-							if ( ( e = expression ( &operand2 ) ) != etNONE ) {
+							if ( ( e = expression ( &operand2, file_nbr ) ) != etNONE )
 								return e ;
-							}
 							opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) | 0x01000 ;
-						} else {
+						} else
 							opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) ;
-						}
 						break ;
 					case stCJMP3 :
 						if ( condition ( &operand1 ) ) {
-							if ( !comma() ) {
+							if ( !comma() )
 								return etCOMMA ;
-							}
 						}
-						if ( ( e = expression ( &operand2 ) ) != etNONE ) {
+						if ( ( e = expression ( &operand2, file_nbr ) ) != etNONE )
 							return e ;
-						}
 						opcode = h->value.integer | operand1 | ( operand2 & 0x3FF ) ;
 						break ;
 					case stCJMP6 :
@@ -1271,41 +1264,31 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 							bInParen = true ;
 						}
 						if ( condition ( &operand1 ) ) {        // JUMP NZ, DONE
-							if ( !comma() ) {
+							if ( !comma() )
 								return etCOMMA ;
-							}
-							if ( ( e = expression ( &operand2 ) ) != etNONE ) {
+							if ( ( e = expression ( &operand2, file_nbr ) ) != etNONE )
 								return e ;
-							}
-							if ( operand2 >= gCodeRange ) {
+							if ( operand2 >= gCodeRange )
 								return etRANGE ;
-							}
 							opcode = h->value.integer | operand1 | ( operand2 ) ;
 						} else if ( destreg ( &operand1 ) ) {   // JUMP s0, s1
-							if ( !comma() ) {
+							if ( !comma() )
 								return etCOMMA ;
-							}
-							if ( !srcreg ( &operand2 ) ) {
+							if ( !srcreg ( &operand2 ) )
 								return etREGISTER ;
-							}
-							if ( operand2 >= gCodeRange ) {
-								return etRANGE ;
-							}
 							opcode = h->value.integer | operand1 | operand2 | 0x4000 ;
-						} else if ( ( e = expression ( &operand2 ) ) != etNONE ) { // JUMP DONE
+						} else if ( ( e = expression ( &operand2, file_nbr ) ) != etNONE ) { // JUMP DONE
 							return e ;
 						} else {
-							if ( operand2 >= gCodeRange ) {
+							if ( operand2 >= gCodeRange )
 								return etRANGE ;
-							}
 							opcode = h->value.integer | operand2 ;
 						}
 						if ( bInParen ) {
 							if ( tok_current()->type == tRPAREN ) {
 								tok_next() ;
-							} else {
+							} else
 								return etSYNTAX ;
-							}
 						}
 						bInParen = false ;
 						break ;
@@ -1314,15 +1297,13 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						operand2 = oPC + 2 ;
 						if ( condition ( &operand1 ) ) {
 							if ( comma() ) {
-								if ( ( e = expression ( &operand2 ) ) != etNONE ) {
+								if ( ( e = expression ( &operand2, file_nbr ) ) != etNONE )
 									return e ;
-								}
 								operand2 += oPC + 1 ;
 							}
 						} else if ( tok_current()->type != tNONE ) {
-							if ( ( e = expression ( &operand2 ) ) != etNONE ) {
+							if ( ( e = expression ( &operand2, file_nbr ) ) != etNONE )
 								return e ;
-							}
 							operand2 += oPC + 1 ;
 						}
 						opcode = h->value.integer | operand1 | operand2 ;
@@ -1336,55 +1317,46 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						if ( condition ( &operand1 ) ) {        // RET NZ
 							opcode = h->value.integer | operand1 ;
 						} else if ( destreg ( &operand1 ) ) {   // RET s0, $FF
-							if ( !comma() ) {
+							if ( !comma() )
 								return etCOMMA ;
-							}
-							if ( ( e = expression ( &operand2 ) ) != etNONE ) {
+							if ( ( e = expression ( &operand2, file_nbr ) ) != etNONE )
 								return e ;
-							}
 							opcode =  h->value.integer | operand1 | ( operand2 & 0xFF ) ;
-						} else {
+						} else
 							opcode = 0x25000 ;    // RET
-						}
 						break ;
 					case stINT :
 						opcode = h->value.integer ;
 						break ;
 					case stINTI :
-						if ( !bMode ) {
+						if ( !bMode )
 							return etNOTIMPL ;
-						}
 						opcode = h->value.integer ;
-						if ( tok_current()->type != tIDENT || strcasecmp ( tok_current()->text, "INTERRUPT" ) != 0 ) {
+						if ( tok_current()->type != tIDENT || strcasecmp ( tok_current()->text, "INTERRUPT" ) != 0 )
 							return etMISSING ;
-						}
 						tok_next() ;
 						break ;
 					case stINTE :
 						opcode = h->value.integer ;
-						if ( enadis ( &operand1 ) ) {
+						if ( enadis ( &operand1 ) )
 							opcode = ( h->value.integer & 0xFFFFE ) | operand1 ;
-						}
 						break ;
 					case stIO3 :
-						if ( !destreg ( &operand1 ) ) {
+						if ( !destreg ( &operand1 ) )
 							return etREGISTER ;
-						}
-						if ( !comma() ) {
+						if ( !comma() )
 							return etCOMMA ;
-						}
 						if ( !srcreg ( &operand2 ) ) {
 							if ( !indexed ( &operand2 ) ) {
-								if ( ( e = expression ( &operand2 ) ) != etNONE ) {
+								if ( ( e = expression ( &operand2, file_nbr ) ) != etNONE ) {
 									return e ;
 								}
 								opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) ;
 							} else {
 								opcode = h->value.integer | operand1 | operand2 ;
 							}
-						} else {
+						} else
 							opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) | 0x01000 ;
-						}
 						break ;
 					case stIO6 :
 						if ( !destreg ( &operand1 ) )
@@ -1393,7 +1365,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 							return etCOMMA ;
 						if ( !srcreg ( &operand2 ) ) {  // IN sX, kk
 							if ( !indexed ( &operand2 ) ) {
-								if ( ( e = expression ( &operand2 ) ) != etNONE )
+								if ( ( e = expression ( &operand2, file_nbr ) ) != etNONE )
 									return e ;
 								opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) | 0x01000 ;
 							} else
@@ -1401,7 +1373,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						} else {                        // IN sX, sY
 							opcode = h->value.integer | operand1 | ( operand2 & 0xFF ) ;
                             if ( comma() ) {            // IN sX, sY, k
-								if ( ( e = expression ( &operand2 ) ) != etNONE )
+								if ( ( e = expression ( &operand2, file_nbr ) ) != etNONE )
 									return e ;
                                 if ( operand2 < 15 )
                                     opcode |= operand2 ;
@@ -1417,7 +1389,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						opcode = h->value.integer | operand1 ;
 						break ;
 					case stINST :
-						if ( ( e = expression ( &opcode ) ) != etNONE ) {
+						if ( ( e = expression ( &opcode, file_nbr ) ) != etNONE ) {
 							return e ;
 						}
 						if ( opcode > 0x3FFFF ) {
@@ -1442,11 +1414,11 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 					case stOUTK :
 						if ( !b6 )
 							return etSYNTAX ;
-						if ( ( e = expression ( &operand1 ) ) != etNONE )
+						if ( ( e = expression ( &operand1, file_nbr ) ) != etNONE )
 							return e ;
 						if ( !comma() )
 							return etCOMMA ;
-						if ( ( e = expression ( &operand2 ) ) != etNONE )
+						if ( ( e = expression ( &operand2, file_nbr ) ) != etNONE )
 							return e ;
 						if ( operand1 > 0xFF )
 							return etOVERFLOW ;
@@ -1478,7 +1450,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						state = bsDIS ;
 						break ;
 					case stIF:
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							bActive = result != 0 ;
 						} else
 							return e ;
@@ -1491,11 +1463,11 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 					case stADDRESS :
 						if ( !bMode )
 							return etNOTIMPL ;
-						// fallthrough
+                    // fallthrough
 					case stORG :
 						if ( state != bsINIT )
 							return etSYNTAX ;
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							*addr = result ;
 							if ( result >= gCodeRange ) // within code range
 								return etRANGE ;
@@ -1519,7 +1491,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
                     case stDSG :
 						if ( state != bsINIT )
 							return etSYNTAX ;
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							*addr = result ;
 							if ( result >= gScrSize )// within data range
 								return etSCRRNG ;
@@ -1536,7 +1508,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						if ( state != bsINIT ) {
 							return etSYNTAX ;
 						}
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( result <= 0 ) {
 								return etRANGE ;
 							}
@@ -1555,7 +1527,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 					case stEND :
 						if ( state != bsINIT )
 							return etSYNTAX ;
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( result >= CODESIZE ) {
 								return etRANGE ;
 							}
@@ -1583,7 +1555,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 					case stSCRATCHPAD :
 						if ( state != bsINIT )
 							return etSYNTAX ;
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( bActive ) {
 								gScrLoc = result * 2 ;
                                 *addr = result ;
@@ -1591,7 +1563,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						} else
 							return e ;
 						if ( comma() ) {
-							if ( ( e = expression ( &result ) ) == etNONE ) {
+							if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 								if ( bActive ) {
 									if ( result > CODESIZE )
 										return etSCRSIZE ;
@@ -1622,7 +1594,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 							*data = 0xFFFFFFFF ;
 						} else if ( destreg ( &result ) )
 							*data = result ;
-						else if ( ( e = expression ( &result ) ) == etNONE )
+						else if ( ( e = expression ( &result, file_nbr ) ) == etNONE )
 							*data = result ;
 						else
 							return e ;
@@ -1631,7 +1603,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						if ( state != bsSYMBOL )
 							return etSYNTAX ;
 						e = etSYNTAX ;
-                        if ( ( e = expression ( &result ) ) == etNONE ) {
+                        if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
                             // normal expression?
                             if ( symtok != NULL && symtok->subtype == stSET ) {
                                 symtok->value.integer = result ;
@@ -1653,7 +1625,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						}
 						// NO-OP, just eat tokens in an orderly way
 						do {
-							if ( ( e = expression ( &result ) ) == etNONE ) {
+							if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							} else {
 								return e ;
 							}
@@ -1668,7 +1640,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						}
 						*data = 0xFFFFFFFF;
 						do {
-							if ( ( e = expression ( &result ) ) == etNONE ) {
+							if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 								if ( result > 0xFF ) {
 									return etOVERFLOW ;
 								}
@@ -1701,7 +1673,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						}
 						*data = 0xFFFFFFFF ;
 						do {
-							if ( ( e = expression ( &result ) ) == etNONE ) {
+							if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 								if ( result > 0xFFFF ) {
 									return etOVERFLOW ;
 								}
@@ -1746,7 +1718,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 						}
 						*data = 0xFFFFFFFF;
 						do {
-							if ( ( e = expression ( &result ) ) == etNONE ) {
+							if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 								if ( h->subtype == stLONG_BE ) {
 									if ( bActive ) {
 										gData[ gSCR++ ] = ( result >> 24 ) & 0x00FF ;
@@ -1788,7 +1760,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 							return etSYNTAX ;
 						}
 						*data = 0xFFFFFFFF;
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( bActive ) {
 								*addr = gSCR ;
 								*data = result ;
@@ -1813,7 +1785,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 							if ( tok_current()->type == tSTRING || tok_current()->type == tIDENT ) {
 								char * dup ;
 								if ( tok_current()->type == tIDENT ) {
-									h = find_symbol ( tok_current()->text, false ) ;
+									h = find_symbol ( tok_current()->text, false, -1 ) ;
 									if ( h == NULL || h->type != tVALUE || h->subtype != stSTRING ) {
 										return etSYNTAX ;
 									}
@@ -1854,7 +1826,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 							return etCOMMA ;
 						}
 						// normal expression?
-						if ( ( e = expression ( &result ) ) == etNONE ) {
+						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 //                           if ( bActive )
 							*code = result ;
 						} else {
@@ -1878,6 +1850,7 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 					state = bsEND ;
 					break ;
 					// labels
+				case tGLABEL :
 				case tLABEL :
 					if ( state != bsINIT ) {
 						return etSYNTAX ;
@@ -1913,11 +1886,11 @@ static error_t assemble ( uint32_t * addr, uint32_t * code, uint32_t * data, boo
 				state = bsDIS ;
 			}
 			break ;
+		case tDCOLON :
 		case tCOLON :
 			// if we have a potential label, we need a ':'
-			if ( state != bsLABEL ) {
+			if ( state != bsLABEL )
 				return etSYNTAX ;
-			}
 			tok_next() ;
 			state = bsLABELED ;
 			break ;
@@ -2122,7 +2095,7 @@ static char * file_gets( char * s, int n, FILE * stream ) {
 }
 
 // main entry for the 2-pass assembler
-bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilename, char * listfilename, bool mode, bool b6, bool listcode, bool hex, bool zeros ) {
+bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilename, char * listfilename, bool mode, bool b6, bool listcode, bool hex, bool zeros, bool globals ) {
 	FILE * fsrc = NULL ;
 	FILE * fmem = NULL ;
 	FILE * flist = NULL ;
@@ -2132,6 +2105,7 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 	uint32_t h = 0 ;
 	bool result = true ;
 	uint32_t addr, code, data ;
+	int file_nbr ;
 
 	// set up symbol table with keywords
 	init_symbol ( b6 ) ;
@@ -2150,7 +2124,7 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 	gScrSize = 0x100 ;
 	bMode = mode ;
 	bActive = true ;
-	for ( gSource = *Sources++ ; gSource != NULL ; gSource = *Sources++ ) {
+	for ( gSource = *Sources++, file_nbr = 1 ; gSource != NULL ; gSource = *Sources++, file_nbr += 1 ) {
 		// open source file
 		fsrc = fopen ( gSource, "r" ) ;
 		if ( fsrc == NULL ) {
@@ -2161,7 +2135,7 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 		// pass 1, add symbols from source
 		for ( gLinenr = 0 ; file_gets ( line, sizeof ( line ), fsrc ) != NULL ; ) {
 			if ( lex ( line, mode ) ) {
-				result &= error ( build () ) ;
+				result &= error ( build ( globals ? file_nbr : -1 ) ) ;
 				tok_free() ;
 			} else {
 				result &= error ( etLEX ) ;
@@ -2196,7 +2170,7 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 		else
 			fprintf ( flist, "PB3\n" ) ;
 	}
-	for ( gSource = *Sources++ ; gSource != NULL ; gSource = *Sources++ ) {
+	for ( gSource = *Sources++, file_nbr = 1 ; gSource != NULL ; gSource = *Sources++, file_nbr += 1 ) {
 		fsrc = fopen ( gSource, "r" ) ;
 		if ( fsrc == NULL ) {
 			fprintf ( stderr, "? unable to re-open source file '%s'\n", gSource ) ;
@@ -2209,7 +2183,7 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 		// pass 2, build code and scratchpad
 		for ( gLinenr = 0 ; file_gets ( line, sizeof ( line ), fsrc ) != NULL ; ) {
 			if ( lex ( line, mode ) ) {
-				result &= error ( e = assemble ( &addr, &code, &data, b6 ) ) ;
+				result &= error ( e = assemble ( globals ? file_nbr : -1, &addr, &code, &data, b6 ) ) ;
 				print_line ( flist, e, addr, code, data ) ;
 			} else {
 				result &= error ( etLEX ) ;

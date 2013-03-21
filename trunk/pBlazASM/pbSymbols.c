@@ -39,15 +39,15 @@ static symbol_t symbols[ SIZE ] ;
 static int clash = 0 ;
 
 symbol_t stamps[] = {
-    { tVALUE, stHOURS,   "__hours__",   {0} },
-    { tVALUE, stMINUTES, "__minutes__", {1} },
-    { tVALUE, stSECONDS, "__seconds__", {2} },
-    { tVALUE, stYEAR,    "__year__",    {3} },
-    { tVALUE, stMONTH,   "__month__",   {4} },
-    { tVALUE, stDAY,     "__day__",     {5} },
+    { tVALUE, stHOURS,   "__hours__",   {0}, -1  },
+    { tVALUE, stMINUTES, "__minutes__", {1}, -1  },
+    { tVALUE, stSECONDS, "__seconds__", {2}, -1  },
+    { tVALUE, stYEAR,    "__year__",    {3}, -1  },
+    { tVALUE, stMONTH,   "__month__",   {4}, -1  },
+    { tVALUE, stDAY,     "__day__",     {5}, -1  },
 
-    { tVALUE, stSTRING,  "__time__",    {0} },
-    { tVALUE, stSTRING,  "__date__",    {0} }
+    { tVALUE, stSTRING,  "__time__",    {0}, -1  },
+    { tVALUE, stSTRING,  "__date__",    {0}, -1  }
 } ;
 
 // fast bytewide crc16 (ITU)
@@ -75,7 +75,7 @@ static uint32_t hash ( const char * text ) {
 
 // add all known words, our keywords
 static void add_keyword ( const symbol_t * sym ) {
-    add_symbol ( sym->type, sym->subtype, sym->text, sym->value ) ;
+    add_symbol ( sym->type, sym->subtype, sym->text, sym->value, sym->filenbr ) ;
 }
 
 void init_symbol ( bool b6 ) {
@@ -87,8 +87,10 @@ void init_symbol ( bool b6 ) {
     // clear table
     for ( h = 0 ; h < (int)SIZE ; h += 1 ) {
         symbols[ h ].type = tNONE ;
+        symbols[ h ].subtype = stNONE ;
         symbols[ h ].text = NULL ;
         symbols[ h ].value.integer = 0 ;
+        symbols[ h ].filenbr = -1 ;
     }
     clash = 0 ;
     // add keywords
@@ -127,14 +129,16 @@ void init_symbol ( bool b6 ) {
         add_keyword ( &stamps[ h ] ) ;
 
     zero.integer = 0 ;
-    add_symbol ( tVALUE, stDOT, ".", zero ) ;
+    add_symbol ( tVALUE, stDOT, ".", zero, -1 ) ;
 }
 
 // find a symbol, returns the found symbol, or NULL
-symbol_t * find_symbol ( const char * text, bool bUpper ) {
+symbol_t * find_symbol ( const char * text, bool bUpper, int file_nbr ) {
     int h ;
     uint32_t p ;
     char buf[ 256 ], *s ;
+
+    (void) file_nbr ;
 
     if ( !text )
         return NULL ;
@@ -152,13 +156,14 @@ symbol_t * find_symbol ( const char * text, bool bUpper ) {
     if ( symbols[ p ].text == NULL )
         return NULL ;
     // if text is equal, found
-    if ( strcmp ( symbols[ p ].text, buf ) == 0 )
+    if ( strcmp ( symbols[ p ].text, buf ) == 0 /* && ( file_nbr == -1 || symbols[ p ].type != tLABEL || symbols[ p ].filenbr == -1 || symbols[ p ].filenbr == file_nbr ) */ )
         return &symbols[ p ] ;
+
     // else maybe next entry
     for ( h = ( p + 1 ) & ( SIZE - 1 ) ; h != (int)p ; h = ( h + 1 ) & ( SIZE - 1 ) ) {
         if ( symbols[ h ].text == NULL )
             return NULL ;
-        if ( strcmp ( symbols[ h ].text, buf ) == 0 )
+        if ( strcmp ( symbols[ h ].text, buf ) == 0 /* && ( file_nbr == -1 || symbols[ h ].type != tLABEL || symbols[ h ].filenbr == -1 || symbols[ h ].filenbr == file_nbr ) */ )
             return &symbols[ h ] ;
     }
     return NULL ; // unlikely
@@ -166,7 +171,7 @@ symbol_t * find_symbol ( const char * text, bool bUpper ) {
 
 // add a symbol, rehashing is by linear probing
 // returns false if we want to add an already known symbol
-bool add_symbol ( const type_e type, const subtype_e subtype, const char * text, const value_t value ) {
+bool add_symbol ( const type_e type, const subtype_e subtype, const char * text, const value_t value, int file_nbr ) {
     uint32_t p = hash( text ) ;
     int h = p ;
 
@@ -178,6 +183,7 @@ bool add_symbol ( const type_e type, const subtype_e subtype, const char * text,
             symbols[ h ].subtype = subtype ;
             symbols[ h ].text = strdup ( text ) ;
             symbols[ h ].value = value ;
+            symbols[ h ].filenbr = file_nbr ;
             return true ;
         } else if ( strcmp ( symbols[ h ].text, text ) == 0 ) { // if text is equal, already there?
             if ( symbols[ h ].type == type && symbols[ h ].subtype == stSET )
