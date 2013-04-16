@@ -1,9 +1,9 @@
 /*
- *  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2003..2013 : Henk van Kampen <henk@mediatronix.com>
  *
  *  This file is part of pBlazASM.
  *
- *  pBlazMRG is free software: you can redistribute it and/or modify
+ *  pBlazASM is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
@@ -35,7 +35,7 @@ bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64
 
 	outfile = fopen ( strPSMfile, "w" ) ;
 	if ( outfile == NULL ) {
-		fprintf ( stderr, " ? Unable to open output file '%s'", strPSMfile ) ;
+        fprintf ( stderr, "? Unable to open output file '%s' ", strPSMfile ) ;
 		return false ;
 	}
 

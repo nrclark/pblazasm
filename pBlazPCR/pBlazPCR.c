@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2003..2013 : Henk van Kampen <henk@mediatronix.com>
  *
  *  This file is part of pBlazASM.
  *
@@ -73,14 +73,14 @@ bool loadMEM ( const char * strMEMfile ) {
 
 	infile = fopen ( strMEMfile, "r" ) ;
 	if ( infile == NULL ) {
-		fprintf ( stderr, "? Unable to open MEM file '%s\n'", strMEMfile ) ;
+        fprintf ( stderr, "? Unable to open MEM file '%s'\n", strMEMfile ) ;
 		return false ;
 	}
 
 	for ( addr = -1 ; addr < MAXMEM && fgets ( line, sizeof ( line ), infile ) != NULL; ) {
 		if ( ( p = strchr ( line, '@' ) ) != NULL ) {
 			if ( sscanf ( ++p, "%X", &addr ) != 1 ) {
-				fprintf ( stderr, "? Error in address in MEM file '%s\n'", strMEMfile ) ;
+                fprintf ( stderr, "? Error in address in MEM file '%s'\n", strMEMfile ) ;
 				return false ;
 			}
 		} else {
@@ -110,6 +110,7 @@ bool loadSCR ( const char * strDatafile, const int offset ) {
 	uint32_t data ;
 	char line[ 256 ], *p ;
 	FILE * infile = NULL ;
+    (void)offset ;
 
 	if ( strDatafile == NULL || * strDatafile == 0 )
 		return true ;
@@ -339,7 +340,7 @@ int main ( int argc, char * argv[] ) {
 		}
 	}
 
-	if ( bOptErr ) {
+    if ( bOptErr || code_filename[ 0 ] == '\0' ) {
 		usage ( basename ( argv[ 0 ] ) ) ;
 		exit ( -1 ) ;
 	}
@@ -348,14 +349,14 @@ int main ( int argc, char * argv[] ) {
 		if ( strrchr ( code_filename, '.' ) == NULL )
 			strcat ( code_filename, ".mem" ) ;
 		if ( bVerbose )
-			printf ( "! %s file: %s\n", "MEM", code_filename ) ;
+            printf ( "! %s file: '%s'\n", "MEM", code_filename ) ;
 	}
 
 	if ( * data_filename != 0 ) {
 		if ( strrchr ( data_filename, '.' ) == NULL )
 			strcat ( data_filename, ".scr" ) ;
 		if ( bVerbose )
-			printf ( "! %s file: %s\n", "SCR", data_filename ) ;
+            printf ( "! %s file: '%s'\n", "SCR", data_filename ) ;
 	}
 
 	// output filename
