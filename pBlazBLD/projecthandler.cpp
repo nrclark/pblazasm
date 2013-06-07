@@ -140,7 +140,7 @@ void QmtxProjectHandler::Load( QString filename ) {
             QMessageBox mb ;
             mb.setStandardButtons( QMessageBox::Ok ) ;
             mb.setInformativeText( projectFileName );
-            mb.setText( "Could not load project file:" ) ;
+            mb.setText( "? Could not load project file:" ) ;
             mb.exec() ;
             return ;
         }
@@ -148,7 +148,11 @@ void QmtxProjectHandler::Load( QString filename ) {
 }
 
 void QmtxProjectHandler::Save() {
-    saveas();
+    _save() ;
+}
+
+void QmtxProjectHandler::SaveAs() {
+    _save_as() ;
 }
 
 void QmtxProjectHandler::addSourceFile( QString filename ) {
@@ -231,7 +235,7 @@ void QmtxProjectHandler::setModified( QtProperty *prop, const QVariant &var ) {
 
 bool QmtxProjectHandler::maybeSave() {
     if ( isModified() ) {
-        int ret = QMessageBox::warning( 0, "pBlazBLD",
+        int ret = QMessageBox::warning( 0, "QtSDR",
              "The project has been modified.\nDo you want to save your changes?",
              QMessageBox::Yes | QMessageBox::No,
              QMessageBox::Cancel | QMessageBox::Escape
