@@ -7,7 +7,7 @@ TARGET = pBlazSIM
 TEMPLATE = app
 
 win32: {
-    QMAKE_LFLAGS += -static-libgcc -static-libstdc++
+    QMAKE_LFLAGS += -static -static-libgcc -static-libstdc++
 }
 
 SOURCES  += \
