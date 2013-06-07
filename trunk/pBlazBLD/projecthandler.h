@@ -31,6 +31,7 @@ public:
     void New() ;
     void Load(QString filename) ;
     void Save() ;
+    void SaveAs() ;
     bool maybeSave() ;
 
     void addSourceFile( QString fileName ) ;
