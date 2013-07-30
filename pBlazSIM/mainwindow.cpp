@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2003..2013 : Henk van Kampen <henk@mediatronix.com>
  *
  *  This file is part of pBlazASM.
  *
@@ -325,7 +325,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 // destructor
 MainWindow::~MainWindow() {
-    pBlaze->initPB6( ) ;
+    pBlaze->initPB( ) ;
 
     // settings in Registry
     QSettings settings( QSettings::NativeFormat, QSettings::UserScope, "Mediatronix", "pBlazSIM" ) ;
@@ -414,7 +414,7 @@ void MainWindow::removeCode( void ) {
 
     // reset core
     on_actionReset_triggered( ) ;
-    pBlaze->initPB6( ) ;
+    pBlaze->initPB( ) ;
 
     ui->actionStep->setEnabled( false ) ;
     ui->actionJump->setEnabled( false ) ;
@@ -527,7 +527,7 @@ void MainWindow::loadLSTfile( QString filename ) {
     }
 
     on_actionReset_triggered( ) ;
-    pBlaze->initPB6( ) ;
+    pBlaze->initPB( ) ;
     ui->actionStep->setEnabled( true ) ;
     ui->actionJump->setEnabled( true ) ;
     ui->actionRun->setEnabled( true ) ;
@@ -540,7 +540,7 @@ void MainWindow::loadLSTfile( QString filename ) {
 void MainWindow::on_actionExit_triggered()
 {
     timer->stop( ) ;
-    pBlaze->initPB6( ) ;
+    pBlaze->initPB( ) ;
     qApp->exit( ) ;
 }
 
@@ -642,7 +642,7 @@ void MainWindow::on_actionReset_triggered()
     selectLine( QItemSelectionModel::Clear ) ;
 
     timer->stop( ) ;
-    pBlaze->resetPB6( ) ;
+    pBlaze->resetPB( ) ;
     pBlaze->updateData( ) ;
     pBlaze->updateState( ) ;
     pBlaze->updateIO( ) ;

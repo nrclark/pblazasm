@@ -36,7 +36,7 @@ uint32_t UART::getValue ( uint32_t address ) {
 
 void UART::setValue ( uint32_t address, uint32_t value ) {
     (void)address ;
-    ( (MainWindow *)w )->setUARTdata( value ) ;
+    ((MainWindow *)w)->setUARTdata( value ) ;
 }
 
 

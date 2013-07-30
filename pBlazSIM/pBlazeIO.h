@@ -36,7 +36,7 @@ protected :
 } ;
 
 class UART : public QObject, public IODevice { Q_OBJECT
- public:
+public:
     uint32_t getValue ( uint32_t address ) ;
     void setValue ( uint32_t address, uint32_t value ) ;
 
@@ -44,15 +44,15 @@ protected :
 } ;
 
 class CC : public QObject, public IODevice { Q_OBJECT
-private:
-    uint64_t TimeStamp ;
-    uint64_t TimeDelta ;
-
 public:
     uint32_t getValue ( uint32_t address ) ;
     void setValue ( uint32_t address, uint32_t value ) ;
 
     QmtxPicoblaze * pBlaze ;
+
+private:
+    uint64_t TimeStamp ;
+    uint64_t TimeDelta ;
 } ;
 
 class SBOX : public QObject, public IODevice { Q_OBJECT
@@ -73,6 +73,7 @@ public:
     void update( void ) ;
 
     void setItem ( uint32_t reg, QStandardItem * item ) ;
+
 private:
     QStandardItem * leds[ 8 ] ;
     uint32_t rack ;
@@ -82,6 +83,10 @@ private:
 } ;
 
 class QmtxPicoblaze : public QObject, public Picoblaze { Q_OBJECT
+    friend class UART ;
+    friend class CC ;
+    friend class SBOX ;
+
 public:
     void updateData( void ) ;
     void updateState( void ) ;

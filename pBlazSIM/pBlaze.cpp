@@ -59,14 +59,7 @@ void Picoblaze::clearScratchpad( void ) {
         scratchpad[ scr ].value = 0 ;
 }
 
-void Picoblaze::initPB6 ( void ) {
-    pc = 0 ;
-    sp = 0 ;
-    zero = false ;
-    carry = false ;
-    enable = false ;
-    bank = 0 ;
-
+void Picoblaze::initPB ( void ) {
     for ( int reg = 0 ; reg < MAXREG ; reg += 1 ) {
         registers[ 0 ][ reg ].value = 0 ;
         registers[ 0 ][ reg ].defined = false ;
@@ -80,18 +73,16 @@ void Picoblaze::initPB6 ( void ) {
         stack[ sp ].zero = false ;
     }
 
-    for ( int address = 0 ; address < MAXMEM ; address += 1 )
-        Code[ address ].count = 0ll ;
-
-    CycleCounter = 0ll ;
+    resetPB() ;
 }
 
-void Picoblaze::resetPB6 ( void ) {
+void Picoblaze::resetPB ( void ) {
     pc = 0 ;
     sp = 0 ;
     zero = false ;
     carry = false ;
     enable = false ;
+    bank = 0 ;
 
     for ( int address = 0 ; address < MAXMEM ; address += 1 )
         Code[ address ].count = 0ll ;
@@ -654,3 +645,456 @@ bool Picoblaze::stepPB6 ( void ) {
     CycleCounter += 2 ; // 2 clock cycles per instruction
     return true ;
 }
+
+bool Picoblaze::stepPB3 ( void ) {
+    uint32_t c, t ;
+    int addr = 0 ;
+
+    c = Code[ pc ].code & 0x3FFFF ;
+    npc = pc + 1 ;
+
+    switch ( c ) {
+    case 0x101000 : // 0x101000 ... 0x101FFF : // MOVE sX, sY
+        registers[ 0 ][ DestReg ( c ) ].value = registers[ 0 ][ SrcReg ( c ) ].value ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        break ;
+    case 0x100000 : // 0x100000 ... 0x100FFF : // MOVE sX, K
+        registers[ 0 ][ DestReg ( c ) ].value = Constant ( c ) ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        break ;
+
+    case 0x10B000 : // 0x10B000 ... 0x10BFFF : // AND sX, sY
+        registers[ 0 ][ DestReg ( c ) ].value = registers[ 0 ][ DestReg ( c ) ].value & registers[ 0 ][ SrcReg ( c ) ].value ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+        carry = false ;
+        break ;
+    case 0x10A000 : // 0x10A000 ... 0x10AFFF : // AND sX, K
+        registers[ 0 ][ DestReg ( c ) ].value = registers[ 0 ][ DestReg ( c ) ].value & Constant ( c ) ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+        carry = false ;
+        break ;
+
+    case 0x10D000 : // 0x10D000 ... 0x10DFFF : // OR sX, sY
+        registers[ 0 ][ DestReg ( c ) ].value = registers[ 0 ][ DestReg ( c ) ].value | registers[ 0 ][ SrcReg ( c ) ].value ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+        carry = false ;
+        break ;
+    case 0x10C000 : // 0x10C000 ... 0x10CFFF : // OR sX, K
+        registers[ 0 ][ DestReg ( c ) ].value = registers[ 0 ][ DestReg ( c ) ].value | Constant ( c ) ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+        carry = false ;
+        break ;
+
+    case 0x10F000 : // 0x10F000 ... 0x10FFFF : // XOR sX, sY
+        registers[ 0 ][ DestReg ( c ) ].value = registers[ 0 ][ DestReg ( c ) ].value ^ registers[ 0 ][ SrcReg ( c ) ].value ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+        carry = false ;
+        break ;
+    case 0x10E000 : // 0x10E000 ... 0x10EFFF : // XOR sX, K
+        registers[ 0 ][ DestReg ( c ) ].value = registers[ 0 ][ DestReg ( c ) ].value ^ Constant ( c ) ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+        carry = false ;
+        break ;
+
+    case 0x113000 : // 0x113000 ... 0x113FFF : // TEST sX, sY
+        t = registers[ 0 ][ DestReg ( c ) ].value & registers[ 0 ][ SrcReg ( c ) ].value ;
+        zero = ( t & 0xFF ) == 0 ;
+        t ^= t >> 4 ;
+        t ^= t >> 2 ;
+        t ^= t >> 1 ;
+        carry = ( t & 1 ) == 1 ;
+        break ;
+    case 0x112000 : // 0x112000 ... 0x112FFF : // TEST sX, K
+        t = registers[ 0 ][ DestReg ( c ) ].value & Constant ( c ) ;
+        zero = ( t & 0xFF ) == 0 ;
+        t ^= t >> 4 ;
+        t ^= t >> 2 ;
+        t ^= t >> 1 ;
+        carry = ( t & 1 ) == 1 ;
+        break ;
+
+    case 0x119000 : // 0x119000 ... 0x119FFF : // ADD sX, sY
+        t = registers[ 0 ][ DestReg ( c ) ].value + registers[ 0 ][ SrcReg ( c ) ].value ;
+        registers[ 0 ][ DestReg ( c ) ].value = t & 0xFF ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        zero = ( t & 0xFF ) == 0 ;
+        carry = ( ( t >> 8 ) & 1 ) == 1 ;
+        break ;
+    case 0x118000 : // 0x118000 ... 0x118FFF : // ADD sX, K
+        t = registers[ 0 ][ DestReg ( c ) ].value + Constant ( c ) ;
+        registers[ 0 ][ DestReg ( c ) ].value = t & 0xFF ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        zero = ( t & 0xFF ) == 0 ;
+        carry = ( ( t >> 8 ) & 1 ) == 1 ;
+        break ;
+
+    case 0x11B000 : // 0x11B000 ... 0x11BFFF : // ADDC sX, sY
+        t = registers[ 0 ][ DestReg ( c ) ].value + registers[ 0 ][ SrcReg ( c ) ].value + ( carry ? 1 : 0 ) ;
+        registers[ 0 ][ DestReg ( c ) ].value = t & 0xFF ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        if ( c & 0x100000 )
+            zero = ( t & 0xFF ) == 0 ;
+        else
+            zero = ( ( t & 0xFF ) == 0 ) & zero ;
+        carry = ( ( t >> 8 ) & 1 ) == 1 ;
+        break ;
+    case 0x11A000 : // 0x11A000 ... 0x11AFFF : // ADDC sX, K
+        t = registers[ 0 ][ DestReg ( c ) ].value + Constant ( c ) + ( carry ? 1 : 0 ) ;
+        registers[ 0 ][ DestReg ( c ) ].value = t & 0xFF ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        if ( c & 0x100000 )
+            zero = ( t & 0xFF ) == 0 ;
+        else
+            zero = ( ( t & 0xFF ) == 0 ) & zero ;
+        carry = ( ( t >> 8 ) & 1 ) == 1 ;
+        break ;
+
+    case 0x11D000 : // 0x11D000 ... 0x11DFFF : // SUB sX, sY
+        t = registers[ 0 ][ DestReg ( c ) ].value - registers[ 0 ][ SrcReg ( c ) ].value ;
+        registers[ 0 ][ DestReg ( c ) ].value = t & 0xFF ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        zero = ( t & 0xFF ) == 0 ;
+        carry = ( ( t >> 8 ) & 1 ) == 1 ;
+        break ;
+    case 0x11C000 : // 0x11C000 ... 0x11CFFF : // SUB sX, K
+        t = registers[ 0 ][ DestReg ( c ) ].value - Constant ( c ) ;
+        registers[ 0 ][ DestReg ( c ) ].value = t & 0xFF ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        zero = ( t & 0xFF ) == 0 ;
+        carry = ( ( t >> 8 ) & 1 ) == 1 ;
+        break ;
+
+    case 0x11F000 : // 0x11F000 ... 0x11FFFF : // SUBC sX, sY
+        t = registers[ 0 ][ DestReg ( c ) ].value - registers[ 0 ][ SrcReg ( c ) ].value - ( carry ? 1 : 0 )  ;
+        registers[ 0 ][ DestReg ( c ) ].value = t & 0xFF ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        if ( c & 0x100000 )
+            zero = ( t & 0xFF ) == 0 ;
+        else
+            zero = ( ( t & 0xFF ) == 0 ) & zero ;
+        carry = ( ( t >> 8 ) & 1 ) == 1 ;
+        break ;
+    case 0x11E000 : // 0x11E000 ... 0x11EFFF : // SUBC sX, K
+        t = registers[ 0 ][ DestReg ( c ) ].value - Constant ( c ) - ( carry ? 1 : 0 ) ;
+        registers[ 0 ][ DestReg ( c ) ].value = t & 0xFF ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        if ( c & 0x100000 )
+            zero = ( t & 0xFF ) == 0 ;
+        else
+            zero = ( ( t & 0xFF ) == 0 ) & zero ;
+        carry = ( ( t >> 8 ) & 1 ) == 1 ;
+        break ;
+
+    case 0x115000 : // 0x115000 ... 0x115FFF : // COMP sX, sY
+        t = registers[ 0 ][ DestReg ( c ) ].value - registers[ 0 ][ SrcReg ( c ) ].value ;
+        zero = ( t & 0xFF ) == 0 ;
+        carry = ( ( t >> 8 ) & 1 ) == 1 ;
+        break ;
+    case 0x114000 : // 0x114000 ... 0x114FFF : // COMP sX, K
+        t = registers[ 0 ][ DestReg ( c ) ].value - Constant ( c ) ;
+        zero = ( t & 0xFF ) == 0 ;
+        carry = ( ( t >> 8 ) & 1 ) == 1 ;
+        break ;
+
+    case 0x120000 : // 0x120000 ... 0x120FFF : // SHIFTs
+        if ( c & 0xF0 ) {
+            return false ;
+        } else
+            switch ( c & 0xF ) {
+            case 0x2 : // RL sX
+                t = registers[ 0 ][ DestReg ( c ) ].value ;
+                registers[ 0 ][ DestReg ( c ) ].value = ( ( t << 1 ) | ( t >> 7 ) ) & 0xFF ;
+                registers[ 0 ][ DestReg ( c ) ].defined = true ;
+                zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+                carry = ( ( t >> 7 ) & 1 ) == 1 ;
+                break ;
+            case 0x6 : // SL0 sX
+                t = registers[ 0 ][ DestReg ( c ) ].value ;
+                registers[ 0 ][ DestReg ( c ) ].value = ( ( t << 1 ) | 0 ) & 0xFF ;
+                registers[ 0 ][ DestReg ( c ) ].defined = true ;
+                zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+                carry = ( ( t >> 7 ) & 1 ) == 1 ;
+                break ;
+            case 0x7 : // SL1 sX
+                t = registers[ 0 ][ DestReg ( c ) ].value ;
+                registers[ 0 ][ DestReg ( c ) ].value = ( ( t << 1 ) | 1 ) & 0xFF ;
+                registers[ 0 ][ DestReg ( c ) ].defined = true ;
+                zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+                carry = ( ( t >> 7 ) & 1 ) == 1 ;
+                break ;
+            case 0x0 : // SLA sX
+                t = registers[ 0 ][ DestReg ( c ) ].value ;
+                registers[ 0 ][ DestReg ( c ) ].value = ( ( t << 1 ) | ( carry ? 1 : 0 ) ) & 0xFF ;
+                registers[ 0 ][ DestReg ( c ) ].defined = true ;
+                zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+                carry = ( ( t >> 7 ) & 1 ) == 1 ;
+                break ;
+            case 0x4 : // SLX sX
+                t = registers[ 0 ][ DestReg ( c ) ].value ;
+                registers[ 0 ][ DestReg ( c ) ].value = ( ( t << 1 ) | ( t & 1 ) ) & 0xFF ;
+                registers[ 0 ][ DestReg ( c ) ].defined = true ;
+                zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+                carry = ( ( t >> 7 ) & 1 ) == 1 ;
+                break ;
+
+            case 0xC : // RR sX
+                t = registers[ 0 ][ DestReg ( c ) ].value ;
+                registers[ 0 ][ DestReg ( c ) ].value = ( ( t >> 1 ) | ( t << 7 ) ) & 0xFF ;
+                registers[ 0 ][ DestReg ( c ) ].defined = true ;
+                zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+                carry = ( t & 1 ) == 1 ;
+                break ;
+            case 0xE : // SR0 sX
+                t = registers[ 0 ][ DestReg ( c ) ].value ;
+                registers[ 0 ][ DestReg ( c ) ].value = ( ( t >> 1 ) | ( 0 << 7 ) ) & 0xFF ;
+                registers[ 0 ][ DestReg ( c ) ].defined = true ;
+                zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+                carry = ( t & 1 ) == 1 ;
+                break ;
+            case 0xF : // SR1 sX
+                t = registers[ 0 ][ DestReg ( c ) ].value ;
+                registers[ 0 ][ DestReg ( c ) ].value = ( ( t >> 1 ) | ( 1 << 7 ) ) & 0xFF ;
+                registers[ 0 ][ DestReg ( c ) ].defined = true ;
+                zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+                carry = ( t & 1 ) == 1 ;
+                break ;
+            case 0x8 : // SRA sX
+                t = registers[ 0 ][ DestReg ( c ) ].value ;
+                registers[ 0 ][ DestReg ( c ) ].value = ( ( t >> 1 ) | ( carry ? ( 1 << 7 ) : 0 ) ) & 0xFF ;
+                registers[ 0 ][ DestReg ( c ) ].defined = true ;
+                zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+                carry = ( t & 1 ) == 1 ;
+                break ;
+            case 0xA : // SRX sX
+                t = registers[ 0 ][ DestReg ( c ) ].value ;
+                registers[ 0 ][ DestReg ( c ) ].value = ( ( t >> 1 ) | ( t & 0x80 ) ) & 0xFF ;
+                registers[ 0 ][ DestReg ( c ) ].defined = true ;
+                zero = registers[ 0 ][ DestReg ( c ) ].value == 0 ;
+                carry = ( t  & 1 ) == 1 ;
+                break ;
+
+            default :
+                return false ;
+            }
+        break ;
+
+    case 0x134000 : // 0x134000 ... 0x134FFF : // JUMP
+        npc = Address12 ( c ) ;
+        break ;
+
+    case 0x135000 : // 0x135000 ... 0x1353FF : // JUMP Z
+        if ( c < 0x135400 ) {
+            if ( zero )
+                npc = Address12 ( c ) ;
+            break ;
+        }
+//      else
+//          fall through
+    case 0x036000 : // 0x36000 ... 0x36FFF :
+//  case 0x135400 ... 0x1357FF : // JUMP NZ
+        if ( c < 0x135800 ) {
+            if ( !zero )
+                npc = Address12 ( c ) ;
+            break ;
+        }
+//      else
+//          fall through
+    case 0x03A000 : // 0x3A000 ... 0x3AFFF :
+//  case 0x135800 ... 0x135BFF : // JUMP C
+        if ( c < 0x135C00 ) {
+            if ( carry )
+                npc = Address12 ( c ) ;
+            break ;
+        }
+//      else
+//          fall through
+    case 0x03E000 : // 0x3E000 ... 0x3EFFF :
+//  case 0x135C00 ... 0x135FFF : // JUMP NC
+        if ( !carry )
+            npc = Address12 ( c ) ;
+        break ;
+
+
+    case 0x130000 : // 0x130000 ... 0x130FFF : // CALL
+        if ( sp > 30 )
+            return false ;
+        stack[ sp++ ].pc = npc ;
+        npc = Address12 ( c ) ;
+        break ;
+    case 0x131000 : // 0x131000 ... 0x1313FF : // CALL
+        if ( c < 0x131400 ) {
+            if ( sp > 30 )
+                return false ;
+            if ( zero ) {
+                stack[ sp++ ].pc = npc ;
+                npc = Address12 ( c ) ;
+            }
+            break ;
+        }
+//      else
+//          fall through
+    case 0x034000 : // 0x34000 ... 0x34FFF : // CALL NZ
+//  case 0x131400 ... 0x1317FF : // CALL
+        if ( c < 0x131800 ) {
+            if ( sp > 30 )
+                return false ;
+            if ( ! zero ) {
+                stack[ sp++ ].pc = npc ;
+                npc = Address12 ( c ) ;
+            }
+            break ;
+        }
+//      else
+//          fall through
+    case 0x038000 : // 0x38000 ... 0x38FFF : // CALL C
+//  case 0x131800 ... 0x131BFF : // CALL
+        if ( c < 0x131C00 ) {
+            if ( sp > 30 )
+                return false ;
+            if ( carry ) {
+                stack[ sp++ ].pc = npc ;
+                npc = Address12 ( c ) ;
+            }
+            break ;
+        }
+//      else
+//          fall through
+    case 0x03C000 : // 0x3C000 ... 0x3CFFF : // CALL NC
+//  case 0x131C00 ... 0x131FFF : // CALL
+        if ( sp > 30 )
+            return false ;
+        if ( ! carry ) {
+            stack[ sp++ ].pc = npc ;
+            npc = Address12 ( c ) ;
+        }
+        break ;
+
+    case 0x25000 :
+    case 0x12A000 : // RET
+        if ( sp <= 0 )
+            return false ;
+        npc = stack[ --sp ].pc ;
+        break ;
+    case 0x31000 : // RET Z
+    case 0x12B000 :
+        if ( c < 0x12B400 ) {
+            if ( zero ) {
+                if ( sp <= 0 )
+                    return false ;
+                npc = stack[ --sp ].pc ;
+            }
+            break ;
+        }
+//      else
+//          fall through
+    case 0x35000 : // RET NZ
+//  case 0x12B400 :
+        if ( c < 0x12B800 ) {
+            if ( ! zero ) {
+                    if ( sp <= 0 )
+                        return false ;
+                npc = stack[ --sp ].pc ;
+            }
+            break ;
+        }
+//      else
+//          fall through
+    case 0x39000 : // RET C
+//  case 0x12B800 :
+        if ( c < 0x12BC00 ) {
+            if ( carry ) {
+                if ( sp <= 0 )
+                    return false ;
+                npc = stack[ --sp ].pc ;
+            }
+            break ;
+        }
+//      else
+//          fall through
+    case 0x3D000 : // RET NC
+//  case 0x12BC00 :
+        if ( ! carry ) {
+            if ( sp <= 0 )
+                return false ;
+            npc = stack[ --sp ].pc ;
+        }
+        break ;
+
+    case 0x12F000 : // 0x12F000 ... 0x12FFFF : // ST sX, sY
+        addr = registers[ 0 ][ SrcReg ( c ) ].value + Offset ( c ) ;
+        scratchpad[ addr ].value = registers[ 0 ][ DestReg ( c ) ].value & 0xFF ;
+        break ;
+    case 0x12E000 : // 0x12E000 ... 0x12EFFF : // ST sX, K
+        scratchpad[ Constant ( c ) ].value = registers[ 0 ][ DestReg ( c ) ].value & 0xFF ;
+        break ;
+
+    case 0x107000 : // 0x107000 ... 0x107FFF : // LD sX, sY
+        addr = registers[ 0 ][ SrcReg ( c ) ].value + Offset ( c ) ;
+        registers[ 0 ][ DestReg ( c ) ].value = scratchpad[ addr ].value & 0xFF ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        break ;
+    case 0x106000 : // 0x106000 ... 0x106FFF : // LD sX, K
+        registers[ 0 ][ DestReg ( c ) ].value = scratchpad[ Constant ( c ) ].value & 0xFF ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        break ;
+
+    case 0x12D000 : // 0x12D000 ... 0x12DFFF : // OUT sX, sY
+        addr = registers[ 0 ][ SrcReg ( c ) ].value + Offset ( c ) ;
+        if ( IO[ addr ].device == NULL )
+            return false ;
+         IO[ addr ].device->setValue( addr, registers[ 0 ][ DestReg ( c ) ].value & 0xFF ) ;
+        break ;
+    case 0x12C000 : // 0x12C000 ... 0x12CFFF : // OUT sX, K
+        addr = Constant ( c ) ;
+        if ( IO[ addr ].device == NULL )
+            return false ;
+        IO[ addr ].device->setValue( addr, registers[ 0 ][ DestReg ( c ) ].value & 0xFF ) ;
+        break ;
+    case 0x02B000 : // 0x2B000 ... 0x2BFFF : // OUTK
+        break ;
+
+    case 0x105000 : // 0x105000 ... 0x105FFF : // IN sX, sY
+        addr = registers[ 0 ][ SrcReg ( c ) ].value + Offset ( c ) ;
+        if ( IO[ addr ].device == NULL )
+            return false ;
+        registers[ 0 ][ DestReg ( c ) ].value = IO[ addr ].device->getValue( addr ) & 0xFF ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        break ;
+    case 0x104000 : // 0x104000 ... 0x104FFF : // IN sX, K
+        addr = Constant ( c ) ;
+        if ( IO[ addr ].device == NULL )
+            return false ;
+        registers[ 0 ][ DestReg ( c ) ].value = IO[ addr ].device->getValue( addr ) & 0xFF ;
+        registers[ 0 ][ DestReg ( c ) ].defined = true ;
+        break ;
+
+    case 0x13C000 : // DINT / EINT
+    case 0x13C001 : // EINT
+        enable =  ( c & 0x000001 ) ? true : false ;
+        break ;
+    case 0x138000 : // RETI
+    case 0x138001 :
+        if ( sp <= 0 )
+            return false ;
+        npc = stack[ --sp ].pc ;
+        zero = stack[ sp ].zero ;
+        carry = stack[ sp ].carry ;
+        enable = ( c & 0x000001 ) ? true : false ;
+        break ;
+
+    default :
+      return false ;
+    }
+
+    Code[ pc ].count++ ;
+    pc = npc ;          // only update when no error
+    CycleCounter += 2 ; // 2 clock cycles per instruction
+    return true ;
+}
+

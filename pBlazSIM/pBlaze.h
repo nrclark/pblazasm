@@ -46,9 +46,6 @@ protected :
 // Picoblaze
 class Picoblaze {
     friend class IODevice ;
-    friend class UART ;
-    friend class CC ;
-    friend class SBOX ;
 
 public:
     Picoblaze( void );
@@ -206,9 +203,12 @@ public:
         return IO[ addr ].device ;
     }
 
-    void initPB6( void ) ;
-    void resetPB6 ( void ) ;
+    void initPB( void ) ;
+    void resetPB ( void ) ;
     bool stepPB6 ( void ) ;
+    bool stepPB3 ( void ) ;
+
+    uint64_t CycleCounter ;
 
 private:
     typedef struct _inst {
@@ -243,7 +243,6 @@ private:
     } IO_t ;
 
     bool bPB3 ;
-    uint64_t CycleCounter ;
 
     uint32_t pc, npc, barrier ;
     uint32_t sp, nsp ;

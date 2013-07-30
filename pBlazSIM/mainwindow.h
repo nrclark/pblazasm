@@ -53,7 +53,7 @@
 #include "pBlazeIO.h"
 #include "hexspinbox.h"
 
-#define PBLAZSIM_VERSION_STR "1.8"
+#define PBLAZSIM_VERSION_STR "2.0"
 
 namespace Ui {
 class MainWindow ;
