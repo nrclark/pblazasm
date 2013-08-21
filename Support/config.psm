@@ -1,12 +1,11 @@
-
 // -------------------------------------------------------------------------------
 // config of USBM
 // -------------------------------------------------------------------------------
 
 ; schratchpad
 		.SCR	0x780, 256
-; 1k instructions
-
+      
+; 2k instructions
 CODESIZE	.EQU	2048
 
 		.END	CODESIZE - 1
@@ -14,7 +13,7 @@ CODESIZE	.EQU	2048
 _INT_		.EQU	0
 _I2C_		.EQU	1
 _SPI_		.EQU	0
-_UART_		.EQU	1
+_UART_	  .EQU	1
 
 _FMC_		.EQU	0
 _BUG_		.EQU	1
