@@ -23,6 +23,9 @@
 
 Picoblaze::Picoblaze( void ) {
     bPB3 = false ;
+    interrupt = false ;
+    intvect = 0x3FF ;
+    hwbuild = 0x42 ;
 
     clearCode() ;
     bank = 0 ;
@@ -82,6 +85,7 @@ void Picoblaze::resetPB ( void ) {
     zero = false ;
     carry = false ;
     enable = false ;
+    acknowledge = false ;
     bank = 0 ;
 
     for ( int address = 0 ; address < MAXMEM ; address += 1 )
@@ -306,11 +310,13 @@ bool Picoblaze::stepPB6 ( void ) {
 
     case 0x014000 : // 0x14000 ... 0x14FFF : // SHIFTs
     case 0x120000 : // 0x120000 ... 0x120FFF : // SHIFTs
-        if ( c & 0xF0 ) {
+        if ( c & 0xF0 ) { // 0x14X80 : HWBUILD
             if ( bPB3 )
                 return false ;
-            registers[ bank ][ DestReg ( c ) ].value = 0x42 ;
+            registers[ bank ][ DestReg ( c ) ].value = hwbuild ;
             registers[ bank ][ DestReg ( c ) ].defined = true ;
+            zero = ( hwbuild == 0 ) ;
+            carry = true ;
         } else
             switch ( c & 0xF ) {
             case 0x2 : // RL sX
@@ -391,6 +397,7 @@ bool Picoblaze::stepPB6 ( void ) {
         break ;
 
     case 0x022000 : // 0x22000 ... 0x22FFF : // JUMP
+    case 0x023000 : // 0x23000 ... 0x23FFF : // BREAK
     case 0x134000 : // 0x134000 ... 0x134FFF :
         npc = Address12 ( c ) ;
         break ;
@@ -617,7 +624,9 @@ bool Picoblaze::stepPB6 ( void ) {
     case 0x13C000 :
 //  case 0x28001 : // EINT
 //  case 0x13C001 :
-        enable =  ( c & 0x000001 ) ? true : false ;
+        if ( bExtended )
+            carry = enable ;
+        enable = ( c & 0x000001 ) ? true : false ;
         break ;
     case 0x29000 : // RETI
     case 0x138000 :
@@ -628,6 +637,7 @@ bool Picoblaze::stepPB6 ( void ) {
         npc = stack[ --sp ].pc ;
         zero = stack[ sp ].zero ;
         carry = stack[ sp ].carry ;
+        bank = stack[ sp ].bank ;
         enable = ( c & 0x000001 ) ? true : false ;
         break ;
 
@@ -653,7 +663,7 @@ bool Picoblaze::stepPB3 ( void ) {
     c = Code[ pc ].code & 0x3FFFF ;
     npc = pc + 1 ;
 
-    switch ( c ) {
+    switch ( c & 0xFFF000 ) {
     case 0x101000 : // 0x101000 ... 0x101FFF : // MOVE sX, sY
         registers[ 0 ][ DestReg ( c ) ].value = registers[ 0 ][ SrcReg ( c ) ].value ;
         registers[ 0 ][ DestReg ( c ) ].defined = true ;
@@ -1076,7 +1086,7 @@ bool Picoblaze::stepPB3 ( void ) {
 
     case 0x13C000 : // DINT / EINT
     case 0x13C001 : // EINT
-        enable =  ( c & 0x000001 ) ? true : false ;
+        enable = ( c & 0x000001 ) ? true : false ;
         break ;
     case 0x138000 : // RETI
     case 0x138001 :

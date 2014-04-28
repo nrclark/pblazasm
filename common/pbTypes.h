@@ -72,6 +72,7 @@ typedef enum _SUBTYPE {
 	stCJMP3,
 	stCJMP6,
 	stCSKP,
+    stBREAK,
 	stCRET3,
 	stCRET6,
 	stIO3,
