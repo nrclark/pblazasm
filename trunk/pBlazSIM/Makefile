@@ -3,19 +3,14 @@
 
 RM = "rm"
 MP = "C:/MinGW32/include"
-CC = "gcc"
+CC = "g++"
 
 C_SRCS += \
-./pBlazASM.c \
-./pbLexer.c \
-./pbLibgen.c \
-./pbParser.c \
-./pbSymbols.c
+./pBlazSIMcl.cpp \
+./pBlaze.cpp
 
-#./getopt.c
-
-EXE = "./pBlazASM.exe"
-OBJS = $(C_SRCS:.c=.o)
+EXE = "./pBlazSIMcl.exe"
+OBJS = $(C_SRCS:.cpp=.o)
 LIBS = 
 INCS = -I$(MP) -I../common
 CFLAGS = $(INCS) -g3 -DWINDOWS -Wall -c -O3 -DHAVE_STRING_H

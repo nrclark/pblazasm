@@ -23,6 +23,7 @@
 #include <ctype.h>
 
 #include "pBlaze.h"
+#include "version.h"
 
 class UARTDevice : public IODevice
 {
@@ -37,9 +38,47 @@ public:
     }
 } ;
 
-void usage(void)
+class MULTDevice : public IODevice
 {
-    fprintf(stderr, "pBlazSIMcl <filename[.lst]>\n");
+public:
+    MULTDevice ( ) ;
+    virtual void setValue ( uint32_t address, uint32_t value )
+    {
+        int idx = ( address & 0x02 ) >> 1 ;
+        if ( address & 0x01 )
+        {
+            values[ idx ] &= 0xFF00 ;
+            values[ idx ] |= ( value & 0xFF ) << 8;
+        }
+        else
+        {
+            values[ idx ] = ( value & 0xFF ) << 0 ;
+        }
+    }
+    virtual uint32_t getValue ( uint32_t address )
+    {
+        return ( ( values[ 0 ] * values[ 1 ] ) >> ( address & 0x03 ) ) & 0xFF ;
+    }
+private:
+    uint32_t values[ 2 ] ;
+} ;
+
+MULTDevice::MULTDevice()
+{
+    values[ 0 ] = 0 ;
+    values[ 1 ] = 0 ;
+}
+
+static void usage( const char * text )
+{
+	printf("\n%s - Picoblaze command line Simulator V%ld.%ld.%ld (%s)\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS);
+	printf("  (c) 2003-2014 Henk van Kampen\n");
+    printf(" %s <filename[.lst]>\n", text);
+    printf("  Reads filename.lst and if present filename.scr and starts executing.\n");
+    printf("  Execution stops on the first breakpoint. Use BREAK opcode to set it.\n");
+    printf(" Peripherals:\n");
+    printf("  0xE8-0xEB: 16x16 to 32 bit multiplier (little endian)\n");
+    printf("  0xEC-0xED: output to console (UART)\n");
 }
 
 bool isHexN(const char * Line, int nChars)
@@ -50,7 +89,7 @@ bool isHexN(const char * Line, int nChars)
         if (!isxdigit(Line[i]))
             return false;
     }
-    return isspace(Line[i]);
+    return (isspace(Line[i]) != 0);
 }
 
 int main(int argc, char *argv[])
@@ -60,7 +99,7 @@ int main(int argc, char *argv[])
 
     if (argc != 2)
     {
-        usage();
+        usage(argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -108,7 +147,7 @@ int main(int argc, char *argv[])
     dot[1] = 's';
     dot[2] = 'c';
     dot[3] = 'r';
-    // read scratchpad data (.scr) assciated with .lst
+    // read scratchpad data (.scr) associated with .lst
     pBlaze.clearScratchpad();
     int addr = -1;
     file = fopen(filename, "rt");
@@ -137,11 +176,19 @@ int main(int argc, char *argv[])
         fclose(file);
     }
 
-    pBlaze.initPB6();
+    pBlaze.initPB();
+    pBlaze.setIODevice(NULL, 0xE8, 0xEB, new MULTDevice());
     pBlaze.setIODevice(NULL, 0xEC, 0xED, new UARTDevice());
-    pBlaze.setBreakpoint(0);
-    while (pBlaze.stepPB6() || pBlaze.onBreakpoint())
+    pBlaze.resetPB();
+    while (pBlaze.step() && !pBlaze.onBreakpoint())
     {// run, forest, run
     }
-    return EXIT_SUCCESS;
+    printf("%d instructions read\n", row-1);
+    if (pBlaze.onBreakpoint())
+    {
+        printf("executed in %d clock ticks\n", pBlaze.CycleCounter);
+        return EXIT_SUCCESS;
+    }
+    printf("failed after %d clock ticks\n", pBlaze.CycleCounter);
+    return EXIT_FAILURE;
 }

@@ -1308,6 +1308,9 @@ static error_t assemble ( int file_nbr, uint32_t * addr, uint32_t * code, uint32
 						}
 						opcode = h->value.integer | operand1 | operand2 ;
 						break ;
+					case stBREAK :
+						opcode = h->value.integer + oPC + 1 ;
+						break ;
 					case stCRET3 :
 						condition ( &operand1 ) ;
 						opcode = h->value.integer | operand1 ;

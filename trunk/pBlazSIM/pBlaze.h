@@ -58,6 +58,18 @@ public:
         bPB3 = bCore ;
     }
 
+    void setExtended( bool bExt ) {
+        bExtended = bExt ;
+    }
+
+    void setInterruptVector( int address ) {
+        intvect = address ;
+    }
+
+    void setHWbuild( uint8_t val ) {
+        hwbuild = val ;
+    }
+
     bool onBarrier( void ) {
         return pc == barrier ;
     }
@@ -71,19 +83,19 @@ public:
     }
 
     bool onBreakpoint( void ) {
-        return Code[ pc ].breakpoint ;
+        return Code[ pc ].breakpoint ? true : false ;
     }
 
     bool getBreakpoint( uint32_t address ) {
-        return Code[ address ].breakpoint ;
+        return Code[ address ].breakpoint ? true : false ;
     }
 
     void resetBreakpoint( int address ) {
-        Code[ address ].breakpoint = false ;
+        Code[ address ].breakpoint &= 0xFE ;
     }
 
     void setBreakpoint( int address ) {
-        Code[ address ].breakpoint = true ;
+        Code[ address ].breakpoint |= 0x01 ;
     }
 
     void setScratchpadData( uint32_t cell, uint32_t value ) {
@@ -109,7 +121,10 @@ public:
     void setCodeItem( uint32_t address, uint32_t code, uint32_t line, void * item ){
         Code[ address ].code = code ;
         Code[ address ].line = line ;
-        Code[ address ].breakpoint = false ;
+        if ( ( ( code & 0xFF000 ) == 0x23000 ) && !bPB3 )
+            Code[ address ].breakpoint = 0x02 ; // BREAK
+        else
+            Code[ address ].breakpoint = 0x00 ;
         Code[ address ].count = 0ll ;
         Code[ address ].item = item ;
     }
@@ -132,6 +147,14 @@ public:
 
     bool getEnable() {
         return enable ;
+    }
+
+    void setInterrupt( bool irq ) {
+        interrupt = irq ;
+    }
+
+    bool getAcknowledge() {
+        return acknowledge ;
     }
 
     int getBank() {
@@ -205,8 +228,23 @@ public:
 
     void initPB( void ) ;
     void resetPB ( void ) ;
-    bool stepPB6 ( void ) ;
-    bool stepPB3 ( void ) ;
+    inline bool step ( void ) {
+        if ( !enable )
+            acknowledge = false ;
+        if ( enable && interrupt ) {
+            if ( sp > 30 )
+                return false ;
+            stack[ sp ].pc = pc ;
+            stack[ sp ].carry = carry ;
+            stack[ sp ].zero = zero ;
+            stack[ sp ].bank = bank ;
+            sp += 1 ;
+            pc = intvect ;
+            enable = false ;
+            acknowledge = true ;
+        }
+        return ( bPB3 ) ? stepPB3() : stepPB6() ;
+    }
 
     uint64_t CycleCounter ;
 
@@ -214,7 +252,7 @@ private:
     typedef struct _inst {
         uint32_t code ;
         unsigned line ;
-        bool breakpoint ;
+        int breakpoint ;
         uint64_t count ;
         void * item ;
     } INST_t ;
@@ -223,6 +261,7 @@ private:
         uint32_t pc ;
         bool zero ;
         bool carry ;
+        int bank ;
         void * item ;
     } STACK_t ;
 
@@ -243,10 +282,12 @@ private:
     } IO_t ;
 
     bool bPB3 ;
+    bool bExtended ;
 
-    uint32_t pc, npc, barrier ;
+    uint32_t pc, npc, barrier, intvect ;
     uint32_t sp, nsp ;
     int bank ;
+    uint8_t hwbuild ;
 
     INST_t Code[ MAXMEM ] ;
     DATA_t scratchpad[ MAXSCR ] ;
@@ -254,7 +295,7 @@ private:
     REG_t registers[ 2 ][ 16 ] ;
     IO_t IO[ MAXSCR ] ;
 
-    bool carry, zero, enable ;
+    bool carry, zero, enable, interrupt, acknowledge ;
 
     inline uint32_t DestReg ( const int code ) {
         return ( code >> 8 ) & 0xF ;
@@ -278,8 +319,9 @@ private:
         else
             return code & 0xFFF ;
     }
+
+    bool stepPB6 ( void ) ;
+    bool stepPB3 ( void ) ;
 } ;
 
 #endif // PBLAZE_H
-
-
