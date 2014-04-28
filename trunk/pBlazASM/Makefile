@@ -8,11 +8,11 @@ CC = "gcc"
 C_SRCS += \
 ./pBlazASM.c \
 ./pbLexer.c \
-./pbLibgen.c \
 ./pbParser.c \
-./pbSymbols.c
+./pbSymbols.c \
+../common/pbLibgen.c
 
-#./getopt.c
+#../common/getopt.c
 
 EXE = "./pBlazASM.exe"
 OBJS = $(C_SRCS:.c=.o)

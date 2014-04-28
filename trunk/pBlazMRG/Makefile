@@ -14,7 +14,7 @@ CC = "C:/tcc/tcc"
 C_SRCS += \
 ./pBlazMRG.c \
 ./pbLibgen.c \
-./getopt.c
+../common/getopt.c
 
 EXE = "./pBlazMRG.exe"
 OBJS = $(C_SRCS:.c=.o)
