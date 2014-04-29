@@ -567,7 +567,7 @@ void MainWindow::oneStep( void ) {
 
     // run for a short time or until broken
     for ( int i = 0 ; i < 256 ; i += 1 ) {
-        if ( ! pBlaze->stepPB6() || pBlaze->onBreakpoint() || pBlaze->onBarrier() ) {
+        if ( ! pBlaze->step() || pBlaze->onBreakpoint() || pBlaze->onBarrier() ) {
             if ( pBlaze->onBarrier() )
                 pBlaze->resetBarrier( ) ;
             timer->stop( ) ;
@@ -594,7 +594,7 @@ void MainWindow::on_actionStep_triggered()
 {
     selectLine( QItemSelectionModel::Clear ) ;
 
-    if ( pBlaze->stepPB6() )
+    if ( pBlaze->step() )
         statusBar()->showMessage(tr("Stepped") ) ;
     else
         statusBar()->showMessage(tr("Breakpoint") ) ;
