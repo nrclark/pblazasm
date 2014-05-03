@@ -22,11 +22,15 @@
 #include <ctype.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "pbTypes.h"
 #include "pbSymbols.h"
 #include "pbLexer.h"
+#include "pbLib.h"
+#include "pbParser.h"
 #include "pbErrors.h"
+#include "version.h"
 
 #ifdef _MSC_VER   //Microsoft Visual C doesn't have strcasemcp, but has stricmp instead
 #define strcasecmp  stricmp
@@ -53,7 +57,7 @@ static bool bActive = true ; // conditional assembly mode
 static bool bCode = true ; // list code
 
 // source
-static char * gSource ; // source filename for error printer
+static const char * gSource ; // source filename for error printer
 static int gLinenr = 0 ; // current line number
 static int label_field = 20 ;
 static int opcode_field = 6 ;
@@ -448,7 +452,7 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 
 /**
  * expression processing
- * depending of current bMode
+ * depending on current bMode
  * @param result resulting value of expression
  * @return error code
  */
@@ -534,7 +538,7 @@ static error_t expr ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 
 /**
  * expression processing
- * depending of current bMode
+ * depending on current bMode
  * @param result resulting value of expression
  * @return error code
  */
@@ -712,6 +716,7 @@ static error_t build ( int file_nbr ) {
 		case tIDENT :
 			// opcode or directive?
 			h = find_symbol ( tok_current()->text, false, file_nbr ) ;
+			// opcode mnemonic in lower/mixed case?
 			if ( h == NULL ) {
 				h = find_symbol ( tok_current()->text, true, file_nbr ) ;
 				if ( h == NULL || h->type != tOPCODE )
@@ -1648,7 +1653,7 @@ static error_t assemble ( int file_nbr, uint32_t * addr, uint32_t * code, uint32
 									return etOVERFLOW ;
 								}
 								if ( bActive ) {
-									gData[ gSCR++ ] = result ;
+									gData[ gSCR++ ] = (uint8_t)result ;
 								}
 							} else if ( e == etEMPTY ) {
 								// allow an empty expression list for generating a symbol only
@@ -2097,12 +2102,44 @@ static char * file_gets( char * s, int n, FILE * stream ) {
     return s ;
 }
 
+bool pass1 ( source_t * Source, int file_nbr )
+{
+	FILE * fsrc = NULL ;
+	bool result = true ;
+	char line[ 4096 ] ;
+
+	gSource = Source->filename ;
+	// open source file
+	fsrc = fopen ( Source->filename, "r" ) ;
+	if ( fsrc == NULL ) {
+		fprintf ( stderr, "? unable to open source file '%s'\n", Source->filename ) ;
+		return false ;
+	}
+	// pass 1, add symbols from source
+	for ( gLinenr = 0 ;
+		  result &&
+		  ( file_gets ( line, sizeof ( line ), fsrc ) != NULL ) ;
+		)
+	{
+		if ( lex ( line, bMode ) ) {
+			result &= error ( build ( file_nbr ) ) ;
+			tok_free() ;
+		} else {
+			result &= error ( etLEX ) ;
+		}
+	}
+	fclose ( fsrc ) ;
+	return result ;
+}
+
 // main entry for the 2-pass assembler
-bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilename, char * listfilename, bool mode, bool b6, bool listcode, bool hex, bool zeros, bool globals ) {
+bool assembler ( source_t * sources,
+                 const char * codefilename, const char * datafilename, const char * listfilename,
+                 bool mode, bool b6, bool listcode, bool hex, bool zeros, bool globals ) {
 	FILE * fsrc = NULL ;
 	FILE * fmem = NULL ;
 	FILE * flist = NULL ;
-	char ** Sources = NULL ;
+	source_t * Source = NULL ;
 	char line[ 4096 ] ;
 	error_t e = etNONE ;
 	uint32_t h = 0 ;
@@ -2119,7 +2156,6 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 	for ( h = 0 ; h < DATASIZE ; h += 1 )
 		gData[ h ] = 0xDE00 ;
 
-	Sources = sourcefilenames ;
 	gCodeRange = 1024 ;
 	gPC = 0 ;
 	gSCR = 0 ;
@@ -2127,45 +2163,34 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 	gScrSize = 0x100 ;
 	bMode = mode ;
 	bActive = true ;
-	for ( gSource = *Sources++, file_nbr = 1 ; gSource != NULL ; gSource = *Sources++, file_nbr += 1 ) {
-		// open source file
-		fsrc = fopen ( gSource, "r" ) ;
-		if ( fsrc == NULL ) {
-			fprintf ( stderr, "? unable to open source file '%s'\n", gSource ) ;
+	file_nbr = 1 ;
+	for ( Source = sources ; Source->filename != NULL ; Source++, file_nbr++ ) {
+		if ( !pass1 ( Source, globals ? file_nbr : -1 ) ) {
 			result = false ;
-			goto finally ;
+			break ;
 		}
-		// pass 1, add symbols from source
-		for ( gLinenr = 0 ; file_gets ( line, sizeof ( line ), fsrc ) != NULL ; ) {
-			if ( lex ( line, mode ) ) {
-				result &= error ( build ( globals ? file_nbr : -1 ) ) ;
-				tok_free() ;
-			} else {
-				result &= error ( etLEX ) ;
-			}
-		}
-		fclose ( fsrc ) ;
 	}
 	// give up if errors in pass 1
 	if ( !result )
 		goto finally ;
+
 	if ( strlen ( listfilename ) > 0 ) {
 		flist = fopen ( listfilename, "w" ) ;
 		if ( flist == NULL ) {
 			fprintf ( stderr, "? unable to create LST file '%s'\n", listfilename ) ;
 			result = false ;
 		}
+		fprintf( flist, "; created by Picoblaze Assembler V%ld.%ld.%ld (%s)\n", MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
 	}
 
 	bCode = listcode ;
-	Sources = sourcefilenames ;
 	gCodeRange = 1024 ;
 	gPC = 0 ;
 	gSCR = 0 ;
 	gScrLoc = -1 ;
 	gScrSize = 0x100 ;
-	bMode = mode ;
 	bActive = true ;
+	file_nbr = 1 ;
 
 	if ( bCode && flist != NULL ) {
 		if ( b6 )
@@ -2173,19 +2198,24 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 		else
 			fprintf ( flist, "PB3\n" ) ;
 	}
-	for ( gSource = *Sources++, file_nbr = 1 ; gSource != NULL ; gSource = *Sources++, file_nbr += 1 ) {
-		fsrc = fopen ( gSource, "r" ) ;
+	for ( Source = sources ; Source->filename != NULL ; Source++, file_nbr += 1 ) {
+		gSource = Source->filename ;
+		fsrc = fopen ( Source->filename, "r" ) ;
 		if ( fsrc == NULL ) {
-			fprintf ( stderr, "? unable to re-open source file '%s'\n", gSource ) ;
+			fprintf ( stderr, "? unable to re-open source file '%s'\n", Source->filename ) ;
 			result = false ;
 			goto finally ;
 		}
 		if ( flist != NULL ) {
-			fprintf ( flist, "---------- source file: %-75s\n", gSource ) ;
+			fprintf ( flist, "; ---------- source file: %s\n", gSource ) ;
 		}
 		// pass 2, build code and scratchpad
-		for ( gLinenr = 0 ; file_gets ( line, sizeof ( line ), fsrc ) != NULL ; ) {
-			if ( lex ( line, mode ) ) {
+		for ( gLinenr = 0 ;
+			  result &&
+			  ( file_gets ( line, sizeof ( line ), fsrc ) != NULL ) ;
+			)
+		{
+			if ( lex ( line, bMode ) ) {
 				result &= error ( e = assemble ( globals ? file_nbr : -1, &addr, &code, &data, b6 ) ) ;
 				print_line ( flist, e, addr, code, data ) ;
 			} else {
@@ -2207,8 +2237,9 @@ bool assembler ( char ** sourcefilenames, char * codefilename, char * datafilena
 			dump_data ( fmem, hex ) ;
 			fclose ( fmem ) ;
 		}
+	}
     // merge scratch pad in code
-	} else if ( gScrLoc > -1 ) { // Merge data into code
+	if ( gScrLoc > -1 && gScrLoc / 2 < gCodeRange ) { // Merge data into code
 		for ( h = 0 ; h < gScrSize ; h += 2 ) {
 			if ( ( ( gData [ h ] & 0xFF00 ) != 0xDE00 ) || ( ( gData [ h + 1 ] & 0xFF00 ) != 0xDE00 ) ) {
                 if ( gCode[ ( gScrLoc + h ) / 2 ] == 0xFFFC0000 ) { // Data not overlapping used code

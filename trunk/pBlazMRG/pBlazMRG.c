@@ -22,8 +22,8 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
+#include <stdbool.h>
 
-#include "pbTypes.h"
 #include "pbLibgen.h"
 
 #if defined TCC || defined _MSC_VER
@@ -40,22 +40,22 @@
 
 uint32_t Code[ MAXMEM ] ;
 
-static void usage( char * text ) {
+static void usage( const char * text ) {
 	printf ( "\n%s - Picoblaze Assembler merge utility V%ld.%ld.%ld (%s) (c) 2003-2013 Henk van Kampen\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
 
-    printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n"  ) ;
-    printf ( "This is free software, and you are welcome to redistribute it\n"  ) ;
-    printf ( "under certain conditions. See <http://www.gnu.org/licenses/>\n"  ) ;
+	printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n"  ) ;
+	printf ( "This is free software, and you are welcome to redistribute it\n"  ) ;
+	printf ( "under certain conditions. See <http://www.gnu.org/licenses/>\n"  ) ;
 
 
 	printf( "\nUSAGE:\n" ) ;
 	printf( "   pBlazMRG [-v] [-s<MEM data inputfile>[+offset]]* [-c<MEM code inputfile>[+offset]]* -e<entity_name> -t<TPL inputfile> <ROM outputfile>\n"
-             "   where:\n"
-             "         -v      generates verbose reporting\n"
-             "         -s      loads one or more data MEM files\n"
-             "         -c      loads one or more code MEM files\n"
-             "         -e      the entity name in the HDL output file\n"
-             "         -t      HDL template file for the code or data rom\n" ) ;
+	        "   where:\n"
+	        "         -v      generates verbose reporting\n"
+	        "         -s      loads one or more data MEM files\n"
+	        "         -c      loads one or more code MEM files\n"
+	        "         -e      the entity name in the HDL output file\n"
+	        "         -t      HDL template file for the code or data rom\n" ) ;
 }
 
 bool loadCode( const char * strCodefile, const int offset ) {
@@ -298,13 +298,13 @@ bool mergeTPL( const char * strTPLfile, const char * strROMfile, const char * st
 					fprintf( outfile, "pBlazMRG" ) ;
 					state = stCOPY ;
 				} else if ( strcmp( "timestamp", buffer ) == 0 ) {
-                    time_t rawtime;
-                    struct tm * timeinfo;
-                    char date_str[ 256 ] ;
+					time_t rawtime;
+					struct tm * timeinfo;
+					char date_str[ 256 ] ;
 
-                    time( &rawtime ) ;
-                    timeinfo = localtime( &rawtime ) ;
-                    strftime( date_str, 256, "%d-%b-%Y %X", timeinfo ) ;
+					time( &rawtime ) ;
+					timeinfo = localtime( &rawtime ) ;
+					strftime( date_str, 256, "%d-%b-%Y %X", timeinfo ) ;
 					fprintf( outfile, "%s", date_str ) ;
 					state = stCOPY ;
 				} else if ( strcmp( "begin template", buffer ) == 0 ) {
@@ -343,7 +343,7 @@ int main( int argc, char * argv[] ) {
 	int err, i, optch ;
 
 	opterr = -1 ;
-    err = -1 ;
+	err = -1 ;
 	while ( ( optch = getopt( argc, argv, ":c:d:e:hm:s:t:v" ) ) != -1 ) {
 		switch ( optch ) {
 		case 'e' :
@@ -369,7 +369,7 @@ int main( int argc, char * argv[] ) {
 			} else
 				bOptErr = true ;
 			break ;
-        case 'd' :
+		case 'd' :
 		case 's' :
 			if ( optarg != NULL ) {
 			    if ( iDataFileIdx >= MAXFILES ) {
@@ -415,17 +415,17 @@ int main( int argc, char * argv[] ) {
 
 	if ( bOptErr ) {
 		usage( basename( argv[ 0 ] ) ) ;
-        err = 0 ;
+		err = 0 ;
 		goto finally ;
 	}
 
-    err = -2 ;
+	err = -2 ;
 	if ( ! tpl_filename ) {
-        fprintf( stderr, "? missing template file\n" ) ;
+		fprintf( stderr, "? missing template file\n" ) ;
 		usage( basename( argv[ 0 ] ) ) ;
-        err = 0 ;
+		err = 0 ;
 		goto finally ;
-    }
+	}
 
 	if ( ! entity_name && iCodeFileIdx > 0  )
 		entity_name = strdup( filename( code_filenames[ 0 ] ) ) ;
@@ -442,35 +442,35 @@ int main( int argc, char * argv[] ) {
 	if ( bVerbose )
 		printf( "! output file: %s\n", rom_filename ) ;
 
-    // load code and data
+	// load code and data
 	for ( i = 0 ; i < MAXMEM ; i++ )
 		Code[ i ] = 0 ;
 
-    err = -3 ;
-    for ( i = 0 ; i < iCodeFileIdx ; i += 1 )
-        if ( ! loadCode( code_filenames[ i ], iCodeOffsets[ i ] ) )
-            goto finally ;
-    for ( i = 0 ; i < iDataFileIdx ; i += 1 )
-        if ( ! loadData( data_filenames[ i ], iDataOffsets[ i ] ) )
-            goto finally ;
+	err = -3 ;
+	for ( i = 0 ; i < iCodeFileIdx ; i += 1 )
+		if ( ! loadCode( code_filenames[ i ], iCodeOffsets[ i ] ) )
+			goto finally ;
+	for ( i = 0 ; i < iDataFileIdx ; i += 1 )
+		if ( ! loadData( data_filenames[ i ], iDataOffsets[ i ] ) )
+			goto finally ;
 
-    // merge in template
-    err = -1 ;
-    if ( mergeTPL( tpl_filename, rom_filename, entity_name ) )
-        err = 0 ;
+	// merge in template
+	err = -1 ;
+	if ( mergeTPL( tpl_filename, rom_filename, entity_name ) )
+		err = 0 ;
 
 finally:
-    for ( i = 0 ; i < iCodeFileIdx ; i += 1 )
-        if ( code_filenames[ i ] )
-            free( code_filenames[ i ] ) ;
-    for ( i = 0 ; i < iDataFileIdx ; i += 1 )
-        if ( data_filenames[ i ] )
-            free( data_filenames[ i ] ) ;
-    if ( tpl_filename )
-        free( tpl_filename ) ;
-    if ( rom_filename )
-        free( rom_filename ) ;
-    if ( entity_name )
-        free( entity_name ) ;
-    exit( err ) ;
+	for ( i = 0 ; i < iCodeFileIdx ; i += 1 )
+		if ( code_filenames[ i ] )
+			free( code_filenames[ i ] ) ;
+	for ( i = 0 ; i < iDataFileIdx ; i += 1 )
+		if ( data_filenames[ i ] )
+			free( data_filenames[ i ] ) ;
+	if ( tpl_filename )
+		free( tpl_filename ) ;
+	if ( rom_filename )
+		free( rom_filename ) ;
+	if ( entity_name )
+		free( entity_name ) ;
+	exit( err ) ;
 }

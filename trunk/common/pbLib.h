@@ -1,6 +1,6 @@
-
 /*
- *  Copyright © 2003..2013 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright © 2014 : Maarten Brock <sourceforge.brock AT dse.nl>
+ *  $Id:$
  *
  *	This file is part of pBlazASM.
  *
@@ -9,7 +9,7 @@
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  pBlazMRG is distributed in the hope that it will be useful,
+ *  pBlazASM is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
@@ -18,9 +18,11 @@
  *  along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//!
-// operating system dependent filename processing functions
-//
-char * basename( const char * path ) ;
-char * filename( const char * path ) ;
-char * dirname( const char * path ) ;
+/**
+ * pBlazASM library loader
+ * @file pbLib.h
+ */
+
+typedef struct {
+    const char * filename ;
+} source_t ;

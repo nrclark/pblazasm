@@ -13,7 +13,9 @@ CC = "C:/tcc/tcc"
  
 C_SRCS += \
 ./pBlazMRG.c \
-./pbLibgen.c \
+../common/dbuf.c \
+../common/dbuf_string.c \
+../common/pbLibgen.c \
 ../common/getopt.c
 
 EXE = "./pBlazMRG.exe"

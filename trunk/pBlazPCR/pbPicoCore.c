@@ -23,8 +23,8 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <time.h>
+#include <stdbool.h>
 
-#include "pbTypes.h"
 #include "pbPicoCore.h"
 
 bool writeVHD6 ( const char * strPSMfile, INST_t * Code, uint32_t * Data, uint64_t inst_map, int code_size, int stack_size, int pad_size, int bank_size, bool want_alu ) {

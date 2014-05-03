@@ -47,7 +47,7 @@ typedef struct _instr {
 INST_t Code[ MAXMEM ] ;
 uint32_t Data[ MAXSCR ] ;
 
-static void print_version( char * text ) {
+static void print_version( const char * text ) {
 	printf ( "\n%s - Picoblaze Disassembler V%ld.%ld.%ld (%s) (c) 2012 Henk van Kampen\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
 }
 
@@ -56,7 +56,7 @@ static void print_version( char * text ) {
  * usage prints usage text
  * @param text application name
  */
-static void usage ( char * text ) {
+static void usage ( const char * text ) {
     print_version( text ) ;
 
     printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n"  ) ;
@@ -347,7 +347,7 @@ static void fprintline3 ( FILE * file, char * opcode, char * p1, char * f2, int 
 
     n += fprintf ( file, "%*s", 16, "" ) ;
     n += fprintf ( file, "%*s", -6, opcode ) ;
-    n += fprintf ( file, p1 ) ;
+    n += fprintf ( file, "%s", p1 ) ;
     n += fprintf ( file, ", " ) ;
     n += fprintf ( file, f2, p2 ) ;
     n += fprintf ( file, "%*s", 40 - n, "" ) ;
@@ -359,7 +359,7 @@ static void fprintline4 ( FILE * file, char * opcode, char * p1, int pc, int c )
 
     n += fprintf ( file, "%*s", 16, "" ) ;
     n += fprintf ( file, "%*s", -6, opcode ) ;
-    n += fprintf ( file, p1 ) ;
+    n += fprintf ( file, "%s", p1 ) ;
     n += fprintf ( file, "%*s", 40 - n, "" ) ;
     n += fprintf ( file, "; %03X : %05X \n", pc, c ) ;
 }
@@ -787,6 +787,9 @@ static bool writePSM6 ( const char * strPSMfile ) {
                 case 0x22000 ... 0x22FFF :
                     fprintline1 ( outfile,  "JUMP", "L_%03X", Address12 ( c ), pc, c ) ;
                     break ;
+                case 0x23000 ... 0x23FFF :
+                    fprintline1 ( outfile,  "BREAK", "L_%03X", Address12 ( c ), pc, c ) ;
+                    break ;
                 case 0x32000 ... 0x32FFF :
                     fprintline2 ( outfile,  "JUMP", "Z", "L_%03X", 0, Address12 ( c ), pc, c ) ;
                     break ;
@@ -1146,9 +1149,9 @@ void checkCode ( bool bCore ) {
 }
 
 int main ( int argc, char * argv[] ) {
-    char code_filename[ 256 ] = { '\0' } ;
-    char data_filename[ 256 ] = { '\0' } ;
-    char psm_filename[ 256 ] = { '\0' } ;
+    char * code_filename = NULL ;
+    char * data_filename = NULL ;
+    char * psm_filename = NULL ;
 
     bool result = false ;
     bool bOptErr = false ;
@@ -1187,7 +1190,7 @@ int main ( int argc, char * argv[] ) {
             } else {
                 bMEM = true ;
                 if ( optarg != NULL )
-                    strcpy ( code_filename, optarg ) ;
+                    code_filename = strdup ( optarg ) ;
             }
             break ;
         case 'd' :
@@ -1220,7 +1223,7 @@ int main ( int argc, char * argv[] ) {
                 if ( bVerbose )
                     printf ( "! NDF option chosen\n" ) ;
                 if ( optarg != NULL )
-                    strcpy ( code_filename, optarg ) ;
+                    code_filename = strdup ( optarg ) ;
             }
             break ;
         case 'x' :
@@ -1232,7 +1235,7 @@ int main ( int argc, char * argv[] ) {
                 if ( bVerbose )
                     printf ( "! XDL option chosen\n" ) ;
                 if ( optarg != NULL )
-                    strcpy ( code_filename, optarg ) ;
+                    code_filename = strdup ( optarg ) ;
             }
             break ;
         default :
@@ -1249,37 +1252,40 @@ int main ( int argc, char * argv[] ) {
 
     if ( bVerbose ) {
         print_version( basename ( argv[ 0 ] ) ) ;
-		if ( bKCPSM6 ) {
-			printf ( "! PB6 option chosen\n" ) ;
-		} else {
-			printf ( "! PB3 option chosen\n" ) ;
-		}
-	}
+        if ( bKCPSM6 ) {
+            printf ( "! PB6 option chosen\n" ) ;
+        } else {
+            printf ( "! PB3 option chosen\n" ) ;
+        }
+    }
 
 
-    if ( * code_filename != 0 ) {
-        if ( strrchr ( code_filename, '.' ) == NULL )
-            strcat ( code_filename, bXDL ? ".xdl" : bNDF ? ".ndf" : ".mem" ) ;
+    if ( code_filename != NULL ) {
+        char * p = code_filename ;
+        code_filename = duplicate_filename ( code_filename, bXDL ? ".xdl" : bNDF ? ".ndf" : ".mem" ) ;
+        free ( p ) ;
         if ( bVerbose )
             printf ( "! %s file: %s\n", bXDL ? "XDL" : bNDF ? "NDF" : "MEM", code_filename ) ;
     }
 
-    if ( * data_filename != 0 ) {
-        if ( strrchr ( data_filename, '.' ) == NULL )
-            strcat ( data_filename, ".scr" ) ;
+    if ( data_filename != NULL ) {
+        char * p = data_filename ;
+        data_filename = duplicate_filename ( data_filename, ".scr" ) ;
+        free ( p ) ;
         if ( bVerbose )
             printf ( "! %s file: %s\n", "SCR", data_filename ) ;
     }
 
     // output filename
     if ( argv[ optind ] == NULL ) {
-        strcpy ( psm_filename, filename ( code_filename ) ) ;
+        psm_filename = filename ( code_filename ) ;
     } else {
-        strcpy ( psm_filename, argv[ optind++ ] ) ;
+        psm_filename = strdup ( argv[ optind++ ] ) ;
     }
-    if ( * psm_filename != 0 ) {
-        if ( strrchr ( psm_filename, '.' ) == NULL )
-            strcat ( psm_filename, bPico ? ".vhd" : ".psm" ) ;
+    if ( psm_filename != NULL ) {
+        char * p = psm_filename ;
+        psm_filename = duplicate_filename ( psm_filename, bPico ? ".vhd" : ".psm" ) ;
+        free ( p ) ;
         if ( bVerbose )
             printf ( "! output file: %s\n", psm_filename ) ;
     }
@@ -1316,5 +1322,11 @@ int main ( int argc, char * argv[] ) {
     } else
         writePSM3 ( psm_filename ) ;
 
+    if ( code_filename )
+        free ( code_filename ) ;
+    if ( data_filename )
+        free ( data_filename ) ;
+    if ( psm_filename )
+        free ( psm_filename ) ;
     exit ( 0 ) ;
 }

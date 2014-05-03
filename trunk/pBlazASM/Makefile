@@ -10,6 +10,8 @@ C_SRCS += \
 ./pbLexer.c \
 ./pbParser.c \
 ./pbSymbols.c \
+../common/dbuf.c \
+../common/dbuf_string.c \
 ../common/pbLibgen.c
 
 #../common/getopt.c
