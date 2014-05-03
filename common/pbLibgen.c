@@ -20,41 +20,89 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "dbuf_string.h"
 //!
 // operating system dependent filename processing functions
 //
-char * basename( const char * path ) {
-    char * ptr = strrchr( path, '\\' ) ;
-    return ptr ? ptr + 1 : (char *) path ;
+const char * basename( const char * path ) {
+    const char * slash ;
+
+    slash = strrchr( path, '/' ) ;
+    if ( slash ) {
+        return slash + 1 ;
+    } else {
+        slash = strrchr( path, '\\' ) ;
+        if ( slash ) {
+            return slash + 1 ;
+        } else {
+            return path ;
+        }
+    }
 }
 
 char * filename( const char * path ) {
-    char * ptr = strrchr( path, '\\' ) ;
-    char * b = strdup( ptr ? ptr + 1 : (char *) path ) ;
-    char * p = strrchr( b, '.' ) ;
-    if ( p != NULL )
-        *p = '\0' ;
-    return b ;
+    char * name, * dot ;
+
+    name = strdup( basename( path ) ) ;
+    dot = strrchr( name, '.' ) ;
+    if (dot != NULL)
+        *dot = 0 ;
+    return name ;
 }
 
 char * dirname( const char * path ) {
-    char * newpath ;
+    char * name ;
     const char * slash ;
-    long length ;
+    ptrdiff_t length ;
 
-    slash = strrchr( path, '\\' ) ;
-    if ( slash == 0 ) {
-        path = "." ;
-        length = 1 ;
-    } else {
-        while ( slash > path && *slash == '\\' )
-            slash -= 1 ;
+    slash = strrchr( path, '/' ) ;
+    if ( slash ) {
         length = slash - path + 1 ;
+    } else {
+        slash = strrchr( path, '\\' ) ;
+        if ( slash ) {
+            length = slash - path + 1 ;
+        } else {
+#ifdef _WIN32
+            path = ".\\" ;
+#else
+            path = "./" ;
+#endif
+            length = 2 ;
+        }
     }
-    newpath = (char *) malloc( length + 1 ) ;
-    if ( newpath == 0 )
-        return 0 ;
-    strncpy( newpath, path, length ) ;
-    newpath[ length ] = 0 ;
-    return newpath ;
+    name = strdup( path ) ;
+    name[ length ] = 0 ;
+    return name ;
+}
+
+/**
+ * construct new filename based on base_name and replace extension
+*/
+char * construct_filename( const char * base_name, const char * ext ) {
+	char * pfile ;
+	char * ppath ;
+	struct dbuf_s dbuf ;
+	char * ret ;
+
+	pfile = filename( base_name ) ;
+	ppath = dirname( base_name ) ;
+	dbuf_init( &dbuf, 128 ) ;
+	dbuf_append_str( &dbuf, ppath ) ;
+	dbuf_append_str( &dbuf, pfile ) ;
+	dbuf_append_str( &dbuf, ext ) ;
+	ret = dbuf_detach( &dbuf );
+	free( ppath ) ;
+	free( pfile ) ;
+	return ret ;
+}
+
+/**
+ * duplicate new filename based on base_name and add extension if necessary
+*/
+char * duplicate_filename( const char * base_name, const char * defext ) {
+	if ( strrchr( base_name, '.' ) == NULL )
+		return construct_filename( base_name, defext ) ;
+	else
+		return strdup( base_name ) ;
 }

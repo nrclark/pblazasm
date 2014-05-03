@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
+#include <stdbool.h>
 
 #include "pbTypes.h"
 #include "pbSymbols.h"
@@ -63,7 +64,7 @@ static inline void crc16( uint8_t data, uint16_t * crc ) {
 //  \param text string to hash
 static uint32_t hash ( const char * text ) {
     uint16_t crc = 0xFFFF ;
-    char * p = (char *)text ;
+    const char * p = text ;
 
     if ( p != NULL ) {
         while ( *p != 0 )
@@ -82,10 +83,10 @@ void init_symbol ( bool b6 ) {
     time_t timer ;
     struct tm * ptime ;
     value_t zero ;
-    int h ;
+    size_t h ;
 
     // clear table
-    for ( h = 0 ; h < (int)SIZE ; h += 1 ) {
+    for ( h = 0 ; h < SIZE ; h += 1 ) {
         symbols[ h ].type = tNONE ;
         symbols[ h ].subtype = stNONE ;
         symbols[ h ].text = NULL ;
@@ -95,23 +96,23 @@ void init_symbol ( bool b6 ) {
     clash = 0 ;
     // add keywords
     if ( b6 )
-        for ( h = 0 ; h < (int)sizeof ( opcodes6 ) / (int)sizeof ( symbol_t ) ; h += 1 )
+        for ( h = 0 ; h < sizeof ( opcodes6 ) / sizeof ( symbol_t ) ; h += 1 )
             add_keyword ( &opcodes6[ h ] ) ;
     else
-        for ( h = 0 ; h < (int)sizeof ( opcodes3 ) / (int)sizeof ( symbol_t ) ; h += 1 )
+        for ( h = 0 ; h < sizeof ( opcodes3 ) / sizeof ( symbol_t ) ; h += 1 )
             add_keyword ( &opcodes3[ h ] ) ;
 
     if ( b6 )
-        for ( h = 0 ; h < (int)sizeof ( conditions6 ) / (int)sizeof ( symbol_t ) ; h += 1 )
+        for ( h = 0 ; h < sizeof ( conditions6 ) / sizeof ( symbol_t ) ; h += 1 )
             add_keyword ( &conditions6[ h ] ) ;
     else
-        for ( h = 0 ; h < (int)sizeof ( conditions3 ) / (int)sizeof ( symbol_t ) ; h += 1 )
+        for ( h = 0 ; h < sizeof ( conditions3 ) / sizeof ( symbol_t ) ; h += 1 )
             add_keyword ( &conditions3[ h ] ) ;
 
-    for ( h = 0 ; h < (int)sizeof ( directives ) / (int)sizeof ( symbol_t ) ; h += 1 )
+    for ( h = 0 ; h < sizeof ( directives ) / sizeof ( symbol_t ) ; h += 1 )
         add_keyword ( &directives[ h ] ) ;
 
-    for ( h = 0 ; h < (int)sizeof ( registers ) / (int)sizeof ( symbol_t ) ; h += 1 )
+    for ( h = 0 ; h < sizeof ( registers ) / sizeof ( symbol_t ) ; h += 1 )
         add_keyword ( &registers[ h ] ) ;
 
     time ( &timer ) ;
@@ -125,7 +126,7 @@ void init_symbol ( bool b6 ) {
     stamps[ 6 ].value.string = strdup ( __TIME__ ) ;
     stamps[ 7 ].value.string = strdup ( __DATE__ ) ;
 
-    for ( h = 0 ; h < (int)sizeof ( stamps ) / (int)sizeof ( symbol_t ) ; h += 1 )
+    for ( h = 0 ; h < sizeof ( stamps ) / sizeof ( symbol_t ) ; h += 1 )
         add_keyword ( &stamps[ h ] ) ;
 
     zero.integer = 0 ;

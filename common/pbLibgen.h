@@ -20,6 +20,8 @@
 //!
 // operating system dependent filename processing functions
 //
-char * basename( const char * path ) ;
+const char * basename( const char * path ) ;
 char * filename( const char * path ) ;
 char * dirname( const char * path ) ;
+char * construct_filename( const char * base_name, const char * ext ) ;
+char * duplicate_filename( const char * base_name, const char * ext ) ;

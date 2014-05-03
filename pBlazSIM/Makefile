@@ -25,7 +25,7 @@ $(EXE):	$(OBJS)
 	@echo Building: $(EXE)
 	$(CC) -o $@ $^ $(LIBS)
 	
-%.o: %.c %.h
+%.o: %.cpp %.h
 	@echo Building: "$@"
 	$(CC) $(CFLAGS) -o"$@" "$<"
 

@@ -1,4 +1,3 @@
-
 /*
  *  Copyright © 2003..2013 : Henk van Kampen <henk@mediatronix.com>
  *
@@ -17,10 +16,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with pBlazASM.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-typedef unsigned char bool ;
-#define true (1)
-#define false (0)
 
 #ifdef _MSC_VER
 #define inline

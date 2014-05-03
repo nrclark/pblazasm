@@ -36,27 +36,31 @@
 		<Compiler>
 			<Add option="-Wextra" />
 			<Add option="-Wall" />
+			<Add directory="..\common" />
 		</Compiler>
 		<Linker>
 			<Add option="-static-libgcc" />
 		</Linker>
-		<Unit filename="S6_2k.vhd">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
-		<Unit filename="getopt.c">
+		<Unit filename="..\common/dbuf.c">
 			<Option compilerVar="CC" />
-			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
-		<Unit filename="getopt.h">
-			<Option target="&lt;{~None~}&gt;" />
+		<Unit filename="..\common\dbuf.h" />
+		<Unit filename="..\common\dbuf_string.c">
+			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="..\common\dbuf_string.h" />
+		<Unit filename="..\common\getopt.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="..\common\getopt.h" />
+		<Unit filename="..\common\pbLibgen.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="..\common\pbLibgen.h" />
+		<Unit filename="..\common\version.h" />
 		<Unit filename="pBlazMRG.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="pbLibgen.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="version.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />

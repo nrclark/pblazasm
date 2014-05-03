@@ -13,13 +13,15 @@ CC = "C:/tcc/tcc.exe"
  
 C_SRCS += \
 ./pBlazDIS.c \
-./pbLibgen.c \
-./getopt.c
+../common/dbuf.c \
+../common/dbuf_string.c \
+../common/pbLibgen.c \
+../common/getopt.c
 
 EXE = "./pBlazDIS.exe"
 OBJS = $(C_SRCS:.c=.o)
 LIBS = 
-INCS = -I$(MP)"/include" -I"./inc"
+INCS = -I$(MP)"/include" -I"./inc" -I"../common"
 CFLAGS = $(INCS) -g3 -DWINDOWS -Wall -c -O3 -DTCC -DHAVE_STRING_H
 
 ## rules

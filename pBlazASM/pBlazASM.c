@@ -25,8 +25,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "pbTypes.h"
+#include "pbLib.h"
 #include "pbParser.h"
 #include "pbLibgen.h"
 
@@ -38,7 +40,7 @@
 
 #include "version.h"
 
-static void print_version( char * text ) {
+static void print_version( const char * text ) {
 	printf ( "\n%s - Picoblaze Assembler V%ld.%ld.%ld (%s) (c) 2003-2013 Henk van Kampen\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
 }
 
@@ -47,12 +49,12 @@ static void print_version( char * text ) {
  * usage prints usage text
  * @param text application name
  */
-static void usage ( char * text ) {
-    print_version( text ) ;
+static void usage ( const char * text ) {
+	print_version( text ) ;
 
-    printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n"  ) ;
-    printf ( "This is free software, and you are welcome to redistribute it\n"  ) ;
-    printf ( "under certain conditions. See <http://www.gnu.org/licenses/>\n"  ) ;
+	printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n" ) ;
+	printf ( "This is free software, and you are welcome to redistribute it\n" ) ;
+	printf ( "under certain conditions. See <http://www.gnu.org/licenses/>\n" ) ;
 
 	printf ( "\nUsage:\n" ) ;
 	printf ( "   pBlazASM -3|-6 [-k] [-v] [-f] [-c[<MEMfile>]] [-s[<MEMfile>]] [-l[<LSTfile>]] <input file> <input file> <input file> ...\n" ) ;
@@ -77,13 +79,13 @@ static void usage ( char * text ) {
  * calls actual assembler()
  */
 int main ( int argc, char ** argv ) {
-	char * src_filenames[ 256 ] = { NULL } ;
-	char code_filename[ 256 ] = { 0 } ;
-	char data_filename[ 256 ] = { 0 } ;
-	char list_filename[ 256 ] = { 0 } ;
-	char * pfile, *ppath ;
+	source_t src_files[ 256 ] = { { NULL } } ;
+	char * code_filename = NULL ;
+	char * data_filename = NULL ;
+	char * list_filename = NULL ;
 	int result = 0 ;
 	int nInputfile = 0 ;
+	char * p ;
 
 	bool bKCPSM6 = true ;
 	bool bMandatory = true ;
@@ -128,70 +130,44 @@ int main ( int argc, char ** argv ) {
 			bOptErr = true ;
 			break ;
 		case 's' :
-			bWantSCR = true ;
-			if ( optarg != NULL ) {
-				strcpy ( data_filename, optarg ) ;
-			}
-			break ;
 		case 'S' :
 			bWantSCR = true ;
-			bWantZEROs = true ;
+			bWantZEROs = ( optch == 'S' ) ;
 			if ( optarg != NULL ) {
-				strcpy ( data_filename, optarg ) ;
+				data_filename = strdup ( optarg ) ;
 			}
 			break ;
 		case 'x' :
-			if ( bWantMEM ) {
-				fprintf ( stderr, "? conflicting option -%c\n", optch ) ;
-				bOptErr = true ;
-			} else {
-				bWantHEX = true ;
-				if ( optarg != NULL ) {
-					strcpy ( code_filename, optarg ) ;
-				}
-			}
-			break ;
 		case 'X' :
 			if ( bWantMEM ) {
 				fprintf ( stderr, "? conflicting option -%c\n", optch ) ;
 				bOptErr = true ;
 			} else {
 				bWantHEX = true ;
-				bWantZEROs = true ;
+				bWantZEROs = ( optch == 'X' ) ;
 				if ( optarg != NULL ) {
-					strcpy ( code_filename, optarg ) ;
+					code_filename = strdup ( optarg ) ;
 				}
 			}
 		case 'c' :
-		case 'm' :
-			if ( bWantHEX ) {
-				fprintf ( stderr, "? conflicting option -%c\n", optch ) ;
-				bOptErr = true ;
-			} else {
-				bWantMEM = true ;
-				if ( optarg != NULL ) {
-					strcpy ( code_filename, optarg ) ;
-				}
-			}
-			break ;
 		case 'C' :
+		case 'm' :
 		case 'M' :
 			if ( bWantHEX ) {
 				fprintf ( stderr, "? conflicting option -%c\n", optch ) ;
 				bOptErr = true ;
 			} else {
 				bWantMEM = true ;
-				bWantZEROs = true ;
+				bWantZEROs = ( optch == 'C' || optch == 'M' ) ;
 				if ( optarg != NULL ) {
-					strcpy ( code_filename, optarg ) ;
+					code_filename = strdup ( optarg ) ;
 				}
 			}
-			break ;
 			break ;
 		case 'l' :
 			bWantLST = true ;
 			if ( optarg != NULL ) {
-				strcpy ( list_filename, optarg ) ;
+				list_filename = strdup ( optarg ) ;
 			}
 			break ;
 		case 'k' :
@@ -221,7 +197,7 @@ int main ( int argc, char ** argv ) {
 	}
 
 	if ( bVerbose ) {
-        print_version( basename ( argv[ 0 ] ) ) ;
+		print_version( basename ( argv[ 0 ] ) ) ;
 		if ( bKCPSM6 ) {
 			printf ( "! PB6 option chosen\n" ) ;
 		} else {
@@ -244,90 +220,76 @@ int main ( int argc, char ** argv ) {
 		goto finally ;
 	}
 
-	for ( nInputfile = 0 ; argv[ optind ] != NULL && nInputfile < 256 ; nInputfile += 1, optind += 1 ) {
-		src_filenames[ nInputfile ] = calloc ( strlen ( argv[ optind ] ) + 16, sizeof ( char ) ) ;
-		strcpy ( src_filenames[ nInputfile ], argv[ optind ] ) ;
+	for ( nInputfile = 0 ; argv[ optind ] != NULL; optind += 1 ) {
+		char * name ;
+		char * dot ;
 
-		if ( strrchr ( src_filenames[ nInputfile ], '.' ) == NULL ) {
-			strcat ( src_filenames[ nInputfile ], ".psm" ) ;
-		}
+		name = argv[ optind ] ;
+		dot = strrchr ( name, '.' ) ;
+		if ( dot == NULL )
+			name = construct_filename ( name, ".psm" ) ;
+		else
+			name = strdup ( name ) ;
 		if ( bVerbose )
-			fprintf ( stdout, "! Sourcefile: %s\n", src_filenames[ nInputfile ] ) ;
+			fprintf ( stdout, "! Sourcefile: %s\n", name ) ;
+		if ( nInputfile < 256 ) {
+			src_files[ nInputfile ].filename = name ;
+			nInputfile++ ;
+		}
 	}
 
 	if ( bWantMEM || bWantHEX ) {
-		if ( strlen ( code_filename ) == 0 ) {
-			pfile = filename ( src_filenames[ nInputfile - 1 ] ) ;
-			ppath = dirname ( src_filenames[ nInputfile - 1 ] ) ;
-			strcpy ( code_filename, ppath ) ;
-#ifdef __MINGW32__
-			strcat ( code_filename, "\\" ) ;
-#else
-			strcat ( code_filename, "/" ) ;
-#endif
-			strcat ( code_filename, pfile ) ;
-			strcat ( code_filename, bWantHEX ? ".hex" : ".mem" ) ;
-			free ( ppath ) ;
-			free ( pfile ) ;
+		if ( code_filename == NULL ) {
+			code_filename = construct_filename ( src_files[ nInputfile - 1 ].filename, bWantHEX ? ".hex" : ".mem" ) ;
 		}
-		if ( strrchr ( code_filename, '.' ) == NULL )
-			strcat ( code_filename, bWantHEX ? ".hex" : ".mem" ) ;
+		if ( strrchr ( code_filename, '.' ) == NULL ) {
+			code_filename = construct_filename ( p = code_filename, bWantHEX ? ".hex" : ".mem" ) ;
+			free ( p ) ;
+		}
 		if ( bVerbose )
 			fprintf ( stdout, "! MEM file: %s\n", code_filename ) ;
 	}
 
 	if ( bWantSCR ) {
-		if ( strlen ( data_filename ) == 0 ) {
-			pfile = filename ( src_filenames[ nInputfile - 1 ] ) ;
-			ppath = dirname ( src_filenames[ nInputfile - 1 ] ) ;
-			strcpy ( data_filename, ppath ) ;
-#ifdef __MINGW32__
-			strcat ( data_filename, "\\" ) ;
-#else
-			strcat ( data_filename, "/" ) ;
-#endif
-			strcat ( data_filename, pfile ) ;
-			strcat ( data_filename, ".scr" ) ;
-			free ( ppath ) ;
-			free ( pfile ) ;
+		if ( data_filename == NULL ) {
+			data_filename = construct_filename ( src_files[ nInputfile - 1 ].filename, ".scr" ) ;
 		}
-		if ( strrchr ( data_filename, '.' ) == NULL )
-			strcat ( data_filename, ".scr" ) ;
+		if ( strrchr ( data_filename, '.' ) == NULL ) {
+			data_filename = construct_filename ( p = data_filename, ".scr" ) ;
+			free ( p ) ;
+		}
 		if ( bVerbose )
 			fprintf ( stdout, "! SCR file: %s\n", data_filename ) ;
 	}
 
 	if ( bWantLST ) {
-		if ( strlen ( list_filename ) == 0 ) {
-			pfile = filename ( src_filenames[ nInputfile - 1 ] ) ;
-			ppath = dirname ( src_filenames[ nInputfile - 1 ] ) ;
-			strcpy ( list_filename, ppath ) ;
-#ifdef __MINGW32__
-			strcat ( list_filename, "\\" ) ;
-#else
-			strcat ( list_filename, "/" ) ;
-#endif
-			strcat ( list_filename, pfile ) ;
-			strcat ( list_filename, ".lst" ) ;
-			free ( ppath ) ;
-			free ( pfile ) ;
+		if ( list_filename == NULL ) {
+			list_filename = construct_filename ( src_files[ nInputfile - 1 ].filename, ".lst" ) ;
 		}
-		if ( strrchr ( list_filename, '.' ) == NULL )
-			strcat ( list_filename, ".lst" ) ;
+		if ( strrchr ( list_filename, '.' ) == NULL ) {
+			list_filename = construct_filename ( p = list_filename, ".lst" ) ;
+			free ( p ) ;
+		}
 		if ( bVerbose )
 			fprintf ( stdout, "! LST file: %s\n", list_filename ) ;
 	}
 
-	if ( assembler ( src_filenames, code_filename, data_filename, list_filename, bKCPSM_mode, bKCPSM6, bList_mode, bWantHEX, bWantZEROs, bGlobals ) )
+	if ( assembler ( src_files, code_filename, data_filename, list_filename,
+	                 bKCPSM_mode, bKCPSM6, bList_mode, bWantHEX, bWantZEROs, bGlobals ) )
 		result = 0 ;
 	else
 		result = -1 ;
 
 finally: {
-		int i ;
-
-		for ( i = 0 ; i < nInputfile ; i += 1 )
-			free ( src_filenames[ i ] ) ;
+		if ( code_filename )
+			free ( code_filename ) ;
+		if ( data_filename )
+			free ( data_filename ) ;
+		if ( list_filename )
+			free ( list_filename ) ;
+		while ( nInputfile-- ) {
+			free( (void *)src_files[ nInputfile ].filename ) ;
+		}
 	}
 	exit( result ) ;
 }

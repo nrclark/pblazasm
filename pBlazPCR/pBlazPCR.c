@@ -22,8 +22,8 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
+#include <stdbool.h>
 
-#include "pbTypes.h"
 #include "pbLibgen.h"
 #include "pbPicoCore.h"
 #include "version.h"
@@ -45,7 +45,7 @@ static int bank_size = 0 ;
 static bool want_alu = false ;
 
 
-static void usage ( char * text ) {
+static void usage ( const char * text ) {
 	printf ( "\n%s - PicoCore Builder V%ld.%ld.%ld (%s)\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
 
     printf ( "\nThis program comes with ABSOLUTELY NO WARRANTY.\n"  ) ;
@@ -297,9 +297,9 @@ void checkPB6 ( int pc ) {
 }
 
 int main ( int argc, char * argv[] ) {
-	char code_filename[ 256 ] = { '\0' } ;
-	char data_filename[ 256 ] = { '\0' } ;
-	char vhd_filename[ 256 ] = { '\0' } ;
+	char * code_filename = NULL ;
+	char * data_filename = NULL ;
+	char * vhd_filename = NULL ;
 
 	bool result = false ;
 	bool bOptErr = false ;
@@ -318,13 +318,13 @@ int main ( int argc, char * argv[] ) {
 		case 'm' :
 			bMEM = true ;
 			if ( optarg != NULL )
-				strcpy ( code_filename, optarg ) ;
+				code_filename = strdup ( optarg ) ;
 			break ;
 		case 'd' :
 		case 's' :
 			bSCR = true ;
 			if ( optarg != NULL )
-				strcpy ( data_filename, optarg ) ;
+				data_filename = strdup ( optarg ) ;
 			break ;
 		case 'h' :
 			bOptErr = true ;
@@ -340,34 +340,36 @@ int main ( int argc, char * argv[] ) {
 		}
 	}
 
-    if ( bOptErr || code_filename[ 0 ] == '\0' ) {
+    if ( bOptErr || code_filename == NULL ) {
 		usage ( basename ( argv[ 0 ] ) ) ;
 		exit ( -1 ) ;
 	}
 
-	if ( * code_filename != 0 ) {
-		if ( strrchr ( code_filename, '.' ) == NULL )
-			strcat ( code_filename, ".mem" ) ;
+	if ( code_filename != NULL ) {
+		char * p = code_filename ;
+		code_filename = duplicate_filename ( code_filename, ".mem" ) ;
+		free ( p ) ;
 		if ( bVerbose )
             printf ( "! %s file: '%s'\n", "MEM", code_filename ) ;
 	}
 
-	if ( * data_filename != 0 ) {
-		if ( strrchr ( data_filename, '.' ) == NULL )
-			strcat ( data_filename, ".scr" ) ;
+	if ( data_filename != NULL ) {
+		char * p = data_filename ;
+		data_filename = duplicate_filename ( data_filename, ".scr" ) ;
+		free ( p ) ;
 		if ( bVerbose )
             printf ( "! %s file: '%s'\n", "SCR", data_filename ) ;
 	}
 
 	// output filename
 	if ( argv[ optind ] == NULL )
-		strcpy ( vhd_filename, filename ( code_filename ) ) ;
+		vhd_filename = filename ( code_filename ) ;
 	else
-		strcpy ( vhd_filename, argv[ optind++ ] ) ;
-	if ( * vhd_filename != 0 ) {
-		if ( strrchr ( vhd_filename, '.' ) == NULL ) {
-			strcat ( vhd_filename, ".vhd" ) ;
-		}
+		vhd_filename = strdup ( argv[ optind++ ] ) ;
+	if ( vhd_filename != NULL ) {
+		char * p = vhd_filename ;
+		vhd_filename = duplicate_filename ( vhd_filename, ".vhd" ) ;
+		free ( p ) ;
 		if ( bVerbose ) {
 			printf ( "! output file: %s\n", vhd_filename ) ;
 		}
@@ -397,5 +399,11 @@ int main ( int argc, char * argv[] ) {
 	if ( ! result )
 		exit ( -2 ) ;
 
+	if ( code_filename )
+		free( code_filename ) ;
+	if ( data_filename )
+		free( data_filename ) ;
+	if ( vhd_filename )
+		free( vhd_filename ) ;
 	exit ( 0 ) ;
 }

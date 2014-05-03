@@ -71,8 +71,8 @@ MULTDevice::MULTDevice()
 
 static void usage( const char * text )
 {
-	printf("\n%s - Picoblaze command line Simulator V%ld.%ld.%ld (%s)\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS);
-	printf("  (c) 2003-2014 Henk van Kampen\n");
+    printf("\n%s - Picoblaze command line Simulator V%ld.%ld.%ld (%s)\n", text, MAJOR, MINOR, BUILDS_COUNT, STATUS);
+    printf("  (c) 2003-2014 Henk van Kampen\n");
     printf(" %s <filename[.lst]>\n", text);
     printf("  Reads filename.lst and if present filename.scr and starts executing.\n");
     printf("  Execution stops on the first breakpoint. Use BREAK opcode to set it.\n");
@@ -186,9 +186,9 @@ int main(int argc, char *argv[])
     printf("%d instructions read\n", row-1);
     if (pBlaze.onBreakpoint())
     {
-        printf("executed in %d clock ticks\n", pBlaze.CycleCounter);
+        printf("executed in %llu clock ticks\n", (unsigned long long)pBlaze.CycleCounter);
         return EXIT_SUCCESS;
     }
-    printf("failed after %d clock ticks\n", pBlaze.CycleCounter);
+    printf("failed after %llu clock ticks\n", (unsigned long long)pBlaze.CycleCounter);
     return EXIT_FAILURE;
 }
