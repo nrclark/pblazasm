@@ -37,6 +37,7 @@ typedef enum _TYPE {
 	tOPCODE,
 	tCONDITION,
 	tIDENT,
+	tUNDEF,
 	tLABEL,
 	tGLABEL,
 	tDIRECTIVE,

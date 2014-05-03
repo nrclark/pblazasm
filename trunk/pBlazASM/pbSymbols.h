@@ -20,6 +20,7 @@
 
 void init_symbol( bool b6 ) ;
 symbol_t * find_symbol( const char * text, bool bUpper, int file_nbr ) ;
+const symbol_t* next_symbol( const type_e type, const symbol_t* p ) ;
 bool add_symbol( const type_e type, const subtype_e subtype, const char * text, const value_t value, int file_nbr ) ;
 void free_symbol( void ) ;
 
