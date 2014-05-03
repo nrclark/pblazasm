@@ -23,6 +23,17 @@
  * @file pbLib.h
  */
 
+#include "lkar.h"
+
 typedef struct {
     const char * filename ;
+    const char * object ;
+    int offset ;
+    int length ;
 } source_t ;
+
+int is_ar (FILE * libfp);
+char * get_member_name (char *name, size_t *p_size, int allocate, FILE * libfp);
+size_t ar_get_header (struct ar_hdr *hdr, FILE * libfp, char **p_obj_name);
+int load_symbol_table (FILE * fp, const char * archive);
+int add_lib_obj (const char * name, source_t * libobj, int verbose);

@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <stdbool.h>
 
 #include "pbTypes.h"
@@ -68,9 +69,11 @@ static void usage ( const char * text ) {
 	         "         -k      select KCPSM mode with limited expression handling (-3 only)\n"
 	         "         -v      generates verbose reporting\n"
 	         "         -f      with -l creates a list file without code to replace the source\n" ) ;
+	printf ( "   <input file>  can be .psm source file or .lib library\n" ) ;
 	printf ( "\nNote: All (max 255) input files are assembled to one output." ) ;
 	printf ( "\nNote: Option -k (KCPSM mode) is not supported in Picoblaze-6 mode." ) ;
-	printf ( "\nNote: -C, -S and -X generate fully populated MEM files for 'Data2Mem'.\n" ) ;
+	printf ( "\nNote: -C, -S and -X generate fully populated MEM files for 'Data2Mem'." ) ;
+	printf ( "\nNote: Unresolved symbols will be imported from the lib files.\n" ) ;
 }
 
 /**
@@ -79,12 +82,14 @@ static void usage ( const char * text ) {
  * calls actual assembler()
  */
 int main ( int argc, char ** argv ) {
-	source_t src_files[ 256 ] = { { NULL } } ;
+	source_t src_files[ 256 ] = { { NULL, NULL, 0, 0 } } ;
+	char * lib_filenames[ 256 ] = { NULL } ;
 	char * code_filename = NULL ;
 	char * data_filename = NULL ;
 	char * list_filename = NULL ;
 	int result = 0 ;
 	int nInputfile = 0 ;
+	int nLibfile = 0 ;
 	char * p ;
 
 	bool bKCPSM6 = true ;
@@ -220,21 +225,30 @@ int main ( int argc, char ** argv ) {
 		goto finally ;
 	}
 
-	for ( nInputfile = 0 ; argv[ optind ] != NULL; optind += 1 ) {
+	for ( nInputfile = nLibfile = 0 ; argv[ optind ] != NULL; optind += 1 ) {
 		char * name ;
 		char * dot ;
 
 		name = argv[ optind ] ;
 		dot = strrchr ( name, '.' ) ;
-		if ( dot == NULL )
-			name = construct_filename ( name, ".psm" ) ;
-		else
-			name = strdup ( name ) ;
-		if ( bVerbose )
-			fprintf ( stdout, "! Sourcefile: %s\n", name ) ;
-		if ( nInputfile < 256 ) {
-			src_files[ nInputfile ].filename = name ;
-			nInputfile++ ;
+		if ( dot && 0 == strcmp ( dot, ".lib" ) ) {
+			if ( bVerbose )
+				fprintf ( stdout, "! Library: %s\n", name ) ;
+			if ( nLibfile < 256 )
+				lib_filenames[ nLibfile++ ] = strdup ( name ) ;
+		} else {
+			if ( dot == NULL )
+				name = construct_filename ( name, ".psm" ) ;
+			else
+				name = strdup ( name ) ;
+			if ( bVerbose )
+				fprintf ( stdout, "! Sourcefile: %s\n", name ) ;
+			if ( nInputfile < 256 ) {
+				src_files[ nInputfile ].filename = name ;
+				src_files[ nInputfile ].offset = 0 ;
+				src_files[ nInputfile ].length = INT_MAX ;
+				nInputfile++ ;
+			}
 		}
 	}
 
@@ -274,8 +288,8 @@ int main ( int argc, char ** argv ) {
 			fprintf ( stdout, "! LST file: %s\n", list_filename ) ;
 	}
 
-	if ( assembler ( src_files, code_filename, data_filename, list_filename,
-	                 bKCPSM_mode, bKCPSM6, bList_mode, bWantHEX, bWantZEROs, bGlobals ) )
+	if ( assembler ( src_files, lib_filenames, code_filename, data_filename, list_filename,
+	                 bKCPSM_mode, bKCPSM6, bList_mode, bWantHEX, bWantZEROs, bGlobals, bVerbose ) )
 		result = 0 ;
 	else
 		result = -1 ;
@@ -287,8 +301,13 @@ finally: {
 			free ( data_filename ) ;
 		if ( list_filename )
 			free ( list_filename ) ;
+		while ( nLibfile-- ) {
+			free( lib_filenames[ nLibfile ] ) ;
+		}
 		while ( nInputfile-- ) {
 			free( (void *)src_files[ nInputfile ].filename ) ;
+			if ( src_files[ nInputfile ].object )
+				free( (void *)src_files[ nInputfile ].object ) ;
 		}
 	}
 	exit( result ) ;

@@ -157,15 +157,31 @@ symbol_t * find_symbol ( const char * text, bool bUpper, int file_nbr ) {
     if ( symbols[ p ].text == NULL )
         return NULL ;
     // if text is equal, found
-    if ( strcmp ( symbols[ p ].text, buf ) == 0 /* && ( file_nbr == -1 || symbols[ p ].type != tLABEL || symbols[ p ].filenbr == -1 || symbols[ p ].filenbr == file_nbr ) */ )
+    if ( strcmp ( symbols[ p ].text, buf ) == 0 &&
+         ( //file_nbr == -1 ||
+           symbols[ p ].type != tLABEL ||
+           //symbols[ p ].filenbr == -1 ||
+           symbols[ p ].filenbr == file_nbr
+         )
+       )
+    {
         return &symbols[ p ] ;
+    }
 
     // else maybe next entry
     for ( h = ( p + 1 ) & ( SIZE - 1 ) ; h != (int)p ; h = ( h + 1 ) & ( SIZE - 1 ) ) {
         if ( symbols[ h ].text == NULL )
             return NULL ;
-        if ( strcmp ( symbols[ h ].text, buf ) == 0 /* && ( file_nbr == -1 || symbols[ h ].type != tLABEL || symbols[ h ].filenbr == -1 || symbols[ h ].filenbr == file_nbr ) */ )
+        if ( strcmp ( symbols[ h ].text, buf ) == 0  &&
+             ( //file_nbr == -1 ||
+               symbols[ h ].type != tLABEL ||
+               //symbols[ h ].filenbr == -1 ||
+               symbols[ h ].filenbr == file_nbr
+             )
+           )
+        {
             return &symbols[ h ] ;
+        }
     }
     return NULL ; // unlikely
 }
@@ -187,6 +203,13 @@ bool add_symbol ( const type_e type, const subtype_e subtype, const char * text,
             symbols[ h ].filenbr = file_nbr ;
             return true ;
         } else if ( strcmp ( symbols[ h ].text, text ) == 0 ) { // if text is equal, already there?
+            if ( symbols[ h ].type == tUNDEF ) { // replace previously undefined identifier
+                symbols[ h ].type = type ;
+                symbols[ h ].subtype = subtype ;
+                symbols[ h ].value = value ;
+                symbols[ h ].filenbr = file_nbr ;
+                return true ;
+            }
             if ( symbols[ h ].type == type && symbols[ h ].subtype == stSET )
                 symbols[ h ].value = value ;
             else if ( symbols[ h ].type == type && symbols[ h ].subtype == subtype && symbols[ h ].value.integer == value.integer )
@@ -196,6 +219,24 @@ bool add_symbol ( const type_e type, const subtype_e subtype, const char * text,
         clash += 1 ;
     } while ( h != (int)p ) ; // full ?
     return false ;
+}
+
+// get symbol with type, start search with p=NULL
+// returns NULL if no more symbols found
+const symbol_t* next_symbol( const type_e type, const symbol_t* p ) {
+	if ( p == NULL ) {
+		p = symbols ;
+	} else {
+		p ++ ;
+	}
+
+	while ( p < symbols + SIZE ) {
+		if ( ( p->type == type ) ) { // found one
+			return p ;
+		}
+        p ++ ;
+	}
+	return NULL;
 }
 
 // dump the recorded symbols

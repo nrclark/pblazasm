@@ -55,6 +55,7 @@ typedef enum _BUILD_STATE {
 static bool bMode = false ; // KCPSM mode, accepts 'NAMEREG' etc
 static bool bActive = true ; // conditional assembly mode
 static bool bCode = true ; // list code
+static int gPass = 0; // first or second pass
 
 // source
 static const char * gSource ; // source filename for error printer
@@ -284,6 +285,7 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 	char * s = NULL ;
 	uint32_t val ;
 	char * r = (char  *)&val ;
+    const value_t unknown_value = { 0xFFFFFFFF } ;
 
 	// full expression handling
 	if ( current()->type == tNONE )
@@ -395,7 +397,17 @@ static error_t term ( uint32_t * result, symbol_t * (*current)(), symbol_t * (*n
 		break ;
 	case tIDENT :
 		h = find_symbol ( s, false, file_nbr ) ;
-		if ( h == NULL )
+        if ( gPass == 1 ) {
+            if ( h == NULL ) {
+                symbol_t * tok = tok_current() ;
+                add_symbol( tUNDEF, stNONE, s, unknown_value, file_nbr );
+            }
+            if ( h == NULL || h->type == tUNDEF ) {
+                val = 0xFFFFFFFF ;
+                break ;
+            }
+        }
+        if ( h == NULL || h->type == tUNDEF )
 			return etUNDEF ;
 		if ( h->type != tVALUE && h->type != tLABEL && h->type != tGLABEL )
 			return etVALUE ;
@@ -722,7 +734,7 @@ static error_t build ( int file_nbr ) {
 				if ( h == NULL || h->type != tOPCODE )
 					h = NULL ;
 			}
-			if ( h != NULL ) {
+			if ( h != NULL && h->type != tUNDEF ) {
 				switch ( h->type ) {
 				case tLABEL :
 					if ( state != bsINIT )
@@ -736,11 +748,80 @@ static error_t build ( int file_nbr ) {
 				case tOPCODE :
 					if ( state != bsINIT && state != bsLABELED )
 						return etSYNTAX ;
-					if ( bActive )
+					if ( bActive ) {
+						tok_next() ;
 						gPC += 1 ;
+					}
+
+					switch ( h->subtype ) {
+					case stMOVE3 :
+					case stMOVE6 :
+						if ( !destreg( &result ) )
+							return etREGISTER ;
+						if ( !comma() )
+							return etCOMMA ;
+						if ( !srcreg( &result ) ) {
+							if ( ( e = expression( &result, file_nbr ) ) != etNONE )
+								return e ;
+						}
+						break ;
+
+					case stCJMP3 :
+					case stCJMP6 :
+						if ( condition( &result ) ) {
+							if ( !comma() )
+								return etCOMMA ;
+						}
+						if ( ( e = expression( &result, file_nbr ) ) != etNONE )
+							return e ;
+						break ;
+
+					case stIO3 :
+					case stIO6 :
+						if ( !destreg( &result ) )
+							return etREGISTER ;
+						if ( !comma() )
+							return etCOMMA ;
+						if ( !srcreg( &result ) ) {
+							if ( !indexed( &result ) ) {
+								if ( ( e = expression( &result, file_nbr ) ) != etNONE )
+									return e ;
+							}
+						}
+						break ;
+
+					case stOUTK :
+						if ( ( e = expression ( &result, file_nbr ) ) != etNONE )
+							return e ;
+						if ( !comma() )
+							return etCOMMA ;
+						if ( ( e = expression ( &result, file_nbr ) ) != etNONE )
+							return e ;
+						break ;
+
+					case stINST :
+						if ( ( e = expression( &result, file_nbr ) ) != etNONE )
+							return e ;
+						break ;
+
+					case stCSKP :
+					case stBREAK :
+					case stCRET3 :
+					case stCRET6 :
+					case stINT :
+					case stINTI :
+					case stINTE :
+					case stSHIFT :
+					case stBANK :
+						break ;
+
+					default :
+						return etNOTIMPL ;
+					}
 					state = bsEND ; // we know enough for now
 					break ;
 				case tDIRECTIVE :
+					tok_next() ;
 					switch ( h->subtype ) {
 					case stFI:
 						bActive = true ;
@@ -750,7 +831,6 @@ static error_t build ( int file_nbr ) {
 						if ( state != bsINIT ) {
 							return etSYNTAX ;
 						}
-						tok_next() ;
 						if ( ( e = expression ( &result, file_nbr ) ) == etNONE )
 							bActive = result != 0 ;
 						else
@@ -764,7 +844,6 @@ static error_t build ( int file_nbr ) {
 					case stORG :
 						if ( state != bsINIT )
 							return etSYNTAX ;
-						tok_next() ;
 						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( result >= gCodeRange )   // within code range
 								return etRANGE ;
@@ -778,7 +857,6 @@ static error_t build ( int file_nbr ) {
 					case stESG :
                         if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
-						tok_next() ;
                         if ( symtok != NULL ) {
                             value.integer = gSCR ;
                             if ( !add_symbol ( tVALUE, stINT, symtok->text, value, file_nbr ) )
@@ -795,7 +873,6 @@ static error_t build ( int file_nbr ) {
 					case stDSG :
                         if ( state != bsINIT )
 							return etSYNTAX ;
-						tok_next() ;
 						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( result >= gScrSize ) // within data range
 								return etSCRRNG ;
@@ -812,7 +889,6 @@ static error_t build ( int file_nbr ) {
 					case stALIGN :
 						if ( state != bsINIT )
 							return etSYNTAX ;
-						tok_next() ;
 						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( result <= 0 )
 								return etRANGE ;
@@ -829,7 +905,6 @@ static error_t build ( int file_nbr ) {
 					case stEND :
 						if ( state != bsINIT )
 							return etSYNTAX ;
-						tok_next() ;
 						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( result >= CODESIZE * 2 )     // within possible code range
 								return etRANGE ;
@@ -843,10 +918,9 @@ static error_t build ( int file_nbr ) {
 					case stSCRATCHPAD :
 						if ( state != bsINIT )
 							return etSYNTAX ;
-						tok_next() ;
 						if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 							if ( bActive ) {
-								if ( result >= gCodeRange )    // within possible code range
+								if ( result > gCodeRange )    // within possible code range
 									return etRANGE ;
 								gScrLoc = result * 2  ;
 							}
@@ -871,7 +945,6 @@ static error_t build ( int file_nbr ) {
                     case stDEF :
 						if ( state != bsSYMBOL )
 							return etSYNTAX ;
-						tok_next() ;
 						if ( symtok != NULL ) {
                             symbol_t * tok = tok_current() ;
                             int c = 2 ;
@@ -898,7 +971,6 @@ static error_t build ( int file_nbr ) {
 					case stEQU :
 						if ( state != bsSYMBOL )
 							return etSYNTAX ;
-						tok_next() ;
 						if ( symtok != NULL ) {
 							if ( tok_current()->type == tSTRING ) {
 								// string value?
@@ -933,7 +1005,6 @@ static error_t build ( int file_nbr ) {
 					case stSET :
 						if ( state != bsSYMBOL )
 							return etSYNTAX ;
-						tok_next() ;
 						if ( symtok != NULL ) {
                             if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
                                 // normal expression?
@@ -950,7 +1021,6 @@ static error_t build ( int file_nbr ) {
 						if ( state != bsINIT ) {
 							return etSYNTAX ;
 						}
-						tok_next() ;
 						symtok = tok_next() ;
 						if ( symtok->type != tIDENT )
 							return etSYNTAX ;
@@ -969,7 +1039,6 @@ static error_t build ( int file_nbr ) {
 						if ( state != bsINIT ) {
 							return etSYNTAX ;
 						}
-						tok_next() ;
 						symtok = tok_next() ;
 						if ( symtok->type != tIDENT ) {
 							return etSYNTAX ;
@@ -999,7 +1068,6 @@ static error_t build ( int file_nbr ) {
 						if ( state != bsSYMBOL ) {
 							return etSYNTAX ;
 						}
-						tok_next() ;
 						if ( symtok != NULL ) {
 							if ( ( e = expression ( &result, file_nbr ) ) == etNONE ) {
 								if ( bActive ) {
@@ -1023,7 +1091,6 @@ static error_t build ( int file_nbr ) {
 						if ( state != bsINIT && state != bsSYMBOL ) {
 							return etSYNTAX ;
 						}
-						tok_next() ;
 						value.integer = gSCR ;
 						if ( symtok != NULL && !add_symbol ( tVALUE, stINT, symtok->text, value, file_nbr ) ) {
 							return etDOUBLE ;
@@ -1059,7 +1126,6 @@ static error_t build ( int file_nbr ) {
 						if ( state != bsINIT && state != bsSYMBOL ) {
 							return etSYNTAX ;
 						}
-						tok_next() ;
 						value.integer = gSCR & 0xFF ;
 						if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value, file_nbr ) ) {
 							return etDOUBLE ;
@@ -1079,7 +1145,6 @@ static error_t build ( int file_nbr ) {
 					case stTEXT :
 						if ( state != bsINIT && state != bsSYMBOL )
 							return etSYNTAX ;
-						tok_next() ;
 						value.integer = gSCR & 0xFF ;
 						if ( symtok && !add_symbol ( tVALUE, stINT, symtok->text, value, file_nbr ) )
 							return etDOUBLE ;
@@ -1334,7 +1399,7 @@ static error_t assemble ( int file_nbr, uint32_t * addr, uint32_t * code, uint32
 							opcode = 0x25000 ;    // RET
 						break ;
 					case stINT :
-						opcode = h->value.integer ;
+						opcode = h->value.integer ;             // EINT / DINT
 						break ;
 					case stINTI :
 						if ( !bMode )
@@ -2104,6 +2169,7 @@ static char * file_gets( char * s, int n, FILE * stream ) {
 
 bool pass1 ( source_t * Source, int file_nbr )
 {
+	long end = Source->offset + Source->length;
 	FILE * fsrc = NULL ;
 	bool result = true ;
 	char line[ 4096 ] ;
@@ -2115,10 +2181,12 @@ bool pass1 ( source_t * Source, int file_nbr )
 		fprintf ( stderr, "? unable to open source file '%s'\n", Source->filename ) ;
 		return false ;
 	}
+	fseek ( fsrc, Source->offset, SEEK_SET ) ;
 	// pass 1, add symbols from source
 	for ( gLinenr = 0 ;
 		  result &&
-		  ( file_gets ( line, sizeof ( line ), fsrc ) != NULL ) ;
+		  ( file_gets ( line, sizeof ( line ), fsrc ) != NULL ) &&
+		  ( ftell ( fsrc ) <= end ) ;
 		)
 	{
 		if ( lex ( line, bMode ) ) {
@@ -2133,9 +2201,9 @@ bool pass1 ( source_t * Source, int file_nbr )
 }
 
 // main entry for the 2-pass assembler
-bool assembler ( source_t * sources,
+bool assembler ( source_t * sources, char ** libfilenames,
                  const char * codefilename, const char * datafilename, const char * listfilename,
-                 bool mode, bool b6, bool listcode, bool hex, bool zeros, bool globals ) {
+                 bool mode, bool b6, bool listcode, bool hex, bool zeros, bool globals, bool verbose ) {
 	FILE * fsrc = NULL ;
 	FILE * fmem = NULL ;
 	FILE * flist = NULL ;
@@ -2145,6 +2213,7 @@ bool assembler ( source_t * sources,
 	uint32_t h = 0 ;
 	bool result = true ;
 	uint32_t addr, code, data ;
+	const symbol_t* sym ;
 	int file_nbr ;
 
 	// set up symbol table with keywords
@@ -2156,6 +2225,7 @@ bool assembler ( source_t * sources,
 	for ( h = 0 ; h < DATASIZE ; h += 1 )
 		gData[ h ] = 0xDE00 ;
 
+	gPass = 1;
 	gCodeRange = 1024 ;
 	gPC = 0 ;
 	gSCR = 0 ;
@@ -2174,6 +2244,43 @@ bool assembler ( source_t * sources,
 	if ( !result )
 		goto finally ;
 
+	// check for undefined symbols
+	if ( next_symbol( tUNDEF, NULL ) ) {
+		char ** lib ;
+
+		// read all libraries and build library symbol table
+		for ( lib = libfilenames ; *lib != NULL ; lib++ ) {
+			// open library file
+			fsrc = fopen( *lib, "rb" ) ;
+			if ( fsrc == NULL ) {
+				fprintf( stderr, "? unable to open library file '%s'", *lib ) ;
+				result = false ;
+				break ;
+			}
+			// add symbols to table
+			load_symbol_table( fsrc, *lib ) ;
+			fclose( fsrc ) ;
+		}
+
+		// for each undefined symbol search it in the library symbol table and assemble the object
+		while ( result && (sym = next_symbol( tUNDEF, NULL ) ) ) {
+			// find symbol and add object to sources
+			if ( !add_lib_obj( sym->text, Source, verbose ) ) {
+				result = false ;
+				break ;
+			}
+			if ( !pass1 ( Source++, globals ? file_nbr : -1 ) ) {
+				result = false ;
+				break ;
+			}
+			file_nbr += 1 ;
+		}
+	}
+
+	// give up if errors in pass 1
+	if ( !result )
+		goto finally ;
+
 	if ( strlen ( listfilename ) > 0 ) {
 		flist = fopen ( listfilename, "w" ) ;
 		if ( flist == NULL ) {
@@ -2183,6 +2290,7 @@ bool assembler ( source_t * sources,
 		fprintf( flist, "; created by Picoblaze Assembler V%ld.%ld.%ld (%s)\n", MAJOR, MINOR, BUILDS_COUNT, STATUS ) ;
 	}
 
+	gPass = 2;
 	bCode = listcode ;
 	gCodeRange = 1024 ;
 	gPC = 0 ;
@@ -2199,7 +2307,8 @@ bool assembler ( source_t * sources,
 			fprintf ( flist, "PB3\n" ) ;
 	}
 	for ( Source = sources ; Source->filename != NULL ; Source++, file_nbr += 1 ) {
-		gSource = Source->filename ;
+		long end = Source->offset + Source->length;
+		gSource = Source->object ? Source->object : Source->filename ;
 		fsrc = fopen ( Source->filename, "r" ) ;
 		if ( fsrc == NULL ) {
 			fprintf ( stderr, "? unable to re-open source file '%s'\n", Source->filename ) ;
@@ -2209,10 +2318,12 @@ bool assembler ( source_t * sources,
 		if ( flist != NULL ) {
 			fprintf ( flist, "; ---------- source file: %s\n", gSource ) ;
 		}
+		fseek ( fsrc, Source->offset, SEEK_SET ) ;
 		// pass 2, build code and scratchpad
 		for ( gLinenr = 0 ;
 			  result &&
-			  ( file_gets ( line, sizeof ( line ), fsrc ) != NULL ) ;
+			  ( file_gets ( line, sizeof ( line ), fsrc ) != NULL ) &&
+			  ( ftell ( fsrc ) <= end ) ;
 			)
 		{
 			if ( lex ( line, bMode ) ) {
