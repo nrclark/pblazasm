@@ -16,6 +16,7 @@
 					<Add option="-pg" />
 					<Add option="-g" />
 					<Add option="-D_DEBUG_" />
+					<Add directory="../common" />
 				</Compiler>
 				<Linker>
 					<Add option="-pg -lgmon" />
@@ -41,6 +42,18 @@
 		<Linker>
 			<Add option="-static-libgcc" />
 		</Linker>
+		<Unit filename="../common/dbuf.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../common/dbuf_string.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../common/getopt.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../common/pbLibgen.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="bsParse.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -53,19 +66,7 @@
 		<Unit filename="pbCRC32.h">
 			<Option target="Release" />
 		</Unit>
-		<Unit filename="pbLibgen.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="pbLibgen.h">
-			<Option target="Release" />
-		</Unit>
 		<Unit filename="pbS3E.h">
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="pbTypes.h">
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="version.h">
 			<Option target="Release" />
 		</Unit>
 		<Extensions>
@@ -83,7 +84,7 @@
 			<envvars />
 			<AutoVersioning>
 				<Scheme minor_max="10" build_max="0" rev_max="0" rev_rand_max="10" build_times_to_increment_minor="100" />
-				<Settings autoincrement="1" date_declarations="1" update_manifest="97" do_auto_increment="0" ask_to_increment="0" language="C" svn="0" svn_directory="" header_path="version.h" />
+				<Settings autoincrement="1" date_declarations="1" update_manifest="1" do_auto_increment="0" ask_to_increment="0" language="C" svn="0" svn_directory="" header_path="version.h" />
 				<Changes_Log show_changes_editor="0" app_title="released version %M.%m.%b of %p" changeslog_path="ChangesLog.txt" />
 				<Code header_guard="VERSION_H" namespace="AutoVersion" prefix="" />
 			</AutoVersioning>
