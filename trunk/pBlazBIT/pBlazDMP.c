@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <time.h>
+#include <stdbool.h>
 
 #include "pbTypes.h"
 #include "pbLibgen.h"
@@ -40,7 +41,7 @@
 uint16_t Data[ MAXMEM * 18 / 16 ] ;
 
 
-static void usage ( char * text ) {
+static void usage ( const char * text ) {
     fprintf( stdout,"\n%s - %s\n", text, "Picoblaze Assembler bitstream dump utility V0.0" ) ;
     fprintf( stdout,"\nUSAGE:\n" ) ;
     fprintf( stdout,"   pBlazDMP [-3|-6] [-v] [-d<data_stream>]* -o<MEM outputfile> <BIT inputfile>\\n" ) ;

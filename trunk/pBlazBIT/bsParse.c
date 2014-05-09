@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <time.h>
+#include <stdbool.h>
+
 
 #include "pbTypes.h"
 #include "pbCRC32tab.h"
