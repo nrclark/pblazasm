@@ -40,58 +40,57 @@
 				</Linker>
 			</Target>
 		</Build>
+		<Compiler>
+			<Add directory="../common" />
+		</Compiler>
 		<Linker>
 			<Add option="-static-libgcc" />
 		</Linker>
-		<Unit filename="getopt.h">
-			<Option target="&lt;{~None~}&gt;" />
+		<Unit filename="../common/dbuf.c">
+			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../common/dbuf.h" />
+		<Unit filename="../common/dbuf_string.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../common/dbuf_string.h" />
+		<Unit filename="../common/getopt.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../common/getopt.h" />
+		<Unit filename="../common/lkar.h" />
+		<Unit filename="../common/pbDirectives.h" />
+		<Unit filename="../common/pbLib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../common/pbLib.h" />
+		<Unit filename="../common/pbLibgen.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../common/pbLibgen.h" />
+		<Unit filename="../common/pbTypes.h" />
+		<Unit filename="../common/version.h" />
 		<Unit filename="pBlazASM.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="pbDirectives.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
-		<Unit filename="pbErrors.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
+		<Unit filename="pbErrors.h" />
 		<Unit filename="pbLexer.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="pbLexer.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
-		<Unit filename="pbLibgen.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="pbLibgen.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
-		<Unit filename="pbOpcodes.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
+		<Unit filename="pbLexer.h" />
+		<Unit filename="pbOpcodes.h" />
 		<Unit filename="pbParser.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="pbParser.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
+		<Unit filename="pbParser.h" />
 		<Unit filename="pbSymbols.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="pbSymbols.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
-		<Unit filename="pbTypes.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
+		<Unit filename="pbSymbols.h" />
 		<Unit filename="test.lst">
 			<Option target="Debug" />
 		</Unit>
 		<Unit filename="test.psm">
-			<Option target="Debug" />
-		</Unit>
-		<Unit filename="version.h">
 			<Option target="Debug" />
 		</Unit>
 		<Extensions>
