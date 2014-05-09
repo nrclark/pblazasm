@@ -4,23 +4,23 @@
 	<Project>
 		<Option title="pBlazPCR" />
 		<Option pch_mode="2" />
-		<Option compiler="clang_compiler" />
+		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="bin\Debug\pBlazPCR" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj\Debug\" />
+				<Option output="bin/Debug/pBlazPCR" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
 				<Option type="1" />
-				<Option compiler="clang_compiler" />
+				<Option compiler="gcc" />
 				<Option parameters="-v -cpblazbit -spblazbit test.vhd" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
-				<Option output="bin\Release\pBlazPCR" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj\Release\" />
+				<Option output="bin/Release/pBlazPCR" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
 				<Option type="1" />
-				<Option compiler="clang_compiler" />
+				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
 				</Compiler>
@@ -32,25 +32,25 @@
 		<Compiler>
 			<Add option="-Wextra" />
 			<Add option="-Wall" />
-			<Add directory="..\common" />
+			<Add directory="../common" />
 		</Compiler>
-		<Unit filename="..\common\dbuf.c">
+		<Unit filename="../common/dbuf.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="..\common\dbuf.h" />
-		<Unit filename="..\common\dbuf_string.c">
+		<Unit filename="../common/dbuf.h" />
+		<Unit filename="../common/dbuf_string.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="..\common\dbuf_string.h" />
-		<Unit filename="..\common\getopt.c">
+		<Unit filename="../common/dbuf_string.h" />
+		<Unit filename="../common/getopt.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="..\common\getopt.h" />
-		<Unit filename="..\common\pbLibgen.c">
+		<Unit filename="../common/getopt.h" />
+		<Unit filename="../common/pbLibgen.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="..\common\pbLibgen.h" />
-		<Unit filename="..\common\version.h" />
+		<Unit filename="../common/pbLibgen.h" />
+		<Unit filename="../common/version.h" />
 		<Unit filename="pBlazPCR.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -63,7 +63,7 @@
 		<Extensions>
 			<AutoVersioning>
 				<Scheme minor_max="10" build_max="0" rev_max="0" rev_rand_max="10" build_times_to_increment_minor="100" />
-				<Settings autoincrement="1" date_declarations="1" do_auto_increment="0" ask_to_increment="0" language="C" svn="0" svn_directory="" header_path="version.h" />
+				<Settings autoincrement="1" date_declarations="1" update_manifest="97" do_auto_increment="0" ask_to_increment="0" language="C" svn="0" svn_directory="" header_path="version.h" />
 				<Changes_Log show_changes_editor="0" app_title="released version %M.%m.%b of %p" changeslog_path="ChangesLog.txt" />
 				<Code header_guard="VERSION_H" namespace="AutoVersion" prefix="" />
 			</AutoVersioning>
