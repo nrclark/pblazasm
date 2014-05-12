@@ -4,13 +4,13 @@
 	<Project>
 		<Option title="pBlazDIS" />
 		<Option pch_mode="2" />
-		<Option compiler="arm-elf-gcc" />
+		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
 				<Option output="bin/Debug/pBlazDIS" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
-				<Option compiler="arm-elf-gcc" />
+				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
@@ -19,7 +19,7 @@
 				<Option output="bin/Release/pBlazDIS" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
-				<Option compiler="arm-elf-gcc" />
+				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
 				</Compiler>
@@ -30,8 +30,21 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add directory="../common" />
 		</Compiler>
-		<Unit filename="main.c">
+		<Unit filename="../common/dbuf.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../common/dbuf.h" />
+		<Unit filename="../common/dbuf_string.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../common/dbuf_string.h" />
+		<Unit filename="../common/pbLibgen.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../common/pbLibgen.h" />
+		<Unit filename="pBlazDIS.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Extensions>
