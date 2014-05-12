@@ -23,6 +23,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
+#include <stdbool.h>
 
 #include "pbTypes.h"
 #include "pbLibgen.h"
