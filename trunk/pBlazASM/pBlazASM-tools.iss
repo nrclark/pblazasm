@@ -19,8 +19,8 @@ AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 DefaultDirName={pf}\Mediatronix\{#MyAppName}
-DefaultGroupName={#MyAppName}
-LicenseFile=C:\Users\henk\Google_Drive\SVN\pBlazASM\gpl-3.0.txt
+DefaultGroupName=Mediatronix pBlazASM tool suite
+LicenseFile=C:\Users\henk\Dropbox\Projects\pblazasm\gpl-3.0.txt
 OutputBaseFilename=pBlazASM-tools-Install
 Compression=lzma
 SolidCompression=yes
@@ -29,15 +29,15 @@ SolidCompression=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazASM\bin\Release\pBlazASM.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazBIT\bin\Release\pBlazBIT.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazDIS\bin\Release\pBlazDIS.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazMRG\bin\Release\pBlazMRG.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\MinGW32\bin\mingwm10.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\henk\Dropbox\Projects\pblazasm\pBlazASM\bin\Release\pBlazASM.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\henk\Dropbox\Projects\pblazasm\pBlazBIT\bin\Release\pBlazBIT.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\henk\Dropbox\Projects\pblazasm\pBlazDIS\bin\Release\pBlazDIS.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\henk\Dropbox\Projects\pblazasm\pBlazMRG\bin\Release\pBlazMRG.exe"; DestDir: "{app}"; Flags: ignoreversion
 ;Source: "C:\Users\henk\Google_Drive\SVN\pBlazPCR\bin\Release\pBlazPCR.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazMRG\P6_ROM_SCR_7S_2K_5Aug11.tpl"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazMRG\ROM_SCR_1024.tpl"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\henk\Google_Drive\SVN\pBlazBIT\ROM_SCR_1024.vhd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\henk\Dropbox\Projects\pblazasm\common\P6_ROM_SCR_7S_2K_5Aug11.tpl"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\henk\Dropbox\Projects\pblazasm\common\ROM_SCR_1024.tpl"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\henk\Dropbox\Projects\pblazasm\common\ROM_SCR_1024.vhd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\MinGW32\bin\mingwm10.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
