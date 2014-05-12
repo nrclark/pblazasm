@@ -768,11 +768,17 @@ static error_t build ( int file_nbr ) {
 
 					case stCJMP3 :
 					case stCJMP6 :
-						if ( condition( &result ) ) {
+                         if ( destreg ( &result ) ) {   // JUMP s0, s1
 							if ( !comma() )
 								return etCOMMA ;
-						}
-						if ( ( e = expression( &result, file_nbr ) ) != etNONE )
+							if ( !srcreg ( &result ) )
+								return etREGISTER ;
+                            break ;
+						} else if ( condition( &result ) ) {
+							if ( !comma() )
+								return etCOMMA ;
+                        }
+                        if ( ( e = expression( &result, file_nbr ) ) != etNONE )
 							return e ;
 						break ;
 
