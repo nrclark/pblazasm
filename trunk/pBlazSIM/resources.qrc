@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/files">
         <file>bug_red.ico</file>
+        <file>IO.js</file>
     </qresource>
     <qresource prefix="/images">
         <file>breakpoint.png</file>
@@ -43,5 +44,9 @@
         <file>bullet_ball_glass.png</file>
         <file>refresh.png</file>
         <file>folder_new.png</file>
+        <file>navigate_open.png</file>
+        <file>document_into.png</file>
+        <file>document_out.png</file>
+        <file>gear_run.png</file>
     </qresource>
 </RCC>
