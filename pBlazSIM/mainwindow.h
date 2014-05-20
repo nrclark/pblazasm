@@ -1,5 +1,5 @@
 /*
- *  Copyright � 2003..2012 : Henk van Kampen <henk@mediatronix.com>
+ *  Copyright � 2003..2014 : Henk van Kampen <henk@mediatronix.com>
  *
  *  This file is part of pBlazASM.
  *
@@ -50,80 +50,97 @@
 #include <QScriptEngineDebugger>
 
 
-#include "pBlazeIO.h"
+#include "pBlazeQt.h"
 #include "hexspinbox.h"
+#include "qmtxpicoterm.h"
+#include "qmtxledbox.h"
 
-#define PBLAZSIM_VERSION_STR "2.0"
+#define PBLAZSIM_VERSION_STR "2.0 rc2"
+#define COL_WIDTH 40
+
 
 namespace Ui {
 class MainWindow ;
 }
-
-class KeyPressEater ;
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
     friend class IODevice ;
-    friend class KeyPressEater ;
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow( QWidget *parent = 0 ) ;
     ~MainWindow();
 
-    QmtxPicoblaze * pBlaze ;
-    QQueue<uint32_t> * UART_IN ;
+    QmtxPicoblaze pBlaze ;
+    QmtxPicoTerm picoTerm ;
 
 public slots:
+    void updateUI( enum pbState state ) ;
+
+    // PicoTerm
+    void showChar( uint32_t c ) ;
+    void clearScreen( void ) ;
+    void dcsLog( QList<uint32_t> l ) ;
+//    void ledControl( int r, int g, int b ) ;
+    void getVirtualSwitches( void ) ;
+
 
 private slots:
+    void on_actionNew_triggered();
     void on_action_Open_triggered();
+    void on_actionRefresh_triggered();
     void on_actionExit_triggered();
 
-    void on_actionStep_triggered();
     void on_actionReset_triggered();
-    void on_actionRun_triggered();
     void on_actionStop_triggered();
+    void on_actionStep_triggered();
+    void on_actionRun_triggered();
     void on_actionJump_triggered();
+    void on_actionLeave_triggered();
+
     void on_actionRemove_triggered();
-    void on_actionRefresh_triggered();
-    void on_actionAbout_triggered();
+
+    void on_tvCode_clicked(const QModelIndex &index);
 
     void on_tvScratchpad_doubleClicked(const QModelIndex &index);
     void on_tvRegisters_doubleClicked(const QModelIndex &index);
     void on_tvCode_doubleClicked(const QModelIndex &index);
-    void on_tvIO_doubleClicked(const QModelIndex &index);
-
-    void on_tvCode_clicked(const QModelIndex &index);
     void on_tvStack_doubleClicked(const QModelIndex &index);
     void on_tvState_doubleClicked(const QModelIndex &index);
-    void on_actionNew_triggered();
+
+    void on_actionLoad_triggered();
+    void on_actionSave_Script_triggered();
+
+    void on_actionAbout_triggered();
     void on_actionAbout_Qt_triggered();
 
     void fileWatch_fileChanged(const QString &path);
-    void oneStep( void );
 
-    void on_pushButton_clicked();
+    void on_actionEvaluate_triggered();
 
-    void on_treeWidgetIO_doubleClicked(const QModelIndex &index);
+    void on_twIO_currentChanged(int index);
+
+    void on_teScript_textChanged();
+
+    void signalHandlerException( QScriptValue value ) ;
 
 protected:
-    void closeEvent(QCloseEvent *event);
+    void closeEvent( QCloseEvent * event ) ;
+    void timerEvent( QTimerEvent * event ) ;
 
 private:
     Ui::MainWindow * ui ;
 
     QScriptEngine * engine ;
     QScriptEngineDebugger * debugger ;
+    QFile scriptFile ;
+    QScriptContext * scriptContext ;
 
-    QTimer * timer ;
-    int span ;
+    int timerId ;
+    QElapsedTimer timer ;
 
-    HexSpinBox * lhsb ;
-    HexSpinBox * fhsb ;
-
-    KeyPressEater * eater ;
     QFileSystemWatcher * fileWatch ;
     QFileSystemModel * filesys_model ;
 
@@ -132,13 +149,12 @@ private:
     QStandardItemModel * stackModel ;
     QStandardItemModel * registerModel ;
     QStandardItemModel * scratchpadModel ;
-    QStandardItemModel * ledsModel ;
 
     QIcon * blueIcon ;
     QIcon * redIcon ;
-    QIcon * greenIcon ;
-    QIcon * blackIcon ;
 
+    void setCore( QmtxPicoblaze::coreType c ) ;
+    void setupIO( void ) ;
 
     void loadLSTfile( QString filename ) ;
     void selectLine(QItemSelectionModel::SelectionFlags option);
@@ -152,17 +168,5 @@ public:
     uint32_t getScriptValue( uint32_t address ) ;
     void setScriptValue( uint32_t address, uint32_t value ) ;
 } ;
-
-class KeyPressEater : public QObject
- {
-     Q_OBJECT
-
- public:
-    MainWindow * w ;
-
- protected:
-     bool eventFilter(QObject *obj, QEvent *event);
- };
-
 
 #endif // MAINWINDOW_H

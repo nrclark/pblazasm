@@ -7,15 +7,15 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{4D3FAEB5-7D6A-4A25-B89D-EC130B735020}
 AppName=pBlazSIM
-AppVersion=1.8
+AppVersion=2.0 rc
 AppPublisher=Mediatronix BV
 AppPublisherURL=http://www.mediatronix.com
 AppSupportURL=http://www.mediatronix.com
 AppUpdatesURL=http://www.mediatronix.com
 DefaultDirName={pf}\Mediatronix\pBlazSIM
-DefaultGroupName=pBlazSIM  
-LicenseFile=C:\Users\henk\Projects\pblazasm\trunk\gpl-3.0.txt
-OutputBaseFilename=pBlazSIM_Qt510_Install
+DefaultGroupName=Mediatronix pBlazASM tool suite  
+LicenseFile=..\gpl-3.0.txt
+OutputBaseFilename=pBlazSIM_Qt521_Install
 Compression=lzma
 SolidCompression=yes
 
@@ -27,20 +27,24 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1
 
 [Files]
-Source: "..\Builds\pBlazSIM.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Qt5DLLs\icudt51.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Qt5DLLs\icuin51.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Qt5DLLs\icuuc51.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Qt5DLLs\libstdc++-6.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Qt5DLLs\libgcc_s_sjlj-1.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Qt5DLLs\libwinpthread-1.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Qt5DLLs\Qt5Svg.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Qt5DLLs\Qt5Core.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Qt5DLLs\Qt5Gui.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Qt5DLLs\Qt5Script.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Qt5DLLs\Qt5ScriptTools.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Qt5DLLs\Qt5Widgets.dll"; DestDir: "{app}"; Flags: ignoreversion
-; NOTE: Don't use "Flags: ignoreversion" on any shared system files
+Source: "..\build\pBlazSim\release\pBlazSIM.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\icudt51.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\icuin51.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\icuuc51.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\libstdc++-6.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\libgcc_s_dw2-1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\libwinpthread-1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\Qt5Core.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\Qt5Gui.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\Qt5Script.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\Qt5ScriptTools.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\Qt5Widgets.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\platforms\qwindows.dll"; DestDir: "{app}\platforms"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\IO.js"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "..\build\pBlazSim\release\IO.js"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "..\build\pBlazSim\release\IO.js"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "..\build\pBlazSim\release\IO.js"; DestDir: "{app}"; Flags: ignoreversion
+
 
 [Icons]
 Name: "{group}\pBlazSIM"; Filename: "{app}\pBlazSIM.exe"
