@@ -24,13 +24,11 @@
 
 #include <QDebug>
 
-QScriptValue qs_print ( QScriptContext * sc, QScriptEngine * se ) {
+// implement the script function 'print'
+QScriptValue qs_print( QScriptContext * sc, QScriptEngine * se ) {
     qDebug() << sc->argument( 0 ).toString() ;
     return QScriptValue( se, 0 ) ;
 }
-
-
-// constructor, build all supporting cores, models, devices
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -46,39 +44,39 @@ MainWindow::MainWindow(QWidget *parent) :
         "LEDs.addRack( 2, 0x06, 2 ) ; \n"
         "LEDs.addRack( 3, 0x07, 3 ) ; \n"
         "\n"
-                "function setData( port, value ) { \n"
-        "        switch ( port ) { \n"
-        "        case 0 : \n"
-        "            break ; \n"
-        "        case 1 :  \n"
-        "            UART.setData( value ) ; \n"
-        "            break ; \n"
-        "        case 4 : case 5 : case 6 : case 7 : \n"
-        "            LEDs.setValue( port, value ) ; \n"
-        "            break ; \n"
-        "        case 0xF0 : \n"
-        "            index = value ; \n"
-        "            break ; \n"
-        "        default : \n"
-        "            print( \"setData-> port: \" + port + \", value: \" + value ) ; \n"
-        "        } \n"
+        "function setData( port, value ) { \n"
+        "    switch ( port ) { \n"
+        "    case 0 : \n"
+        "        break ; \n"
+        "    case 1 :  \n"
+        "        UART.setData( value ) ; \n"
+        "        break ; \n"
+        "    case 4 : case 5 : case 6 : case 7 : \n"
+        "        LEDs.setValue( port, value ) ; \n"
+        "        break ; \n"
+        "    case 0xF0 : \n"
+        "        index = value ; \n"
+        "        break ; \n"
+        "    default : \n"
+        "        print( \"setData-> port: \" + port + \", value: \" + value ) ; \n"
         "    } \n"
+        "} \n"
         "\n"
-        "    // IN emulation \n"
-        "    function getData( port ) { \n"
-        "        switch ( port ) { \n"
-        "        case 0 :  \n"
-        "            return UART.getStatus() ; \n"
-        "        case 1 :  \n"
-        "            return UART.getData() ; \n"
-        "        case 4 : case 5 : case 6 : case 7 : \n"
-        "            return LEDs.getValue( port ) ; \n"
-        "        case 0xF0 : \n"
-        "            return SBox[ index ] ; \n"
-        "        default : \n"
-        "            print( \"getData-> port: \" + port ) ; \n"
-        "        } \n"
+        "// IN emulation \n"
+        "function getData( port ) { \n"
+        "    switch ( port ) { \n"
+        "    case 0 :  \n"
+        "        return UART.getStatus() ; \n"
+        "    case 1 :  \n"
+        "        return UART.getData() ; \n"
+        "    case 4 : case 5 : case 6 : case 7 : \n"
+        "        return LEDs.getValue( port ) ; \n"
+        "    case 0xF0 : \n"
+        "        return SBox[ index ] ; \n"
+        "    default : \n"
+        "        print( \"getData-> port: \" + port ) ; \n"
         "    } \n"
+        "} \n"
     ) ;
 
     ui->setupUi( this ) ;
@@ -117,6 +115,9 @@ MainWindow::MainWindow(QWidget *parent) :
     // twIO to show scratchpad
     ui->twIO->setCurrentIndex( 0 ) ;
 
+    // tbIO to show LEDs
+    ui->tbIO->setCurrentIndex( 0 ) ;
+
     // LCD numbers to zero
     ui->db7Segment->display( "0000" ) ;
 
@@ -146,7 +147,7 @@ MainWindow::MainWindow(QWidget *parent) :
     stateModel->setHorizontalHeaderLabels( QStringList() << "state" << "PC" << "Z" << "C" << "B" << "E" << "" ) ;
     for ( int column = 1 ; column < 6 ; column += 1 ) {
         QStandardItem * item = new QStandardItem( QString("") ) ;
-        item->setTextAlignment( Qt::AlignHCenter ) ;
+        item->setTextAlignment( Qt::AlignCenter ) ;
         if ( column == 1 )
             item->setToolTip( "Double click to show source line" ) ;
 
@@ -157,9 +158,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tvState->setFont( fixedFont ) ;
     for ( int col = 0 ; col < 6 ; col += 1 )
         ui->tvState->setColumnWidth( col, COL_WIDTH ) ;
+    ui->tvState->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
     QHeaderView * stateHeader = ui->tvState->header() ;
     ui->tvState->setMaximumHeight( stateHeader->height() + metrics.lineSpacing() + 6 ) ;
-    ui->tvState->setEditTriggers(QAbstractItemView::NoEditTriggers ) ;
+    stateHeader->setDefaultAlignment( Qt::AlignCenter ) ;
 
 
     // setup registermodel for registerview
@@ -168,11 +170,11 @@ MainWindow::MainWindow(QWidget *parent) :
     registerModel->setHorizontalHeaderLabels( QStringList() << "reg#" << "value" ) ;
     for ( int reg = 0 ; reg < 16 ; reg += 1 ) {
         QStandardItem * item = new QStandardItem(" s" + QString("%1").arg(reg,1,16,QChar('0')).toUpper() ) ;
-        item->setTextAlignment( Qt::AlignHCenter ) ;
+        item->setTextAlignment( Qt::AlignCenter ) ;
         registerModel->setItem( reg, 0, item ) ;
 
         item = new QStandardItem( "" ) ;
-        item->setTextAlignment( Qt::AlignHCenter ) ;
+        item->setTextAlignment( Qt::AlignCenter ) ;
         item->setToolTip( "Double click to change" ) ;
         pBlaze.setRegisterItem( reg, item ) ;
         registerModel->setItem( reg, 1, item ) ;
@@ -185,19 +187,20 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tvRegisters->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
     QHeaderView * registerHeader = ui->tvRegisters->header() ;
     ui->tvRegisters->setMaximumHeight( registerHeader->height() + 16 * ( metrics.lineSpacing() + 6 ) ) ;
+    registerHeader->setDefaultAlignment( Qt::AlignCenter ) ;
 
 
     // setup stackmodel for stackview
     stackModel = new QStandardItemModel ;
     stackModel->insertColumns( 0, 5 ) ;
-    stackModel->setHorizontalHeaderLabels( QStringList() << "stack" << "PC" << "Z" << "C" << "B" ) ;
+    stackModel->setHorizontalHeaderLabels( QStringList() << "stack" << "PC" << "Z" << "C" << "B" << "" ) ;
     for ( int sp = 0 ; sp < 32 ; sp += 1 ) {
         QStandardItem * item = new QStandardItem( QString("%1").arg( sp, 2, 10 ) ) ;
-        item->setTextAlignment( Qt::AlignHCenter ) ;
+        item->setTextAlignment( Qt::AlignCenter ) ;
         stackModel->setItem( sp, 0, item ) ;
 
         item = new QStandardItem( "" ) ;
-        item->setTextAlignment( Qt::AlignHCenter ) ;
+        item->setTextAlignment( Qt::AlignCenter ) ;
         item->setToolTip( "Double click to show source line" ) ;
         pBlaze.setStackItem( sp, item ) ;
         stackModel->setItem( sp, 1, item ) ;
@@ -207,6 +210,9 @@ MainWindow::MainWindow(QWidget *parent) :
     for ( int col = 0 ; col < 5 ; col += 1 )
         ui->tvStack->setColumnWidth( col, COL_WIDTH ) ;
     ui->tvStack->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
+    QHeaderView * stackHeader = ui->tvStack->header() ;
+    ui->tvStack->setMaximumHeight( stackHeader->height() + 32 * ( metrics.lineSpacing() + 6 ) ) ;
+    stackHeader->setDefaultAlignment( Qt::AlignCenter ) ;
 
 
     // setup scratchpadmodel for scratchpadview
@@ -230,7 +236,7 @@ MainWindow::MainWindow(QWidget *parent) :
             QStandardItem * item = new QStandardItem( "" ) ;
             scratchpadModel->setItem( row, col, item ) ;
 
-            item->setTextAlignment( Qt::AlignHCenter ) ;
+            item->setTextAlignment( Qt::AlignCenter ) ;
             item->setToolTip( "Double click to change" ) ;
             pBlaze.setScratchpadItem( row * 16 + col, item ) ;
         }
@@ -274,7 +280,7 @@ MainWindow::MainWindow(QWidget *parent) :
     engine = new QScriptEngine() ;
 //    debugger = new QScriptEngineDebugger() ;
 //    debugger->attachTo( engine ) ;
-    engine->setProcessEventsInterval( 10 ) ;
+    engine->setProcessEventsInterval( 16 ) ;
 
     scriptFile.setFileName( "" ) ;
 
@@ -290,6 +296,7 @@ MainWindow::MainWindow(QWidget *parent) :
     engine->evaluate( defaultScript ) ;
     ui->teScript->appendPlainText( defaultScript ) ;
 
+    // instatiate a script function 'print'
     engine->globalObject().setProperty( "print", engine->newFunction( qs_print, 1 ) ) ;
 
     connect( engine, SIGNAL(signalHandlerException(QScriptValue)),
@@ -297,6 +304,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->tbScript->setEnabled( false ) ;
     ui->actionEvaluate->setEnabled(  false ) ;
+
 
     // some GUI stuff
     ui->actionRefresh->setEnabled( fileWatch->files().size() > 0 ) ;
@@ -306,8 +314,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->splScript->setStretchFactor( 0, 80 ) ;
     ui->splScript->setStretchFactor( 1, 20 ) ;
 
+
     // UI state
     connect( &pBlaze, SIGNAL(updateUI(enum pbState)), this, SLOT(updateUI(enum pbState)) ) ;
+
 
     // picoterm
     connect( &picoTerm, SIGNAL(clearScreen()), this, SLOT(clearScreen()) ) ;
@@ -326,9 +336,9 @@ MainWindow::~MainWindow() {
     // settings in Registry
     QSettings settings( QSettings::NativeFormat, QSettings::UserScope, "Mediatronix", "pBlazSIM" ) ;
     if ( fileWatch->files().size() > 0 )
-        settings.setValue("files/LST",  fileWatch->files()[ 0 ] ) ;
+        settings.setValue( "files/LST",  fileWatch->files()[ 0 ] ) ;
     else
-        settings.setValue("files/LST", "" ) ;
+        settings.setValue( "files/LST", "" ) ;
 
     settings.beginGroup( "mainwindow" ) ;
     settings.setValue( "state", (int)windowState() ) ;
@@ -552,14 +562,11 @@ void MainWindow::loadLSTfile( QString filename ) {
          codeModel->setItem( row, 0, item ) ;
 
          if ( str.contains( QRegExp( "^PB3$" ) ) ) {
-//             if ( row == 0 )
-                 pBlaze.setCore( QmtxPicoblaze::ctPB3 ) ;
+             pBlaze.setCore( QmtxPicoblaze::ctPB3 ) ;
          } else if ( str.contains( QRegExp( "^PB6$" ) ) ) {
-//             if ( row == 0 )
-                 pBlaze.setCore( QmtxPicoblaze::ctPB6 ) ;
+             pBlaze.setCore( QmtxPicoblaze::ctPB6 ) ;
          } else if ( str.contains( QRegExp( "^PB7$" ) ) ) {
-//             if ( row == 0 )
-                 pBlaze.setCore( QmtxPicoblaze::ctPB7 ) ;
+             pBlaze.setCore( QmtxPicoblaze::ctPB7 ) ;
          } else if ( str.contains( QRegExp( "^KCPSM6" ) ) ) {
              if ( row == 0 )
                  pBlaze.setCore( QmtxPicoblaze::ctPB6 ) ;
@@ -612,7 +619,7 @@ void MainWindow::loadLSTfile( QString filename ) {
     if ( ! pBlaze.configured() )
         return ;
 
-    // read scratchpad data (.scr) assciated with .lst
+    // read scratchpad data (.scr) associated with .lst
     pBlaze.initScratchpad() ;
     if ( file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         for ( int addr = -1 ; addr < MAXMEM && !file.atEnd() ; ) {
@@ -704,7 +711,13 @@ void MainWindow::on_actionLeave_triggered() {
 
     selectLine( QItemSelectionModel::Clear ) ;
 
-    pBlaze.setCeiling() ;
+    pBlaze.setCeiling() ; // uses barrier
+    if ( pBlaze.onBreakpoint() ) {
+        if ( ! pBlaze.step() ) {
+            updateUI( psError ) ;
+            return ;
+        }
+    }
     timerId = startTimer( 16 ) ;
 }
 
@@ -716,6 +729,12 @@ void MainWindow::on_actionRun_triggered() {
     selectLine( QItemSelectionModel::Clear ) ;
 
     pBlaze.resetBarrier() ;
+    if ( pBlaze.onBreakpoint() ) {
+        if ( ! pBlaze.step() ) {
+            updateUI( psError ) ;
+            return ;
+        }
+    }
     timerId = startTimer( 16 ) ;
 }
 
@@ -997,7 +1016,7 @@ uint32_t MainWindow::getScriptValue( uint32_t address ) {
     QScriptValue getData = global.property( "getData" ) ;
     QScriptValue result = getData.call( QScriptValue(), QScriptValueList() << address ) ;
     if ( engine->hasUncaughtException() )
-        qDebug() << "exception in script, error:" << result.toString() << ", line#:" << engine->uncaughtExceptionLineNumber() ;
+        qDebug() << "getScriptValue error:" << result.toString() << ", line#:" << engine->uncaughtExceptionLineNumber() ;
     return result.toNumber() ;
 }
 
@@ -1007,7 +1026,7 @@ void MainWindow::setScriptValue( uint32_t address, uint32_t value ) {
     QScriptValue setData = global.property( "setData" ) ;
     QScriptValue error = setData.call( QScriptValue(), QScriptValueList() << address << value ) ;
     if ( engine->hasUncaughtException() )
-        qDebug() << "exception in script, error:" << error.toString() << ", line#:" << engine->uncaughtExceptionLineNumber() ;
+        qDebug() << "setScriptValue error:" << error.toString() << ", line#:" << engine->uncaughtExceptionLineNumber() ;
 }
 
 void MainWindow::on_actionLoad_triggered() {
@@ -1088,10 +1107,9 @@ void MainWindow::on_actionEvaluate_triggered() {
     if ( engine->isEvaluating() )
         engine->abortEvaluation() ;
     QString program = ui->teScript->toPlainText() ;
-    if ( engine->canEvaluate( program ) ) {
+    if ( engine->canEvaluate( program ) )
         engine->evaluate( program ) ;
-
-   } else
+    else
         qDebug() << "scriptEngine: can't evaluate script due to syntax errors" ;
     ui->actionEvaluate->setEnabled( scriptContext == NULL ) ;
 }
