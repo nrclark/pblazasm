@@ -15,7 +15,7 @@ AppUpdatesURL=http://www.mediatronix.com
 DefaultDirName={pf}\Mediatronix\pBlazSIM
 DefaultGroupName=Mediatronix pBlazASM tool suite  
 LicenseFile=..\gpl-3.0.txt
-OutputBaseFilename=pBlazSIM_Qt521_Install
+OutputBaseFilename=pBlazSIM_Qt530_Install
 Compression=lzma
 SolidCompression=yes
 
@@ -28,22 +28,20 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 
 [Files]
 Source: "..\build\pBlazSim\release\pBlazSIM.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\build\pBlazSim\release\icudt51.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\build\pBlazSim\release\icuin51.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\build\pBlazSim\release\icuuc51.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\build\pBlazSim\release\libstdc++-6.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\build\pBlazSim\release\libgcc_s_dw2-1.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\build\pBlazSim\release\libwinpthread-1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\icudt52.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\icuin52.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\pBlazSim\release\icuuc52.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\pBlazSim\release\Qt5Core.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\pBlazSim\release\Qt5Gui.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\pBlazSim\release\Qt5Script.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\pBlazSim\release\Qt5ScriptTools.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\pBlazSim\release\Qt5Widgets.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\pBlazSim\release\platforms\qwindows.dll"; DestDir: "{app}\platforms"; Flags: ignoreversion
-Source: "..\build\pBlazSim\release\IO.js"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "..\build\pBlazSim\release\IO.js"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "..\build\pBlazSim\release\IO.js"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "..\build\pBlazSim\release\IO.js"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\libstdc++-6.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\libgcc_s_dw2-1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\libwinpthread-1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\IO.js"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\AES.js"; DestDir: "{app}"; Flags: ignoreversion
 
 
 [Icons]

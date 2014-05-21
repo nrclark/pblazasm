@@ -56,7 +56,7 @@
 #include "qmtxledbox.h"
 
 #define PBLAZSIM_VERSION_STR "2.0 rc2"
-#define COL_WIDTH 40
+#define COL_WIDTH 48
 
 
 namespace Ui {
@@ -71,7 +71,7 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow( QWidget *parent = 0 ) ;
-    ~MainWindow();
+    ~MainWindow() ;
 
     QmtxPicoblaze pBlaze ;
     QmtxPicoTerm picoTerm ;
@@ -83,7 +83,6 @@ public slots:
     void showChar( uint32_t c ) ;
     void clearScreen( void ) ;
     void dcsLog( QList<uint32_t> l ) ;
-//    void ledControl( int r, int g, int b ) ;
     void getVirtualSwitches( void ) ;
 
 

@@ -249,7 +249,7 @@
           </item>
          </layout>
         </widget>
-        <widget class="QToolBox" name="toolBox">
+        <widget class="QToolBox" name="tbIO">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -257,15 +257,15 @@
           </sizepolicy>
          </property>
          <property name="currentIndex">
-          <number>1</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="page_3">
           <property name="geometry">
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>100</width>
-            <height>30</height>
+            <width>158</width>
+            <height>190</height>
            </rect>
           </property>
           <attribute name="label">
@@ -289,8 +289,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>285</width>
-            <height>264</height>
+            <width>184</width>
+            <height>115</height>
            </rect>
           </property>
           <attribute name="label">
@@ -593,7 +593,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>83</width>
+            <width>98</width>
             <height>68</height>
            </rect>
           </property>
@@ -664,7 +664,7 @@
          <enum>QTabWidget::Rounded</enum>
         </property>
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
         <property name="elideMode">
          <enum>Qt::ElideNone</enum>
