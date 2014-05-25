@@ -21,8 +21,10 @@
 #include "ui_mainwindow.h"
 #include "qmtxhexinputdialog.h"
 #include "qmtxscriptuart.h"
+#include "qmtxscriptcore.h"
 
 #include <QDebug>
+#include <QScrollBar>
 
 // implement the script function 'print'
 QScriptValue qs_print( QScriptContext * sc, QScriptEngine * se ) {
@@ -39,16 +41,16 @@ MainWindow::MainWindow(QWidget *parent) :
         "// emulates UART at 0x00..0x01 \n"
         "// and 4 LEDs at 0x04..0x07\n"
         "\n"
-        "LEDs.addRack( 0, 0x04, 0 ) ; \n"
-        "LEDs.addRack( 1, 0x05, 1 ) ; \n"
-        "LEDs.addRack( 2, 0x06, 2 ) ; \n"
-        "LEDs.addRack( 3, 0x07, 3 ) ; \n"
+        "LEDs.addRack( 0x04, 0 ) ; \n"
+        "LEDs.addRack( 0x05, 1 ) ; \n"
+        "LEDs.addRack( 0x06, 2 ) ; \n"
+        "LEDs.addRack( 0x07, 3 ) ; \n"
         "\n"
         "function setData( port, value ) { \n"
         "    switch ( port ) { \n"
         "    case 0 : \n"
         "        break ; \n"
-        "    case 1 :  \n"
+        "    case 1 : \n"
         "        UART.setData( value ) ; \n"
         "        break ; \n"
         "    case 4 : case 5 : case 6 : case 7 : \n"
@@ -65,9 +67,9 @@ MainWindow::MainWindow(QWidget *parent) :
         "// IN emulation \n"
         "function getData( port ) { \n"
         "    switch ( port ) { \n"
-        "    case 0 :  \n"
+        "    case 0 : \n"
         "        return UART.getStatus() ; \n"
-        "    case 1 :  \n"
+        "    case 1 : \n"
         "        return UART.getData() ; \n"
         "    case 4 : case 5 : case 6 : case 7 : \n"
         "        return LEDs.getValue( port ) ; \n"
@@ -83,7 +85,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     timerId = 0 ;
 
-    this->setWindowTitle( "pBlazSIM " + QString(PBLAZSIM_VERSION_STR) + " (Qt " + QString(QT_VERSION_STR) + ") - http://www.mediatronix.com" ) ;
+    this->setWindowTitle( "pBlazSIM " + QString(PBLAZSIM_VERSION_STR) + " (Qt::" + QString(QT_VERSION_STR) + ") - http://www.mediatronix.com" ) ;
     this->setWindowIcon( QIcon( ":/files/bug_red.ico" ) ) ;
 
     // font used for all data views
@@ -128,14 +130,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // setup codemodel for codeview
     codeModel = new QStandardItemModel ;
-    codeModel->insertColumns( 0, 5 ) ;
-    codeModel->setHorizontalHeaderLabels( QStringList() << "line" << "bp" << "code" << "source" << "" ) ;
     ui->tvCode->setModel( codeModel ) ;
+    newCode() ;
     ui->tvCode->setFont( fixedFont ) ;
-    ui->tvCode->setColumnWidth( 0, 40 ) ;
-    ui->tvCode->setColumnWidth( 1, 25 ) ;
-    ui->tvCode->setColumnWidth( 2, 90 ) ;
-    ui->tvCode->setColumnWidth( 3, 300 ) ;
     ui->tvCode->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
     ui->tvCode->setSelectionBehavior( QAbstractItemView::SelectRows ) ;
     ui->tvCode->setSelectionMode( QAbstractItemView::NoSelection ) ;
@@ -144,7 +141,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // setup statemodel for stateview
     stateModel = new QStandardItemModel ;
     stateModel->insertColumns( 0, 7 ) ;
-    stateModel->setHorizontalHeaderLabels( QStringList() << "state" << "PC" << "Z" << "C" << "B" << "E" << "" ) ;
+    stateModel->setHorizontalHeaderLabels( QStringList() << "state" << "PC" << "Zero" << "Carry" << "Bank" << "IE" << "" ) ;
     for ( int column = 1 ; column < 6 ; column += 1 ) {
         QStandardItem * item = new QStandardItem( QString("") ) ;
         item->setTextAlignment( Qt::AlignCenter ) ;
@@ -159,6 +156,8 @@ MainWindow::MainWindow(QWidget *parent) :
     for ( int col = 0 ; col < 6 ; col += 1 )
         ui->tvState->setColumnWidth( col, COL_WIDTH ) ;
     ui->tvState->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
+    QScrollBar * stateVSB = ui->tvState->verticalScrollBar() ;
+    ui->tvState->setMinimumWidth( 7 * COL_WIDTH + 6 + stateVSB->sizeHint().width() ) ;
     QHeaderView * stateHeader = ui->tvState->header() ;
     ui->tvState->setMaximumHeight( stateHeader->height() + metrics.lineSpacing() + 6 ) ;
     stateHeader->setDefaultAlignment( Qt::AlignCenter ) ;
@@ -183,7 +182,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tvRegisters->setFont(fixedFont ) ;
     for ( int col = 0 ; col < 2 ; col += 1 )
         ui->tvRegisters->setColumnWidth( col, COL_WIDTH ) ;
-    ui->tvRegisters->setMinimumWidth( 2 * COL_WIDTH + 6 ) ;
+    QScrollBar * registersVSB = ui->tvRegisters->verticalScrollBar() ;
+    ui->tvRegisters->setMinimumWidth( 2 * COL_WIDTH + 6 + registersVSB->sizeHint().width() ) ;
     ui->tvRegisters->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
     QHeaderView * registerHeader = ui->tvRegisters->header() ;
     ui->tvRegisters->setMaximumHeight( registerHeader->height() + 16 * ( metrics.lineSpacing() + 6 ) ) ;
@@ -193,7 +193,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // setup stackmodel for stackview
     stackModel = new QStandardItemModel ;
     stackModel->insertColumns( 0, 5 ) ;
-    stackModel->setHorizontalHeaderLabels( QStringList() << "stack" << "PC" << "Z" << "C" << "B" << "" ) ;
+    stackModel->setHorizontalHeaderLabels( QStringList() << "stack" << "PC" << "Zero" << "Carry" << "Bank" << "" ) ;
     for ( int sp = 0 ; sp < 32 ; sp += 1 ) {
         QStandardItem * item = new QStandardItem( QString("%1").arg( sp, 2, 10 ) ) ;
         item->setTextAlignment( Qt::AlignCenter ) ;
@@ -210,6 +210,8 @@ MainWindow::MainWindow(QWidget *parent) :
     for ( int col = 0 ; col < 5 ; col += 1 )
         ui->tvStack->setColumnWidth( col, COL_WIDTH ) ;
     ui->tvStack->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
+    QScrollBar * stackVSB = ui->tvStack->verticalScrollBar() ;
+    ui->tvStack->setMinimumWidth( 6 * COL_WIDTH + 6 + stackVSB->sizeHint().width() ) ;
     QHeaderView * stackHeader = ui->tvStack->header() ;
     ui->tvStack->setMaximumHeight( stackHeader->height() + 32 * ( metrics.lineSpacing() + 6 ) ) ;
     stackHeader->setDefaultAlignment( Qt::AlignCenter ) ;
@@ -243,7 +245,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tvScratchpad->setModel( scratchpadModel ) ;
     ui->tvScratchpad->setFont( fixedFont ) ;
     for ( int row = 0 ; row < 16 ; row += 1 )
-        ui->tvScratchpad->setRowHeight( row, metrics.lineSpacing() + 6 ) ;
+        ui->tvScratchpad->setRowHeight( row, metrics.lineSpacing() + 3 ) ;
     for ( int col = 0 ; col < 16 ; col += 1 )
         ui->tvScratchpad->setColumnWidth( col, 28 ) ;
     ui->tvScratchpad->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
@@ -292,6 +294,11 @@ MainWindow::MainWindow(QWidget *parent) :
     uart->w = this ;
     QScriptValue svUART = engine->newQObject( uart ) ;
     engine->globalObject().setProperty( "UART", svUART ) ;
+
+    QmtxScriptCore * core = new QmtxScriptCore ;
+    core->w = this ;
+    QScriptValue svCore = engine->newQObject( core ) ;
+    engine->globalObject().setProperty( "Core", svCore ) ;
 
     engine->evaluate( defaultScript ) ;
     ui->teScript->appendPlainText( defaultScript ) ;
@@ -454,14 +461,25 @@ void MainWindow::closeEvent( QCloseEvent *event ) {
     event->accept() ;
 }
 
+void MainWindow::newCode( void ) {
+    codeModel->clear() ;
+    codeModel->insertColumns( 0, 5 ) ;
+    codeModel->setHorizontalHeaderLabels( QStringList() << "line" << "bp" << "code" << "source" << "" ) ;
+    ui->tvCode->setColumnWidth( 0, 40 ) ;
+    ui->tvCode->setColumnWidth( 1, 25 ) ;
+    ui->tvCode->setColumnWidth( 2, 90 ) ;
+    ui->tvCode->setColumnWidth( 3, 300 ) ;
+}
+
 void MainWindow::on_actionNew_triggered() {
-    removeCode() ;
+    pBlaze.setCore( QmtxPicoblaze::ctNone ) ;
+    newCode() ;
 }
 
 // reload LST+SCR files
 void MainWindow::on_actionRefresh_triggered() {
     if ( fileWatch->files().size() > 0 )
-        loadLSTfile( fileWatch->files()[ 0 ] ) ;
+        loadLSTfile( fileWatch->files().first() ) ;
 }
 
 // select LST/LOG file
@@ -496,36 +514,20 @@ void MainWindow::fileWatch_fileChanged( const QString &path ) {
             loadLSTfile( path ) ;
     } else {
         mb.setText( "File doesn't exist anymore, clear simulation?" ) ;
-        if ( mb.exec() == QMessageBox::Yes )
-            removeCode() ;
+        if ( mb.exec() == QMessageBox::Yes ) {
+            pBlaze.setCore( QmtxPicoblaze::ctNone ) ;
+            newCode() ;
+        }
     }
-}
-
-void MainWindow::removeCode( void ) {
-    // remove any filewatches
-    if ( fileWatch->files().count() > 0 )
-        fileWatch->removePaths(fileWatch->files() ) ;
-
-    ui->actionRefresh->setEnabled( fileWatch->files().size() > 0 ) ;
-
-    if ( ! pBlaze.configured() )
-        return ;
-
-    // reset core
-    on_actionReset_triggered() ;
-    pBlaze.initialize() ;
-
-    // remove code
-    codeModel->setRowCount( 0 ) ;
-    pBlaze.clearCode() ;
 }
 
 // load LST+SCR files, build code model/view
 void MainWindow::loadLSTfile( QString filename ) {
-    removeCode() ;
+    pBlaze.setCore( QmtxPicoblaze::ctNone ) ;
+    newCode() ;
 
     QFile file( filename ) ;
-    if (!file.exists() ) {
+    if ( !file.exists() ) {
         QMessageBox mb ;
         mb.setStandardButtons( QMessageBox::Ok ) ;
         mb.setInformativeText( filename ) ;
@@ -534,7 +536,7 @@ void MainWindow::loadLSTfile( QString filename ) {
         return ;
     }
 
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    if ( !file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QMessageBox mb ;
         mb.setStandardButtons( QMessageBox::Ok ) ;
         mb.setInformativeText( filename ) ;
@@ -543,11 +545,14 @@ void MainWindow::loadLSTfile( QString filename ) {
         return ;
     }
 
+    // remove any filewatches
+    while ( fileWatch->files().size() > 0 )
+        fileWatch->removePath( fileWatch->files().last() ) ;
     fileWatch->addPath( filename ) ;
     ui->actionRefresh->setEnabled( fileWatch->files().size() > 0 ) ;
 
     // read .lst file and find code lines
-    for ( int row = 0 ; ! file.atEnd() ;  row += 1 ) {
+    for ( int row = 0 ; ! file.atEnd() ; row += 1 ) {
          QStandardItem * item ;
 
          QByteArray line = file.readLine() ;
@@ -845,9 +850,9 @@ void MainWindow::on_tvState_doubleClicked( const QModelIndex &index ) {
     int row = item->row() ;
     int col = item->column() ;
 
-    if ( col == 1 ) {
-        switch ( row ) {
-        case 0 : {
+    if ( row == 0 ) {
+        switch ( col ) {
+        case 1 : {
             uint32_t pc = pBlaze.getPcValue() ;
             item = (QStandardItem *)pBlaze.getCodeItem( pc ) ;
             if ( item != NULL ) {
@@ -864,10 +869,10 @@ void MainWindow::on_tvState_doubleClicked( const QModelIndex &index ) {
             pBlaze.toggleCarry() ;
             break ;
         case 4 :
-            pBlaze.toggleEnable() ;
+            pBlaze.toggleBank() ;
             break ;
         case 5 :
-            pBlaze.toggleBank() ;
+            pBlaze.toggleEnable() ;
             break ;
         default:
             break ;
@@ -1027,6 +1032,24 @@ void MainWindow::setScriptValue( uint32_t address, uint32_t value ) {
     QScriptValue error = setData.call( QScriptValue(), QScriptValueList() << address << value ) ;
     if ( engine->hasUncaughtException() )
         qDebug() << "setScriptValue error:" << error.toString() << ", line#:" << engine->uncaughtExceptionLineNumber() ;
+}
+
+void MainWindow::scriptInterrupt( void ) {
+    if ( ! pBlaze.configured() )
+        return ;
+    pBlaze.setInterrupt( true ) ;
+}
+
+void MainWindow::scriptSetIntVect( quint32 addr ) {
+    if ( ! pBlaze.configured() )
+        return ;
+    pBlaze.setIntVect( addr ) ;
+}
+
+void MainWindow::scriptSetHWBuild( quint8 value ) {
+    if ( ! pBlaze.configured() )
+        return ;
+    pBlaze.setHWBuild( value ) ;
 }
 
 void MainWindow::on_actionLoad_triggered() {

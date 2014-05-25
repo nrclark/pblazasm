@@ -1,5 +1,5 @@
-#include "qmtxscriptuart.h"
 
+#include "qmtxscriptuart.h"
 #include "mainwindow.h"
 
 QmtxScriptUART::QmtxScriptUART(QObject *parent) :

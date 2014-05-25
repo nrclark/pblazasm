@@ -99,7 +99,7 @@ void Picoblaze::reset( void ) {
     carry = false ;
     enable = false ;
     bank = 0 ;
-    intvect = 0x000 ;
+    intvect = MAXMEM - 1 ;
     interrupt = false ;
 
     for ( int address = 0 ; address < MAXMEM ; address += 1 )

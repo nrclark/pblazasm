@@ -55,7 +55,7 @@
 #include "qmtxpicoterm.h"
 #include "qmtxledbox.h"
 
-#define PBLAZSIM_VERSION_STR "2.0 rc2"
+#define PBLAZSIM_VERSION_STR "2.0 rc3"
 #define COL_WIDTH 48
 
 
@@ -152,12 +152,12 @@ private:
     QIcon * blueIcon ;
     QIcon * redIcon ;
 
+    void newCode( void ) ;
     void setCore( QmtxPicoblaze::coreType c ) ;
     void setupIO( void ) ;
 
     void loadLSTfile( QString filename ) ;
-    void selectLine(QItemSelectionModel::SelectionFlags option);
-    void removeCode( void ) ;
+    void selectLine( QItemSelectionModel::SelectionFlags option ) ;
 
 public:
     uint32_t getUARTdata( void ) ;
@@ -166,6 +166,11 @@ public:
 
     uint32_t getScriptValue( uint32_t address ) ;
     void setScriptValue( uint32_t address, uint32_t value ) ;
+
+    void scriptInterrupt( void ) ;
+    void scriptSetIntVect( quint32 addr ) ;
+    void scriptSetHWBuild( quint8 value ) ;
+
 } ;
 
 #endif // MAINWINDOW_H
