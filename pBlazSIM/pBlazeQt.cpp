@@ -113,7 +113,7 @@ void SCRIPT::setValue( uint32_t address, uint32_t value ) {
 // QmtxPicoblaze
 
 QmtxPicoblaze::QmtxPicoblaze( void ) {
-    pico = NULL ;
+    setCore( ctNone ) ;
 
     for ( uint i = 0 ; i < MAXREG ; i += 1 )
         registerItems[ i ] = NULL ;
@@ -145,6 +145,9 @@ void QmtxPicoblaze::setCore( QmtxPicoblaze::coreType c ) {
         delete pico ;
     pico = NULL ;
     emit updateUI( psNone ) ;
+
+    for ( uint i = 0 ; i < MAXMEM ; i += 1 )
+        codeItems[ i ] = NULL ;
 
     switch ( c ) {
     case ctPB3 :

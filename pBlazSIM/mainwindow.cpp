@@ -523,8 +523,8 @@ void MainWindow::fileWatch_fileChanged( const QString &path ) {
 
 // load LST+SCR files, build code model/view
 void MainWindow::loadLSTfile( QString filename ) {
-    pBlaze.setCore( QmtxPicoblaze::ctNone ) ;
     newCode() ;
+    pBlaze.setCore( QmtxPicoblaze::ctNone ) ;
 
     QFile file( filename ) ;
     if ( !file.exists() ) {
@@ -789,7 +789,7 @@ void MainWindow::selectLine( QItemSelectionModel::SelectionFlags option ) {
         return ;
 
     QStandardItem * item = (QStandardItem *)pBlaze.getCurrentCodeItem() ;
-    if ( item != NULL ) {
+    if ( item != NULL && item->index() != QModelIndex() ) {
         QItemSelectionModel * selection = ui->tvCode->selectionModel() ;
         if ( selection != NULL ) {
             selection->select( item->index(), option | QItemSelectionModel::Rows ) ;
