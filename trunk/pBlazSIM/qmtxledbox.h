@@ -41,12 +41,12 @@ public:
 
     void setFont( QFont font ) ;
 
-    Q_INVOKABLE bool addRack( int column, int addr, int color ) ;
+    Q_INVOKABLE bool addRack( int addr, int color ) ;
     Q_INVOKABLE quint8 getValue( int addr ) ;
-    Q_INVOKABLE void setValue(int addr, quint8 value ) ;
+    Q_INVOKABLE void setValue( int addr, quint8 value ) ;
 
 private slots:
-    void on_tvLEDS_doubleClicked(const QModelIndex &index);
+    void on_tvLEDS_doubleClicked( const QModelIndex &index);
 
 private:
     Ui::QmtxLEDBox * ui ;
@@ -55,6 +55,7 @@ private:
     QMap< uint8_t, LEDs * > addressMap ;
     QMap< int, LEDs * > itemMap ;
 
+    int columns ;
 } ;
 
 #endif // QMTXLEDBOX_H

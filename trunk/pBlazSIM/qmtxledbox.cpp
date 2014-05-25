@@ -1,6 +1,8 @@
 #include "qmtxledbox.h"
 #include "ui_qmtxledbox.h"
 
+#include <QDebug>
+
 QmtxLEDBox::QmtxLEDBox(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::QmtxLEDBox)
@@ -8,62 +10,59 @@ QmtxLEDBox::QmtxLEDBox(QWidget *parent) :
     ui->setupUi( this ) ;
 
     ledsModel = new QStandardItemModel ;
-    ledsModel->insertColumns( 0, 4 ) ;
-    ledsModel->insertRows( 0, 8 ) ;
     ledsModel->setHorizontalHeaderLabels( QStringList()
-        << "LEDs" << "    " << "    " << "    "
+        << "LEDs"
     ) ;
     ledsModel->setVerticalHeaderLabels( QStringList()
         << "0" << "1" << "2" << "3"
         << "4" << "5" << "6" << "7"
     ) ;
-    for ( int row = 0 ; row < 8 ; row += 1 )
-     for ( int col = 0 ; col < 4 ; col += 1 ) {
-        QStandardItem * item = new QStandardItem() ;
-        item->setToolTip( "Double click to toggle state" ) ;
-        ledsModel->setItem( row, col, item ) ;
-     }
     ui->tvLEDS->setModel( ledsModel ) ;
     for ( int row = 0 ; row < 8 ; row += 1 )
         ui->tvLEDS->setRowHeight( row, 16 ) ;
-    for ( int col = 0 ; col < 4 ; col += 1 )
-        ui->tvLEDS->resizeColumnToContents( col ) ;
     ui->tvLEDS->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
     ui->tvLEDS->horizontalHeader()->setVisible( true ) ;
     ui->tvLEDS->verticalHeader()->setVisible( true ) ;
+    columns = 0 ;
 }
 
 QmtxLEDBox::~QmtxLEDBox() {
-    delete ui;
+    delete ui ;
 }
 
 void QmtxLEDBox::setFont( QFont font ) {
     ui->tvLEDS->setFont( font ) ;
 }
 
-bool QmtxLEDBox::addRack( int column, int addr, int color ) {
-    if ( column > 3 )
-        return false ;
+bool QmtxLEDBox::addRack( int addr, int color ) {
+    qDebug() << addr << color ;
     if ( ! addressMap.contains( addr ) ) {
+        columns += 1 ;
+        for ( int row = 0 ; row < 8 ; row += 1 ) {
+            QStandardItem * item = new QStandardItem() ;
+            item->setToolTip( "Double click to toggle state" ) ;
+            ledsModel->setItem( row, columns - 1, item ) ;
+        }
         LEDs * leds = new LEDs( color ) ;
         addressMap[ addr ] = leds ;
     }
     LEDs * leds = addressMap[ addr ] ;
     for ( int bits = 0 ; bits < 8 ; bits += 1 )
-        leds->setItem( bits, ledsModel->item( bits, column ) ) ;
+        leds->setItem( bits, ledsModel->item( bits, columns - 1 ) ) ;
     leds->update() ;
-    itemMap[ column ] = leds ;
+    itemMap[ columns - 1 ] = leds ;
 
     if ( addressMap.isEmpty() ) {
         ledsModel->setHorizontalHeaderLabels( QStringList() << "LEDs" ) ;
         return true ;
     }
+
     QStringList list ;
     foreach ( uint8_t addr, addressMap.keys() )
         list << QString( "0x%1" ).arg( addr, 2, 16, QChar('0') ) ;
     ledsModel->setHorizontalHeaderLabels( list ) ;
-    for ( int col = 0 ; col < list.count() ; col += 1 )
-        ui->tvLEDS->resizeColumnToContents( col ) ;
+    for ( int col = 0 ; col < columns ; col += 1 )
+       ui->tvLEDS->resizeColumnToContents( col ) ;
     return true ;
 }
 

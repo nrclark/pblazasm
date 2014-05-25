@@ -23,7 +23,8 @@ SOURCES += \
     qmtxpicoterm.cpp \
     qmtxlogbox.cpp \
     qmtxledbox.cpp \
-    qmtxscriptuart.cpp
+    qmtxscriptuart.cpp \
+    qmtxscriptcore.cpp
 
 HEADERS += \
     mainwindow.h \
@@ -34,7 +35,8 @@ HEADERS += \
     qmtxpicoterm.h \
     qmtxlogbox.h \
     qmtxledbox.h \
-    qmtxscriptuart.h
+    qmtxscriptuart.h \
+    qmtxscriptcore.h
 
 FORMS += \
     mainwindow.ui \

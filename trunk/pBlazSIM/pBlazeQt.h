@@ -102,7 +102,8 @@ public:
     }
 
     void initialize( void ) {
-        pico->initialize() ;
+        if ( pico != NULL )
+            pico->initialize() ;
     }
 
     void reset( void ) {
@@ -231,7 +232,8 @@ public:
     }
 
     void clearCode( void ) {
-        pico->clearCode() ;
+        if ( pico == NULL )
+            pico->clearCode() ;
     }
 
     void setCodeItem( uint32_t address, uint32_t code, uint32_t line, void * item ) {
@@ -245,6 +247,18 @@ public:
 
     int getScratchPadSize( void )  {
         return pico->getScratchPadSize() ;
+    }
+
+    void setInterrupt( bool value ) {
+        pico->setInterrupt( value ) ;
+    }
+
+    void setIntVect( bool value ) {
+        pico->setInterruptVector( value ) ;
+    }
+
+    void setHWBuild( bool value ) {
+        pico->setHWbuild( value ) ;
     }
 
     uint64_t getCycleCounter( void ) {

@@ -114,6 +114,7 @@ void SCRIPT::setValue( uint32_t address, uint32_t value ) {
 
 QmtxPicoblaze::QmtxPicoblaze( void ) {
     pico = NULL ;
+
     for ( uint i = 0 ; i < MAXREG ; i += 1 )
         registerItems[ i ] = NULL ;
     for ( uint i = 0 ; i < MAXSCR ; i += 1 )
@@ -140,6 +141,11 @@ void QmtxPicoblaze::updateAll( void ) {
 }
 
 void QmtxPicoblaze::setCore( QmtxPicoblaze::coreType c ) {
+    if ( pico != NULL )
+        delete pico ;
+    pico = NULL ;
+    emit updateUI( psNone ) ;
+
     switch ( c ) {
     case ctPB3 :
         pico = new Picoblaze3 ;
@@ -154,7 +160,6 @@ void QmtxPicoblaze::setCore( QmtxPicoblaze::coreType c ) {
         emit updateUI( psConfigured ) ;
         break ;
     default :
-        pico = NULL ;
         break ;
     }
 }
@@ -261,21 +266,27 @@ void QmtxPicoblaze::updatePicoState( void ) {
     if ( item != NULL )
         item->setData( s, Qt::DisplayRole ) ;
 
-    item = (QStandardItem *)getStateItem( 1 ) ;
-    if ( pico != NULL )
-        s = QString("%1").arg( pico->getSpValue(), 3 ) ;
-    if ( item != NULL )
-        item->setData( s, Qt::DisplayRole ) ;
+//    item = (QStandardItem *)getStateItem( 1 ) ;
+//    if ( pico != NULL )
+//        s = QString("%1").arg( pico->getSpValue(), 3 ) ;
+//    if ( item != NULL )
+//        item->setData( s, Qt::DisplayRole ) ;
 
-    item = (QStandardItem *)getStateItem( 2 ) ;
+    item = (QStandardItem *)getStateItem( 1 ) ;
     if ( pico != NULL )
         s = QString("%1").arg( (int)pico->getZero(), 3 ) ;
     if ( item != NULL )
         item->setData( s, Qt::DisplayRole ) ;
 
-    item = (QStandardItem *)getStateItem( 3 ) ;
+    item = (QStandardItem *)getStateItem( 2 ) ;
     if ( pico != NULL )
         s = QString("%1").arg( (int)pico->getCarry(), 3 ) ;
+    if ( item != NULL )
+        item->setData( s, Qt::DisplayRole ) ;
+
+    item = (QStandardItem *)getStateItem( 3 ) ;
+    if ( pico != NULL )
+        s = pico->getBank() == 0 ? "  A" : pico->getBank() == 1 ? "  B" : "  ???" ;
     if ( item != NULL )
         item->setData( s, Qt::DisplayRole ) ;
 
@@ -285,11 +296,6 @@ void QmtxPicoblaze::updatePicoState( void ) {
     if ( item != NULL )
         item->setData( s, Qt::DisplayRole ) ;
 
-    item = (QStandardItem *)getStateItem( 5 ) ;
-    if ( pico != NULL )
-        s = pico->getBank() == 0 ? "  A" : pico->getBank() == 1 ? "  B" : "  ???" ;
-    if ( item != NULL )
-        item->setData( s, Qt::DisplayRole ) ;
 }
 
 void QmtxPicoblaze::updateIO( void ) {

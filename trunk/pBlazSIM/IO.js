@@ -3,10 +3,10 @@
 //
 
 // allocate 4 LED bars at 0x04..0x07
-LEDs.addRack( 0, 0x04, 0 ) ;
-LEDs.addRack( 1, 0x05, 1 ) ;
-LEDs.addRack( 2, 0x06, 2 ) ;
-LEDs.addRack( 3, 0x07, 3 ) ;
+LEDs.addRack( 0x04, 0 ) ;
+LEDs.addRack( 0x05, 1 ) ;
+LEDs.addRack( 0x06, 2 ) ;
+LEDs.addRack( 0x07, 3 ) ;
 
 // assume an UART at 0x00..0x01
 // UART is a link to the virtual terminal
