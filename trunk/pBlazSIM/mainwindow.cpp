@@ -254,6 +254,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // filewatcher, sees .lst file change
     fileWatch = new QFileSystemWatcher( this ) ;
     connect( fileWatch, SIGNAL(fileChanged(const QString&)), this, SLOT(fileWatch_fileChanged(const QString)) ) ;
+    mbLSTchanged.setStandardButtons( QMessageBox::Yes | QMessageBox::No ) ;
 
 
     // settings in Registry
@@ -312,6 +313,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tbScript->setEnabled( false ) ;
     ui->actionEvaluate->setEnabled(  false ) ;
 
+    // lexer for ECMAscript source
+    lexer = new SharedTools::QScriptHighlighter( ui->teScript->document() ) ;
 
     // some GUI stuff
     ui->actionRefresh->setEnabled( fileWatch->files().size() > 0 ) ;
@@ -339,6 +342,8 @@ MainWindow::~MainWindow() {
 
     if ( engine->isEvaluating() )
         engine->abortEvaluation() ;
+
+    delete lexer ;
 
     // settings in Registry
     QSettings settings( QSettings::NativeFormat, QSettings::UserScope, "Mediatronix", "pBlazSIM" ) ;
@@ -503,18 +508,20 @@ void MainWindow::on_action_Open_triggered() {
 }
 
 void MainWindow::fileWatch_fileChanged( const QString &path ) {
-    QMessageBox mb ;
-    QFile file( path ) ;
-    mb.setStandardButtons( QMessageBox::Yes | QMessageBox::No ) ;
-    mb.setInformativeText( path ) ;
+    fileWatch->removePath( path ) ;
 
+    mbLSTchanged.setInformativeText( path ) ;
+
+    QFile file( path ) ;
     if ( file.exists() ) {
-        mb.setText( "LST file changed; reload?" ) ;
-        if ( mb.exec() == QMessageBox::Yes )
+        mbLSTchanged.setText( "LST file changed; reload?" ) ;
+        if ( mbLSTchanged.exec() == QMessageBox::Yes ) {
             loadLSTfile( path ) ;
+            fileWatch->addPath( path ) ;
+        }
     } else {
-        mb.setText( "File doesn't exist anymore, clear simulation?" ) ;
-        if ( mb.exec() == QMessageBox::Yes ) {
+        mbLSTchanged.setText( "File doesn't exist anymore, clear simulation?" ) ;
+        if ( mbLSTchanged.exec() == QMessageBox::Yes ) {
             pBlaze.setCore( QmtxPicoblaze::ctNone ) ;
             newCode() ;
         }

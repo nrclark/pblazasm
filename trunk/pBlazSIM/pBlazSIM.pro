@@ -24,7 +24,9 @@ SOURCES += \
     qmtxlogbox.cpp \
     qmtxledbox.cpp \
     qmtxscriptuart.cpp \
-    qmtxscriptcore.cpp
+    qmtxscriptcore.cpp \
+    qscripthighlighter.cpp \
+    codeeditor.cpp
 
 HEADERS += \
     mainwindow.h \
@@ -36,7 +38,9 @@ HEADERS += \
     qmtxlogbox.h \
     qmtxledbox.h \
     qmtxscriptuart.h \
-    qmtxscriptcore.h
+    qmtxscriptcore.h \
+    qscripthighlighter.h \
+    codeeditor.h
 
 FORMS += \
     mainwindow.ui \
