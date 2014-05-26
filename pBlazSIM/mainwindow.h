@@ -54,6 +54,7 @@
 #include "hexspinbox.h"
 #include "qmtxpicoterm.h"
 #include "qmtxledbox.h"
+#include "qscripthighlighter.h"
 
 #define PBLAZSIM_VERSION_STR "2.0 rc3"
 #define COL_WIDTH 48
@@ -136,12 +137,14 @@ private:
     QScriptEngineDebugger * debugger ;
     QFile scriptFile ;
     QScriptContext * scriptContext ;
+    SharedTools::QScriptHighlighter * lexer ;
 
     int timerId ;
     QElapsedTimer timer ;
 
     QFileSystemWatcher * fileWatch ;
     QFileSystemModel * filesys_model ;
+    QMessageBox mbLSTchanged ;
 
     QStandardItemModel * codeModel ;
     QStandardItemModel * stateModel ;

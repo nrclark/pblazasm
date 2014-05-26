@@ -278,7 +278,7 @@
          <enum>QTabWidget::Rounded</enum>
         </property>
         <property name="currentIndex">
-         <number>3</number>
+         <number>1</number>
         </property>
         <property name="elideMode">
          <enum>Qt::ElideNone</enum>
@@ -375,7 +375,7 @@
             <property name="childrenCollapsible">
              <bool>false</bool>
             </property>
-            <widget class="QPlainTextEdit" name="teScript">
+            <widget class="CodeEditor" name="teScript">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
                <horstretch>0</horstretch>
@@ -512,7 +512,7 @@
                <x>0</x>
                <y>0</y>
                <width>608</width>
-               <height>302</height>
+               <height>334</height>
               </rect>
              </property>
              <attribute name="label">
@@ -840,7 +840,7 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>83</width>
+               <width>98</width>
                <height>68</height>
               </rect>
              </property>
@@ -1338,6 +1338,11 @@ p, li { white-space: pre-wrap; }
    <extends>QWidget</extends>
    <header>qmtxledbox.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>CodeEditor</class>
+   <extends>QPlainTextEdit</extends>
+   <header>codeeditor.h</header>
   </customwidget>
  </customwidgets>
  <resources>
