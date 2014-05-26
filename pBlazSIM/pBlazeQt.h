@@ -24,6 +24,7 @@
 #include <QObject>
 
 #include "pBlaze.h"
+#include "qmtxscriptcore.h"
 
 enum pbState { psNone = 0, psConfigured, psReady, psBarrier, psBreakpoint, psRunning, psError } ;
 
@@ -127,7 +128,11 @@ public:
     }
 
     inline bool step( void ) {
-        return pico->step() ;
+        if ( ! pico->step() )
+            return false ;
+        if ( pico->getAcknowledge() )
+            scriptCore->acknowledge() ;
+        return true ;
     }
 
     inline bool onBreakpoint( void ) {
@@ -269,6 +274,8 @@ public:
     void updatePicoState( void ) ;
 
     QString getError( void ) ;
+
+    QmtxScriptCore * scriptCore ;
 
 signals:
     void updateUI( enum pbState state ) ;

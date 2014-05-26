@@ -20,8 +20,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "qmtxhexinputdialog.h"
-#include "qmtxscriptuart.h"
-#include "qmtxscriptcore.h"
 
 #include <QDebug>
 #include <QScrollBar>
@@ -202,8 +200,24 @@ MainWindow::MainWindow(QWidget *parent) :
         item = new QStandardItem( "" ) ;
         item->setTextAlignment( Qt::AlignCenter ) ;
         item->setToolTip( "Double click to show source line" ) ;
-        pBlaze.setStackItem( sp, item ) ;
         stackModel->setItem( sp, 1, item ) ;
+        pBlaze.setStackItem( sp, item ) ;
+
+        item = new QStandardItem( "" ) ;
+        item->setTextAlignment( Qt::AlignCenter ) ;
+        stackModel->setItem( sp, 2, item ) ;
+
+        item = new QStandardItem( "" ) ;
+        item->setTextAlignment( Qt::AlignCenter ) ;
+        stackModel->setItem( sp, 3, item ) ;
+
+        item = new QStandardItem( "" ) ;
+        item->setTextAlignment( Qt::AlignCenter ) ;
+        stackModel->setItem( sp, 4, item ) ;
+
+        item = new QStandardItem( "" ) ;
+        item->setTextAlignment( Qt::AlignCenter ) ;
+        stackModel->setItem( sp, 5, item ) ;
     }
     ui->tvStack->setModel( stackModel ) ;
     ui->tvStack->setFont( fixedFont ) ;
@@ -254,7 +268,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // filewatcher, sees .lst file change
     fileWatch = new QFileSystemWatcher( this ) ;
     connect( fileWatch, SIGNAL(fileChanged(const QString&)), this, SLOT(fileWatch_fileChanged(const QString)) ) ;
-    mbLSTchanged.setStandardButtons( QMessageBox::Yes | QMessageBox::No ) ;
+    mbLSTchanged.setStandardButtons( QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel ) ;
 
 
     // settings in Registry
@@ -291,15 +305,16 @@ MainWindow::MainWindow(QWidget *parent) :
     engine->globalObject().setProperty( "LEDs", svLEDBox ) ;
     ui->wgLEDBox->setFont( fixedFont ) ;
 
-    QmtxScriptUART * uart = new QmtxScriptUART ;
+    uart = new QmtxScriptUART ;
     uart->w = this ;
     QScriptValue svUART = engine->newQObject( uart ) ;
     engine->globalObject().setProperty( "UART", svUART ) ;
 
-    QmtxScriptCore * core = new QmtxScriptCore ;
-    core->w = this ;
-    QScriptValue svCore = engine->newQObject( core ) ;
+    scriptCore = new QmtxScriptCore ;
+    scriptCore->w = this ;
+    QScriptValue svCore = engine->newQObject( scriptCore ) ;
     engine->globalObject().setProperty( "Core", svCore ) ;
+    pBlaze.scriptCore = scriptCore ;
 
     engine->evaluate( defaultScript ) ;
     ui->teScript->appendPlainText( defaultScript ) ;
@@ -515,15 +530,23 @@ void MainWindow::fileWatch_fileChanged( const QString &path ) {
     QFile file( path ) ;
     if ( file.exists() ) {
         mbLSTchanged.setText( "LST file changed; reload?" ) ;
-        if ( mbLSTchanged.exec() == QMessageBox::Yes ) {
+        switch ( mbLSTchanged.exec() ) {
+        case QMessageBox::Yes :
             loadLSTfile( path ) ;
+        case QMessageBox::Cancel :
             fileWatch->addPath( path ) ;
+            break ;
         }
     } else {
         mbLSTchanged.setText( "File doesn't exist anymore, clear simulation?" ) ;
-        if ( mbLSTchanged.exec() == QMessageBox::Yes ) {
+        switch ( mbLSTchanged.exec() ) {
+        case QMessageBox::Yes :
             pBlaze.setCore( QmtxPicoblaze::ctNone ) ;
             newCode() ;
+            break ;
+        case QMessageBox::Cancel :
+            fileWatch->addPath( path ) ;
+            break ;
         }
     }
 }
@@ -1047,6 +1070,15 @@ void MainWindow::scriptInterrupt( void ) {
     pBlaze.setInterrupt( true ) ;
 }
 
+void MainWindow::scriptAcknowledge( void ) {
+    QScriptValue global = engine->globalObject() ;
+
+    QScriptValue ack = global.property( "acknowledge" ) ;
+    QScriptValue error = ack.call( QScriptValue() ) ;
+    if ( engine->hasUncaughtException() )
+        qDebug() << "acknowledge error:" << error.toString() << ", line#:" << engine->uncaughtExceptionLineNumber() ;
+}
+
 void MainWindow::scriptSetIntVect( quint32 addr ) {
     if ( ! pBlaze.configured() )
         return ;
@@ -1058,6 +1090,7 @@ void MainWindow::scriptSetHWBuild( quint8 value ) {
         return ;
     pBlaze.setHWBuild( value ) ;
 }
+
 
 void MainWindow::on_actionLoad_triggered() {
     QFileDialog dialog( this ) ;

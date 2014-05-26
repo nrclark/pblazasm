@@ -60,6 +60,7 @@ bool Picoblaze::step() {
         pc = intvect ;
         enable = false ;
         acknowledge = true ;
+        return false ;
     }
     return true ;
 }
@@ -115,7 +116,7 @@ Picoblaze6::Picoblaze6() {
 
 bool Picoblaze6::step( void ) {
     if ( ! Picoblaze::step() )
-        return false ;
+        return error == erNone ; // an interrupt came inbetween?
 
     uint32_t c ;
     uint8_t value ;
@@ -611,7 +612,7 @@ bool Picoblaze6::step( void ) {
     }
 
     Code[ pc ].count++ ;
-    pc = npc ;          // only update when no error
+    pc = npc & ( MAXMEM - 1 ) ;  // only update when no error
     cycleCounter += 2 ; // 2 clock cycles per instruction
     return true ;
 }
@@ -623,7 +624,7 @@ Picoblaze3::Picoblaze3() {
 
 bool Picoblaze3::step ( void ) {
     if ( ! Picoblaze::step() )
-        return false ;
+        return error == erNone ;  // an interrupt came inbetween?
 
     uint32_t c, t ;
     int addr = 0 ;
@@ -1023,7 +1024,7 @@ bool Picoblaze3::step ( void ) {
     }
 
     Code[ pc ].count++ ;
-    pc = npc ;          // only update when no error
+    pc = npc & ( MAXMEM - 1 ) ;  // only update when no error
     cycleCounter += 2 ; // 2 clock cycles per instruction
     return true ;
 }

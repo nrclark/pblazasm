@@ -194,6 +194,30 @@ class Picoblaze {
     friend class IODevice ;
 
 public:
+    typedef struct _inst {
+        uint32_t code ;
+        unsigned int line ;
+        uint64_t count ;
+        bool breakpoint ;
+    } INST_t ;
+
+    typedef struct _stack {
+        uint32_t pc ;
+        int8_t bank ;
+        int8_t zero ;
+        int8_t carry ;
+        enum updateState state ;
+    } STACK_t ;
+
+    typedef struct _register {
+        uint8_t value ;
+        enum updateState state ;
+    } REG_t ;
+
+    typedef struct _io {
+        IODevice * device ;
+    } IO_t ;
+
     Picoblaze( void ) ;
     virtual ~Picoblaze() ;
 
@@ -339,6 +363,10 @@ public:
         return stack[ address ].pc ;
     }
 
+    inline Picoblaze::STACK_t getStackEntry( uint32_t address ) {
+        return stack[ address ] ;
+    }
+
     inline bool pushPC( uint32_t value ) {
         if ( sp > LIMSTK )
             return false ;
@@ -427,30 +455,6 @@ public:
 
 
 protected:
-    typedef struct _inst {
-        uint32_t code ;
-        unsigned int line ;
-        uint64_t count ;
-        bool breakpoint ;
-    } INST_t ;
-
-    typedef struct _stack {
-        uint32_t pc ;
-        int8_t bank ;
-        int8_t zero ;
-        int8_t carry ;
-        enum updateState state ;
-    } STACK_t ;
-
-    typedef struct _register {
-        uint8_t value ;
-        enum updateState state ;
-    } REG_t ;
-
-    typedef struct _io {
-        IODevice * device ;
-    } IO_t ;
-
     uint32_t pc ;
     uint32_t sp ;
     int bank ;

@@ -203,10 +203,11 @@ void QmtxPicoblaze::updateStack( void ) {
     for ( uint32_t p = 0 ; p < MAXSTK ; p += 1 ) {
         QStandardItem * item = (QStandardItem *)getStackItem( p ) ;
         if ( item != NULL ) {
+            QStandardItemModel * model = item->model() ;
             if ( pico != NULL && p < pico->getSpValue() ) {
                 enum updateState state = pico->checkStackEntryState( p ) ;
-                int n = getStackPcValue( p ) ;
-                QString s = QString("%1").arg( n, 3, 16, QChar('0') ).toUpper() ;
+                Picoblaze::STACK_t entry = pico->getStackEntry( p ) ;
+                QString s = QString("%1").arg( entry.pc, 3, 16, QChar('0') ).toUpper() ;
                 switch ( state ) {
                 case usChanged :
                     item->setData( QColor(Qt::cyan), Qt::BackgroundRole ) ;
@@ -222,9 +223,21 @@ void QmtxPicoblaze::updateStack( void ) {
                     break ;
                 }
                 item->setData( s, Qt::DisplayRole ) ;
+                item = model->item( item->row(), 2 ) ;
+                item->setData( entry.zero == 1 ? "1" : entry.zero == 0 ? "0" : "-", Qt::DisplayRole ) ;
+                item = model->item( item->row(), 3 ) ;
+                item->setData( entry.carry == 1 ? "1" : entry.carry == 0 ? "0" : "-", Qt::DisplayRole ) ;
+                item = model->item( item->row(), 4 ) ;
+                item->setData( entry.bank == 1 ? "1" : entry.bank == 0 ? "0" : "-", Qt::DisplayRole ) ;
             } else {
                 item->setData( "", Qt::DisplayRole ) ;
                 item->setData( QColor(Qt::transparent), Qt::BackgroundRole ) ;
+                item = model->item( item->row(), 2 ) ;
+                item->setData( "", Qt::DisplayRole ) ;
+                item = model->item( item->row(), 3 ) ;
+                item->setData( "", Qt::DisplayRole ) ;
+                item = model->item( item->row(), 4 ) ;
+                item->setData( "", Qt::DisplayRole ) ;
             }
         }
     }
@@ -268,12 +281,6 @@ void QmtxPicoblaze::updatePicoState( void ) {
         s = QString("%1").arg( getPcValue(), 3, 16, QChar('0') ) ;
     if ( item != NULL )
         item->setData( s, Qt::DisplayRole ) ;
-
-//    item = (QStandardItem *)getStateItem( 1 ) ;
-//    if ( pico != NULL )
-//        s = QString("%1").arg( pico->getSpValue(), 3 ) ;
-//    if ( item != NULL )
-//        item->setData( s, Qt::DisplayRole ) ;
 
     item = (QStandardItem *)getStateItem( 1 ) ;
     if ( pico != NULL )

@@ -53,7 +53,11 @@
 #include "pBlazeQt.h"
 #include "hexspinbox.h"
 #include "qmtxpicoterm.h"
+
 #include "qmtxledbox.h"
+#include "qmtxscriptuart.h"
+#include "qmtxscriptcore.h"
+
 #include "qscripthighlighter.h"
 
 #define PBLAZSIM_VERSION_STR "2.0 rc3"
@@ -139,6 +143,9 @@ private:
     QScriptContext * scriptContext ;
     SharedTools::QScriptHighlighter * lexer ;
 
+    QmtxScriptCore * scriptCore ;
+    QmtxScriptUART * uart ;
+
     int timerId ;
     QElapsedTimer timer ;
 
@@ -171,9 +178,9 @@ public:
     void setScriptValue( uint32_t address, uint32_t value ) ;
 
     void scriptInterrupt( void ) ;
+    void scriptAcknowledge( void ) ;
     void scriptSetIntVect( quint32 addr ) ;
     void scriptSetHWBuild( quint8 value ) ;
-
 } ;
 
 #endif // MAINWINDOW_H
