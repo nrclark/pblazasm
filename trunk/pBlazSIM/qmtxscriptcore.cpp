@@ -39,3 +39,7 @@ void QmtxScriptCore::setHWBuild( quint8 value ) {
     Q_ASSERT( w != NULL ) ;
     ( (MainWindow *)w )->scriptSetHWBuild( value ) ;
 }
+
+void QmtxScriptCore::acknowledge( void ) {
+    ( (MainWindow *)w )->scriptAcknowledge() ;
+}

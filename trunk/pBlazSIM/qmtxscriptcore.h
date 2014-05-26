@@ -32,6 +32,8 @@ public:
     Q_INVOKABLE void setIntVect( quint32 addr ) ;
     Q_INVOKABLE void setHWBuild( quint8 value ) ;
 
+    void acknowledge( void ) ;
+
     void * w ;
 
 signals:
