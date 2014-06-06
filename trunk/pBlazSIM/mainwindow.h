@@ -60,8 +60,14 @@
 
 #include "qscripthighlighter.h"
 
-#define PBLAZSIM_VERSION_STR "2.0 rc3"
-#define COL_WIDTH 48
+#ifdef OSXVERSION
+#define PBLAZSIM_VERSION_STR "2.1 beta OSX"
+#endif
+#ifdef WIN32VERSION
+#define PBLAZSIM_VERSION_STR "2.1 beta Win32"
+#endif
+
+#define COL_WIDTH 40
 
 
 namespace Ui {

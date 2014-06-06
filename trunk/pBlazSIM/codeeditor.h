@@ -63,7 +63,7 @@ public:
     CodeEditor(QWidget *parent = 0);
 
     void lineNumberAreaPaintEvent(QPaintEvent *event);
-    int lineNumberAreaWidth();
+    int lineNumberAreaWidth(void);
 
     void selectLineAt(QPointF pos ) ;
 

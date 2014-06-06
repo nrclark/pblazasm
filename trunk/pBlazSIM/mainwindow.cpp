@@ -138,14 +138,18 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // setup statemodel for stateview
     stateModel = new QStandardItemModel ;
-    stateModel->insertColumns( 0, 7 ) ;
+    stateModel->insertColumns( 0, 6 ) ;
     stateModel->setHorizontalHeaderLabels( QStringList() << "state" << "PC" << "Zero" << "Carry" << "Bank" << "IE" << "" ) ;
     for ( int column = 1 ; column < 6 ; column += 1 ) {
         QStandardItem * item = new QStandardItem( QString("") ) ;
         item->setTextAlignment( Qt::AlignCenter ) ;
-        if ( column == 1 )
+        switch ( column ) {
+        case 1 :
             item->setToolTip( "Double click to show source line" ) ;
-
+            break ;
+        default :
+            item->setToolTip( "Double click to toggle" ) ;
+        }
         stateModel->setItem( 0, column, item ) ;
         pBlaze.setStateItem( column - 1, item ) ;
     }
@@ -155,7 +159,7 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->tvState->setColumnWidth( col, COL_WIDTH ) ;
     ui->tvState->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
     QScrollBar * stateVSB = ui->tvState->verticalScrollBar() ;
-    ui->tvState->setMinimumWidth( 7 * COL_WIDTH + 6 + stateVSB->sizeHint().width() ) ;
+    ui->tvState->setMinimumWidth( 6 * COL_WIDTH + 6 + stateVSB->sizeHint().width() ) ;
     QHeaderView * stateHeader = ui->tvState->header() ;
     ui->tvState->setMaximumHeight( stateHeader->height() + metrics.lineSpacing() + 6 ) ;
     stateHeader->setDefaultAlignment( Qt::AlignCenter ) ;
@@ -225,7 +229,7 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->tvStack->setColumnWidth( col, COL_WIDTH ) ;
     ui->tvStack->setEditTriggers( QAbstractItemView::NoEditTriggers ) ;
     QScrollBar * stackVSB = ui->tvStack->verticalScrollBar() ;
-    ui->tvStack->setMinimumWidth( 6 * COL_WIDTH + 6 + stackVSB->sizeHint().width() ) ;
+    ui->tvStack->setMinimumWidth( 5 * COL_WIDTH + 6 + stackVSB->sizeHint().width() ) ;
     QHeaderView * stackHeader = ui->tvStack->header() ;
     ui->tvStack->setMaximumHeight( stackHeader->height() + 32 * ( metrics.lineSpacing() + 6 ) ) ;
     stackHeader->setDefaultAlignment( Qt::AlignCenter ) ;
@@ -918,7 +922,7 @@ void MainWindow::on_tvCode_doubleClicked(const QModelIndex &index) {
 
     // clicked somewhere in the row
     int row = codeModel->itemFromIndex(index)->row() ;
-    // get the bullit cell
+    // get the bullet cell
     QStandardItem * item = codeModel->item( row, 1 ) ;
     if ( item == NULL )
         return ;

@@ -23,6 +23,7 @@
 QmtxScriptUART::QmtxScriptUART(QObject *parent) :
     QObject(parent)
 {
+    w = NULL ;
 }
 
 quint8 QmtxScriptUART::getStatus ( void ) {

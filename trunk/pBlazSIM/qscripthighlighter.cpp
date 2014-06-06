@@ -293,116 +293,116 @@ void QScriptHighlighter::highlightBlock(const QString &text)
         state = table[state][input];
 
         switch (state) {
-            case StateStandard: {
-                                    setFormat(i, 1, emptyFormat);
-                                    if (makeLastStandard)
-                                        setFormat(i - 1, 1, emptyFormat);
-                                    makeLastStandard = false;
-                                    if (!buffer.isEmpty() && input != InputAlpha ) {
-                                        highlightKeyword(i, buffer);
-                                        buffer.clear();
-                                    }
-                                } break;
-            case StateCommentStart1:
-                                if (makeLastStandard)
-                                    setFormat(i - 1, 1, emptyFormat);
-                                makeLastStandard = true;
-                                buffer.resize(0);
-                                break;
-            case StateCCommentStart2:
-                                setFormat(i - 1, 2, m_formats[CommentFormat]);
-                                makeLastStandard = false;
-                                buffer.resize(0);
-                                break;
-            case StateCppCommentStart2:
-                                setFormat(i - 1, 2, m_formats[CommentFormat]);
-                                makeLastStandard = false;
-                                buffer.resize(0);
-                                break;
-            case StateCComment:
-                                if (makeLastStandard)
-                                    setFormat(i - 1, 1, emptyFormat);
-                                makeLastStandard = false;
-                                setFormat(i, 1, m_formats[CommentFormat]);
-                                buffer.resize(0);
-                                break;
-            case StateCppComment:
-                                if (makeLastStandard)
-                                    setFormat(i - 1, 1, emptyFormat);
-                                makeLastStandard = false;
-                                setFormat(i, 1, m_formats[CommentFormat]);
-                                buffer.resize(0);
-                                break;
-            case StateCCommentEnd1:
-                                if (makeLastStandard)
-                                    setFormat(i - 1, 1, emptyFormat);
-                                makeLastStandard = false;
-                                setFormat(i, 1, m_formats[CommentFormat]);
-                                buffer.resize(0);
-                                break;
-            case StateCCommentEnd2:
-                                if (makeLastStandard)
-                                    setFormat(i - 1, 1, emptyFormat);
-                                makeLastStandard = false;
-                                setFormat(i, 1, m_formats[CommentFormat]);
-                                buffer.resize(0);
-                                break;
-            case StateStringStart:
-                                if (makeLastStandard)
-                                    setFormat(i - 1, 1, emptyFormat);
-                                makeLastStandard = false;
-                                setFormat(i, 1, emptyFormat);
-                                buffer.resize(0);
-                                break;
-            case StateString:
-                                if (makeLastStandard)
-                                    setFormat(i - 1, 1, emptyFormat);
-                                makeLastStandard = false;
-                                setFormat(i, 1, m_formats[StringFormat]);
-                                buffer.resize(0);
-                                break;
-            case StateStringEnd:
-                                if (makeLastStandard)
-                                    setFormat(i - 1, 1, emptyFormat);
-                                makeLastStandard = false;
-                                setFormat(i, 1, emptyFormat);
-                                buffer.resize(0);
-                                break;
-            case StateString2Start:
-                                if (makeLastStandard)
-                                    setFormat(i - 1, 1, emptyFormat);
-                                makeLastStandard = false;
-                                setFormat(i, 1, emptyFormat);
-                                buffer.resize(0);
-                                break;
-            case StateString2:
-                                if (makeLastStandard)
-                                    setFormat(i - 1, 1, emptyFormat);
-                                makeLastStandard = false;
-                                setFormat(i, 1, m_formats[StringFormat]);
-                                buffer.resize(0);
-                                break;
-            case StateString2End:
-                                if (makeLastStandard)
-                                    setFormat(i - 1, 1, emptyFormat);
-                                makeLastStandard = false;
-                                setFormat(i, 1, emptyFormat);
-                                buffer.resize(0);
-                                break;
-            case StateNumber:
-                                if (makeLastStandard)
-                                    setFormat(i - 1, 1, emptyFormat);
-                                makeLastStandard = false;
-                                setFormat( i, 1, m_formats[NumberFormat]);
-                                buffer.resize(0);
-                                break;
-            case StatePreProcessor:
-                                if (makeLastStandard)
-                                    setFormat(i - 1, 1, emptyFormat);
-                                makeLastStandard = false;
-                                setFormat(i, 1, m_formats[PreProcessorFormat]);
-                                buffer.resize(0);
-                                break;
+        case StateStandard: {
+            setFormat(i, 1, emptyFormat);
+            if (makeLastStandard)
+                setFormat(i - 1, 1, emptyFormat);
+            makeLastStandard = false;
+            if (!buffer.isEmpty() && input != InputAlpha ) {
+                highlightKeyword(i, buffer);
+                buffer.clear();
+            }
+        } break;
+        case StateCommentStart1:
+            if (makeLastStandard)
+                setFormat(i - 1, 1, emptyFormat);
+            makeLastStandard = true;
+            buffer.resize(0);
+            break;
+        case StateCCommentStart2:
+            setFormat(i - 1, 2, m_formats[CommentFormat]);
+            makeLastStandard = false;
+            buffer.resize(0);
+            break;
+        case StateCppCommentStart2:
+            setFormat(i - 1, 2, m_formats[CommentFormat]);
+            makeLastStandard = false;
+            buffer.resize(0);
+            break;
+        case StateCComment:
+            if (makeLastStandard)
+                setFormat(i - 1, 1, emptyFormat);
+            makeLastStandard = false;
+            setFormat(i, 1, m_formats[CommentFormat]);
+            buffer.resize(0);
+            break;
+        case StateCppComment:
+            if (makeLastStandard)
+                setFormat(i - 1, 1, emptyFormat);
+            makeLastStandard = false;
+            setFormat(i, 1, m_formats[CommentFormat]);
+            buffer.resize(0);
+            break;
+        case StateCCommentEnd1:
+            if (makeLastStandard)
+                setFormat(i - 1, 1, emptyFormat);
+            makeLastStandard = false;
+            setFormat(i, 1, m_formats[CommentFormat]);
+            buffer.resize(0);
+            break;
+        case StateCCommentEnd2:
+            if (makeLastStandard)
+                setFormat(i - 1, 1, emptyFormat);
+            makeLastStandard = false;
+            setFormat(i, 1, m_formats[CommentFormat]);
+            buffer.resize(0);
+            break;
+        case StateStringStart:
+            if (makeLastStandard)
+                setFormat(i - 1, 1, emptyFormat);
+            makeLastStandard = false;
+            setFormat(i, 1, emptyFormat);
+            buffer.resize(0);
+            break;
+        case StateString:
+            if (makeLastStandard)
+                setFormat(i - 1, 1, emptyFormat);
+            makeLastStandard = false;
+            setFormat(i, 1, m_formats[StringFormat]);
+            buffer.resize(0);
+            break;
+        case StateStringEnd:
+            if (makeLastStandard)
+                setFormat(i - 1, 1, emptyFormat);
+            makeLastStandard = false;
+            setFormat(i, 1, emptyFormat);
+            buffer.resize(0);
+            break;
+        case StateString2Start:
+            if (makeLastStandard)
+                setFormat(i - 1, 1, emptyFormat);
+            makeLastStandard = false;
+            setFormat(i, 1, emptyFormat);
+            buffer.resize(0);
+            break;
+        case StateString2:
+            if (makeLastStandard)
+                setFormat(i - 1, 1, emptyFormat);
+            makeLastStandard = false;
+            setFormat(i, 1, m_formats[StringFormat]);
+            buffer.resize(0);
+            break;
+        case StateString2End:
+            if (makeLastStandard)
+                setFormat(i - 1, 1, emptyFormat);
+            makeLastStandard = false;
+            setFormat(i, 1, emptyFormat);
+            buffer.resize(0);
+            break;
+        case StateNumber:
+            if (makeLastStandard)
+                setFormat(i - 1, 1, emptyFormat);
+            makeLastStandard = false;
+            setFormat( i, 1, m_formats[NumberFormat]);
+            buffer.resize(0);
+            break;
+        case StatePreProcessor:
+            if (makeLastStandard)
+                setFormat(i - 1, 1, emptyFormat);
+            makeLastStandard = false;
+            setFormat(i, 1, m_formats[PreProcessorFormat]);
+            buffer.resize(0);
+            break;
         }
 
         lastChar = c;
@@ -413,10 +413,11 @@ void QScriptHighlighter::highlightBlock(const QString &text)
 
     highlightKeyword(text.length(), buffer);
 
-    if (state == StateCComment
+    if (
+        state == StateCComment
         || state == StateCCommentEnd1
         || state == StateCCommentStart2
-       ) {
+    ) {
         state = StateCComment;
     } else if (state == StateString) {
         state = StateString;

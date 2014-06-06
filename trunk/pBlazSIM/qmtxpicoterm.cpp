@@ -87,7 +87,6 @@ void QmtxPicoTerm::receivedChar( uint32_t c ) {
         break ;
     case ptDCS2 :
         if ( (uchar)c == 0x9C ) { // ST
-//            emit putChar( dcsChars.first() ) ;
             switch( dcsChars.first() ) {
             case 'p' :
                 inQ << 0x90 << 'P' << 0x9C ;

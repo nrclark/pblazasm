@@ -115,15 +115,23 @@ public:
             emit updateUI( psNone ) ;
     }
     void setBarrier( void ) {
+        if ( pico == NULL )
+            return ;
         pico->setBarrier() ;
     }
     void setCeiling( void ) {
+        if ( pico == NULL )
+            return ;
         pico->setCeiling() ;
     }
     void resetBarrier( void ) {
+        if ( pico == NULL )
+            return ;
         pico->resetBarrier() ;
     }
     bool canLeave( void ) {
+        if ( pico == NULL )
+            return false ;
         return pico != NULL && pico->canLeave() ;
     }
 
@@ -136,9 +144,13 @@ public:
     }
 
     inline bool onBreakpoint( void ) {
+        if ( pico == NULL )
+            return false ;
         return pico->onBreakpoint() ;
     }
     inline bool onBarrier( void ) {
+        if ( pico == NULL )
+            return false ;
         return pico->onBarrier() ;
     }
 
@@ -150,28 +162,42 @@ public:
     }
 
     bool getBreakpoint( uint32_t address ) {
+        if ( pico == NULL )
+            return false ;
         return pico->getBreakpoint( address ) ;
     }
     void resetBreakpoint( uint32_t address ) {
+        if ( pico == NULL )
+            return ;
         pico->resetBreakpoint( address ) ;
     }
     void setBreakpoint( uint32_t address ) {
+        if ( pico == NULL )
+            return ;
         pico->setBreakpoint( address ) ;
     }
 
     inline uint32_t getPcValue( void ) {
+        if ( pico == NULL )
+            return 0 ;
         return pico->getPcValue() ;
     }
 
     uint32_t getCodeCount( uint32_t address ) {
+        if ( pico == NULL )
+            return 0 ;
         return pico->getCodeCount( address ) ;
     }
 
     IODevice * getIODevice( uint32_t addr ) {
+        if ( pico == NULL )
+            return NULL ;
         return pico->getIODevice( addr ) ;
     }
 
     void setIODevice ( void * w, int addr_l, int addr_h, IODevice * device ) {
+        if ( pico == NULL )
+            return ;
         pico->setIODevice( w, addr_l, addr_h, device ) ;
     }
 
@@ -211,18 +237,26 @@ public:
     }
 
     uint8_t getRegisterValue( uint32_t cell ) {
+        if ( pico == NULL )
+            return 0 ;
         return pico->getRegister( pico->getBank(), cell ) ;
     }
 
     void * getRegisterItem( uint32_t reg ) {
+        if ( pico == NULL )
+            return NULL ;
         return registerItems[ reg ] ;
     }
 
     void setRegisterItem ( uint32_t reg, void * item ) {
+        if ( pico == NULL )
+            return ;
         registerItems[ reg ] = item ;
     }
 
     void * getCodeItem( uint32_t address ) {
+        if ( pico == NULL )
+            return NULL ;
         return codeItems[ address ] ;
     }
 
@@ -238,35 +272,50 @@ public:
 
     void clearCode( void ) {
         if ( pico == NULL )
-            pico->clearCode() ;
+            return ;
+        pico->clearCode() ;
     }
 
     void setCodeItem( uint32_t address, uint32_t code, uint32_t line, void * item ) {
+        if ( pico == NULL )
+            return ;
         pico->setCode( address, code, line ) ;
         codeItems[ address ] = item ;
     }
 
     void initScratchpad( void ) {
+        if ( pico == NULL )
+            return ;
         pico->initScratchpad() ;
     }
 
     int getScratchPadSize( void )  {
+        if ( pico == NULL )
+            return 0 ;
         return pico->getScratchPadSize() ;
     }
 
     void setInterrupt( bool value ) {
+        if ( pico == NULL )
+            return ;
         pico->setInterrupt( value ) ;
     }
 
     void setIntVect( bool value ) {
+        if ( pico == NULL )
+            return ;
         pico->setInterruptVector( value ) ;
     }
 
     void setHWBuild( bool value ) {
+        if ( pico == NULL )
+            return ;
         pico->setHWbuild( value ) ;
     }
 
     uint64_t getCycleCounter( void ) {
+        if ( pico == NULL )
+            return 0 ;
         return pico->getCycleCounter() ;
     }
 

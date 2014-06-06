@@ -19,18 +19,23 @@
 
 #include "hexspinbox.h"
 
-HexSpinBox::HexSpinBox(QWidget *parent) : QSpinBox(parent) {
-    setRange(0, 255);
+HexSpinBox::HexSpinBox( QWidget * parent ) :
+    QSpinBox(parent)
+{
+    setRange( 0, 255 ) ;
     validator = new QRegExpValidator(QRegExp("[0-9A-Fa-f]{1,8}"), this);
-//    setPrefix( "0x" ) ;
-    setAlignment( Qt::AlignHCenter ) ;
+    setAlignment( Qt::AlignCenter ) ;
 }
 
-QValidator::State HexSpinBox::validate(QString &text, int &pos) const {
-    return validator->validate(text, pos);
+HexSpinBox::~HexSpinBox() {
+    delete validator ;
 }
 
-QString HexSpinBox::textFromValue(int value) const {
+QValidator::State HexSpinBox::validate( QString &text, int &pos ) const {
+    return validator->validate( text, pos ) ;
+}
+
+QString HexSpinBox::textFromValue( int value ) const {
     return QString( "%1" ).arg( value, 2, 16, QChar('0') ).toUpper() ;
 }
 

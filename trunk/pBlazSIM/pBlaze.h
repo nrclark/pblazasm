@@ -498,6 +498,7 @@ private:
     bool carry, zero, enable, interrupt, acknowledge ;
 } ;
 
+
 class Picoblaze3 : public Picoblaze {
 private:
 protected:
@@ -509,6 +510,7 @@ public:
     bool step( void ) ;
 } ;
 
+
 class Picoblaze6 : public Picoblaze {
 protected:
     virtual uint32_t Address ( const int code ) {
@@ -518,6 +520,7 @@ public:
     Picoblaze6( void ) ;
     bool step( void ) ;
 } ;
+
 
 class Picoblaze7 : public Picoblaze6 {
 protected:

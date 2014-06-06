@@ -23,6 +23,7 @@
 QmtxScriptCore::QmtxScriptCore(QObject *parent) :
     QObject(parent)
 {
+    w = NULL ;
 }
 
 void QmtxScriptCore::interrupt( void ) {
@@ -41,5 +42,6 @@ void QmtxScriptCore::setHWBuild( quint8 value ) {
 }
 
 void QmtxScriptCore::acknowledge( void ) {
+    Q_ASSERT( w != NULL ) ;
     ( (MainWindow *)w )->scriptAcknowledge() ;
 }

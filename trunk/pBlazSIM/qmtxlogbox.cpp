@@ -32,7 +32,6 @@ void logBoxMessageOutput( QtMsgType type, const QMessageLogContext &context, con
     (void)context ;
     if ( single != NULL )
         single->appendPlainText( msg ) ;
-//        single->appendPlainText( msg + "  (" + context.function + ")" ) ;
     logging = false ;
 }
 
