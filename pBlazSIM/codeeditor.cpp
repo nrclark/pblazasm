@@ -53,7 +53,7 @@ CodeEditor::CodeEditor(QWidget *parent) : QPlainTextEdit(parent) {
     highlightCurrentLine();
 }
 
-int CodeEditor::lineNumberAreaWidth() {
+int CodeEditor::lineNumberAreaWidth( void ) {
     int digits = 3 ;
     int max = qMax(1, blockCount());
     while ( max >= 10 ) {
@@ -65,8 +65,9 @@ int CodeEditor::lineNumberAreaWidth() {
 }
 
 void CodeEditor::selectLineAt( QPointF pos ) {
+    (void)pos ;
     viewport() ;
-    int docLPos = document()->documentLayout()->hitTest( pos, Qt::FuzzyHit ) ;
+//    int docLPos = document()->documentLayout()->hitTest( pos, Qt::FuzzyHit ) ;
 //    qDebug() << pos << docLPos ;
 }
 

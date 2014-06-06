@@ -32,12 +32,6 @@ class QmtxLogBox : public QPlainTextEdit
 public:
     explicit QmtxLogBox(QWidget *parent = 0);
     ~QmtxLogBox() ;
-    
-signals:
-    
-public slots:
-    
-private:
-};
+} ;
 
 #endif // QMXTLOGBOX_H

@@ -22,6 +22,7 @@
 #include "pBlaze.h"
 
 Picoblaze::Picoblaze( void ) {
+    scratchpad = NULL ;
     clearCode() ;
     initialize() ;
     for ( int io = 0 ; io < MAXIO ; io += 1 )
@@ -39,7 +40,8 @@ Picoblaze::~Picoblaze( void ) {
                     IO[ i ].device = NULL ;
             delete d ;
         }
-    delete scratchpad ;
+    if ( scratchpad != NULL )
+        delete scratchpad ;
 }
 
 bool Picoblaze::step() {

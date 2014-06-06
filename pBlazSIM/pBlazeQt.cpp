@@ -99,13 +99,14 @@ void SBOX::setValue( uint32_t address, uint32_t value ) {
 }
 
 
-
 // SCRIPT
 uint32_t SCRIPT::getValue( uint32_t address ) {
+    Q_ASSERT( w != NULL ) ;
     return ( (MainWindow *)w )->getScriptValue( address ) ;
 }
 
 void SCRIPT::setValue( uint32_t address, uint32_t value ) {
+    Q_ASSERT( w != NULL ) ;
     ( (MainWindow *)w )->setScriptValue( address, value ) ;
 }
 
@@ -326,6 +327,8 @@ void QmtxPicoblaze::setScratchpadValue ( uint32_t cell, uint32_t value ) {
 }
 
 void QmtxPicoblaze::setRegisterValue ( uint32_t cell, uint32_t value ) {
+    if ( pico == NULL )
+        return ;
     pico->setRegister( pico->getBank(), cell, value ) ;
 
     QStandardItem * item = (QStandardItem *)registerItems[ cell ] ;

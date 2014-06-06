@@ -12,6 +12,9 @@ TEMPLATE = app
 
 win32 : QMAKE_LFLAGS += -static-libgcc -static-libstdc++
 
+win32 : DEFINES += WIN32VERSION
+mac : DEFINES += OSXVERSION
+
 
 SOURCES += \
     main.cpp \
